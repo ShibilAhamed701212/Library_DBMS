@@ -10,12 +10,12 @@
 -- ======================================================
 
 -- ------------------------------------------------------
--- Create main application database if it does not exist
+-- Create main application database if it does not exist (disabled for cloud compliance)
 -- ------------------------------------------------------
-CREATE DATABASE IF NOT EXISTS library_db;
+-- CREATE DATABASE IF NOT EXISTS library_db;
 
--- Switch context to library_db
-USE library_db;
+-- Switch context to library_db (handeled by connection string in cloud)
+-- USE library_db;
 
 
 -- ======================================================
