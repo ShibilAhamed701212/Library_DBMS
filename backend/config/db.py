@@ -70,6 +70,11 @@ def get_connection():
         # Character set to support full Unicode (emojis, symbols, etc.)
         charset="utf8mb4",
 
+        # REQUIRED FOR CLOUD (AIVEN):
+        # Aiven and other cloud providers require SSL.
+        # We enable it only if the host is NOT localhost.
+        ssl_disabled=False if os.getenv("DB_HOST", "127.0.0.1") != "127.0.0.1" else True,
+
         # Authentication plugin used by MySQL
         # Required for compatibility with MySQL 8+
         auth_plugin="mysql_native_password"
