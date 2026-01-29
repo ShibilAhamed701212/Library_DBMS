@@ -88,7 +88,7 @@
                 <tbody>
                     {% for _, row in data.active_users.iterrows() %}
                     <tr>
-                        <td style="font-weight: 600;">{{ row.name }}</td>
+                        <td style="font-weight: 600;">{{ row['name'] }}</td>
                         <td><span class="badge badge-member">{{ row.total_issues }}</span></td>
                     </tr>
                     {% endfor %}
