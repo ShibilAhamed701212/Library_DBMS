@@ -18,7 +18,7 @@
 </head>
 <body>
     <!-- Mobile Menu Toggle -->
-    <button class="menu-toggle" id="menuToggle" style="display: none;">☰</button>
+    <button class="menu-toggle" id="menuToggle">☰</button>
 
     <!-- Flash Messages -->
     <div class="flash-container">
@@ -113,27 +113,14 @@
         const menuToggle = document.getElementById('menuToggle');
         const sidebar = document.getElementById('sidebar');
         
-        // Show menu button on mobile
-        if (window.innerWidth <= 599) {
-            menuToggle.style.display = 'block';
-        }
-        
-        window.addEventListener('resize', () => {
-            if (window.innerWidth <= 599) {
-                menuToggle.style.display = 'block';
-            } else {
-                menuToggle.style.display = 'none';
-                sidebar.classList.remove('open');
-            }
-        });
-        
-        menuToggle.addEventListener('click', () => {
+        menuToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
             sidebar.classList.toggle('open');
         });
         
         // Close sidebar when clicking outside on mobile
         document.addEventListener('click', (e) => {
-            if (window.innerWidth <= 599 && 
+            if (window.innerWidth <= 1024 && 
                 !sidebar.contains(e.target) && 
                 !menuToggle.contains(e.target) &&
                 sidebar.classList.contains('open')) {
