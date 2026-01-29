@@ -46,7 +46,7 @@
                     <tr>
                         <td style="font-weight: 600;">{{ i.title }}</td>
                         <td>{{ i.issue_date }}</td>
-                        <td style="color: {{ 'var(--danger)' if i.fine > 0 else 'var(--text)' }};">₹{{ i.fine }}</td>
+                        <td style="color: {{ 'var(--danger)' if i.fine > 0 else 'var(--text-main)' }};">₹{{ i.fine }}</td>
                         <td>
                             {% if i.fine > 0 %}
                             <span class="badge badge-danger">Overdue</span>

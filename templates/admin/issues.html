@@ -129,7 +129,7 @@
                         <td>{{ i.book_title }}</td>
                         <td>{{ i.issue_date }}</td>
                         <td>{{ i.return_date }}</td>
-                        <td><span class="{{ 'text-danger' if i.fine > 0 else 'text-success' }}">₹{{ i.fine }}</span></td>
+                        <td><span style="color: {{ 'var(--danger)' if i.fine > 0 else 'var(--success)' }};">₹{{ i.fine }}</span></td>
                     </tr>
                     {% endfor %}
                 </tbody>
