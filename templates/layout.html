@@ -33,6 +33,8 @@
     {% endwith %}
     </div>
 
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <div class="app-container">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
@@ -112,11 +114,19 @@
         // Mobile menu toggle
         const menuToggle = document.getElementById('menuToggle');
         const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
         
+        function toggleMenu() {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        }
+
         menuToggle.addEventListener('click', (e) => {
             e.stopPropagation();
-            sidebar.classList.toggle('open');
+            toggleMenu();
         });
+        
+        overlay.addEventListener('click', toggleMenu);
         
         // Close sidebar when clicking outside on mobile
         document.addEventListener('click', (e) => {
@@ -124,7 +134,7 @@
                 !sidebar.contains(e.target) && 
                 !menuToggle.contains(e.target) &&
                 sidebar.classList.contains('open')) {
-                sidebar.classList.remove('open');
+                toggleMenu();
             }
         });
 

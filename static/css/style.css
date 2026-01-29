@@ -397,262 +397,86 @@ tr:last-child td {
     color: white;
 }
 
-/* ================= RESPONSIVE ================= */
-@media (max-width: 768px) {
-    :root {
-        --sidebar-width: 100%;
+/* ================= SIDEBAR OVERLAY ================= */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ================= COMPREHENSIVE RESPONSIVE SYSTEM ================= */
+
+/* 1. Large Tablets & Small Desktops (< 1024px) */
+@media (max-width: 1024px) {
+    .sidebar {
+        transform: translateX(-100%);
+        width: 280px;
+        max-width: 80vw;
     }
     
-    .sidebar {
-        width: 100%;
-        max-width: 100%;
-        position: relative;
-        height: auto;
+    .sidebar.open {
+        transform: translateX(0);
+        box-shadow: 20px 0 50px rgba(0,0,0,0.3);
     }
     
     .main-content {
-        margin-left: 0;
-    }
-}
-
-/* ================= MODERN FORM INPUTS ================= */
-input, select, textarea {
-    width: 100%;
-    padding: var(--space-sm) var(--space-md);
-    border: 2px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--card-bg);
-    color: var(--text-main);
-    font-size: var(--text-sm);
-    font-family: 'Inter', sans-serif;
-    transition: all 0.2s;
-    outline: none;
-}
-
-input:focus, select:focus, textarea:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-input:hover, select:hover, textarea:hover {
-    border-color: var(--text-sub);
-}
-
-select {
-    cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right var(--space-sm) center;
-    padding-right: var(--space-lg);
-}
-
-label {
-    display: block;
-    font-size: var(--text-sm);
-    font-weight: 500;
-    color: var(--text-main);
-    margin-bottom: var(--space-xs);
-}
-
-.form-group {
-    margin-bottom: var(--space-md);
-}
-
-[data-theme='dark'] input,
-[data-theme='dark'] select,
-[data-theme='dark'] textarea {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: var(--border);
-}
-
-/* ================= COMPREHENSIVE RESPONSIVE DESIGN ================= */
-/* Tablet (768px - 999px) */
-@media (min-width: 768px) and (max-width: 999px) {
-    .sidebar { width: 300px; }
-    .main-content { margin-left: 300px; padding: 21px; }
-    .stats-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-}
-
-/* Mobile (max 599px) - Sidebar slides in */
-@media (max-width: 599px) {
-    .sidebar {
+        margin-left: 0 !important;
         width: 100%;
-        transform: translateX(-100%);
-        transition: transform 0.3s ease;
-        z-index: 1000;
+        padding: var(--space-md);
     }
-    .sidebar.open { transform: translateX(0); }
-    .main-content { margin-left: 0; padding: 13px; }
-    .menu-toggle {
-        display: block !important;
-        position: fixed;
-        top: 13px;
-        left: 13px;
-        z-index: 999;
-        background: var(--primary);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 13px;
-        font-size: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-    header { flex-direction: column; align-items: flex-start; margin-top: 55px; }
-    .stats-grid { grid-template-columns: 1fr; gap: 13px; }
-    .stat-card { min-height: 100px; padding: 13px; }
-    .stat-icon { width: 44px; height: 44px; }
-    .stat-value { font-size: 26px; }
-    table { font-size: 12px; }
-    th, td { padding: 8px 13px; }
-}
 
-
-/* ================= MODERN LOGIN PAGE ================= */
-.login-page {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    position: relative;
-    overflow: hidden;
-}
-
-.login-bg-shapes {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    z-index: 0;
-}
-
-.shape {
-    position: absolute;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
-    animation: float 20s infinite ease-in-out;
-}
-
-.shape-1 {
-    width: 300px;
-    height: 300px;
-    top: -100px;
-    left: -100px;
-    animation-delay: 0s;
-}
-
-.shape-2 {
-    width: 200px;
-    height: 200px;
-    bottom: -50px;
-    right: -50px;
-    animation-delay: 7s;
-}
-
-.shape-3 {
-    width: 150px;
-    height: 150px;
-    top: 50%;
-    right: 10%;
-    animation-delay: 14s;
-}
-
-@keyframes float {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-30px) rotate(180deg); }
-}
-
-.login-card {
-    background: white;
-    padding: var(--space-xl);
-    border-radius: var(--radius);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    width: 100%;
-    max-width: 420px;
-    position: relative;
-    z-index: 1;
-    transform-style: preserve-3d;
-    transition: transform 0.5s ease;
-}
-
-.login-header {
-    text-align: center;
-    margin-bottom: var(--space-lg);
-}
-
-.login-header h1 {
-    font-size: var(--text-2xl);
-    font-weight: 700;
-    margin-bottom: var(--space-xs);
-    color: var(--text-main);
-}
-
-.login-header p {
-    font-size: var(--text-sm);
-    color: var(--text-sub);
-}
-
-.login-card .btn-primary {
-    width: 100%;
-    margin-top: var(--space-lg);
-    padding: var(--space-md);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* ================= MOBILE OVERRIDES ================= */
-.menu-toggle {
-    position: fixed;
-    top: var(--space-md);
-    left: var(--space-md);
-    z-index: 1100;
-    background: var(--primary);
-    color: white;
-    border: none;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    cursor: pointer;
-}
-
-.table-container {
-    width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    border-radius: var(--radius);
-    margin-bottom: var(--space-md);
-}
-
-@media (max-width: 768px) {
     .menu-toggle {
         display: flex;
     }
-    
+
+    header {
+        margin-top: calc(var(--space-xl) + 10px);
+    }
+}
+
+/* 2. Tablets & Large Phones (< 768px) */
+@media (max-width: 768px) {
+    :root {
+        --space-lg: 21px;
+        --space-xl: 34px;
+    }
+
     header {
         flex-direction: column;
         align-items: flex-start;
-        gap: var(--space-md);
-        margin-top: var(--space-xl);
+        gap: var(--space-sm);
     }
-    
+
     .user-profile {
         width: 100%;
         justify-content: flex-end;
+        padding-top: var(--space-xs);
+        border-top: 1px solid var(--border);
     }
-    
+
     .stats-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
     }
-    
+
     .stat-card {
         min-height: auto;
-        padding: var(--space-md);
+    }
+
+    .widget-grid {
+        grid-template-columns: 1fr !important;
     }
     
     .section-content form {
@@ -660,18 +484,38 @@ label {
     }
 }
 
+/* 3. Small Phones (< 480px) */
 @media (max-width: 480px) {
     :root {
-        --space-lg: 21px;
-        --space-xl: 34px;
+        --text-2xl: 26px;
+        --text-3xl: 32px;
+        --space-md: 13px;
+        --space-lg: 13px;
     }
-    
+
     .header-title h1 {
         font-size: var(--text-xl);
     }
-    
-    .glass-card {
-        padding: var(--space-md);
+
+    .glass-card, .dashboard-section, .stat-card {
+        padding: var(--space-sm);
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-xs);
+    }
+
+    .btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .table-container {
+        margin: 0 -13px;
+        width: calc(100% + 26px);
+        border-radius: 0;
     }
 }
 
