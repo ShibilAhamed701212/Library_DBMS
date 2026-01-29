@@ -17,8 +17,16 @@
     {% block head %}{% endblock %}
 </head>
 <body>
-    <!-- Mobile Menu Toggle -->
-    <button class="menu-toggle" id="menuToggle">☰</button>
+    <!-- Mobile View: Premium Top Bar -->
+    <div class="mobile-top-bar">
+        <div class="mobile-left">
+            <button class="menu-toggle" id="menuToggle">☰</button>
+            <div class="mobile-logo"><span>📚</span> LibManage</div>
+        </div>
+        <div class="mobile-user">
+            <span class="mobile-user-name">{{ session.get('name', 'User') }}</span>
+        </div>
+    </div>
 
     <!-- Flash Messages -->
     <div class="flash-container">
