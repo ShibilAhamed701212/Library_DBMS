@@ -23,6 +23,7 @@ from dotenv import load_dotenv     # Loads environment variables from .env file
 from backend.routes.auth_routes import auth_bp      # Login, logout, password change
 from backend.routes.admin_routes import admin_bp    # Admin dashboard & admin actions
 from backend.routes.member_routes import member_bp  # Member dashboard
+from backend.routes.system_routes import system_bp  # Cloud initialization
 
 # -------------------------------
 # LOAD ENVIRONMENT VARIABLES
@@ -89,6 +90,7 @@ def create_app():
     app.register_blueprint(auth_bp)     # /
     app.register_blueprint(admin_bp)    # /dashboard
     app.register_blueprint(member_bp)   # /member/dashboard
+    app.register_blueprint(system_bp)   # /system
 
     # -------------------------------
     # RETURN CONFIGURED APP

@@ -11,21 +11,21 @@ def run_schema():
     """
     Reads the SQL schema file and executes it to create tables.
     """
-    schema_path = os.path.join(project_root, "database", "DBMS_library_db.sql")
+    # Use absolute project root for reliability
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root_local = os.path.dirname(script_dir)
+    schema_path = os.path.join(project_root_local, "database", "DBMS_library_db.sql")
     
     if not os.path.exists(schema_path):
-        print(f"❌ Schema file not found at {schema_path}")
-        return
+        return f"❌ Schema file not found at {schema_path}", False
 
-    print("🚀 Initializing database schema...")
+    output = ["🚀 Initializing database schema..."]
     
     try:
         conn = get_connection()
         cursor = conn.cursor()
         
         with open(schema_path, 'r') as f:
-            # Split by semicolon to get individual queries
-            # Note: This is a simple parser and might need adjustments for complex SQL
             sql_commands = f.read().split(';')
             
             for command in sql_commands:
@@ -33,19 +33,19 @@ def run_schema():
                     try:
                         cursor.execute(command)
                     except Exception as e:
-                        # Some commands like DROP USER might fail if user doesn't exist
-                        # We ignore these during initialization
                         if "DROP" in command.upper():
                             continue
-                        print(f"⚠️ Warning during SQL execution: {e}")
+                        output.append(f"⚠️ Warning: {e}")
         
         conn.commit()
         cursor.close()
         conn.close()
-        print("✅ Database tables created successfully!")
+        output.append("✅ Database tables created successfully!")
+        return "\n".join(output), True
         
     except Exception as e:
-        print(f"❌ Error during schema initialization: {e}")
+        return f"❌ Error: {e}", False
 
 if __name__ == "__main__":
-    run_schema()
+    msg, success = run_schema()
+    print(msg)
