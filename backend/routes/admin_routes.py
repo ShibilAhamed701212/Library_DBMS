@@ -20,7 +20,8 @@ from flask import (
     session,            # Stores logged-in user info
     redirect,           # Redirects browser to another URL
     request,            # Reads POSTed form data
-    flash               # Sends messages to UI
+    flash,              # Sends messages to UI
+    url_for             # Generates URLs for routes
 )
 
 # =====================================================
