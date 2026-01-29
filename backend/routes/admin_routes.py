@@ -223,7 +223,7 @@ def send_overdue_reminders_route():
     from flask import flash
     result = send_overdue_reminders()
     flash(result, "success")
-    return redirect(url_for("admin_bp.admin_reports"))
+    return redirect(url_for("admin.admin_reports"))
 
 
 # =====================================================
