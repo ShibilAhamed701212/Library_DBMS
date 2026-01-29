@@ -1,0 +1,127 @@
+{% extends "layout.html" %}
+
+{% block title %}Manage Books{% endblock %}
+{% block header_title %}Book Inventory{% endblock %}
+{% block header_subtitle %}View, add, or update the library's physical collection.{% endblock %}
+
+{% block head %}
+<style>
+    .admin-books-filter {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        padding: 1rem;
+        border-radius: 12px;
+    }
+    .admin-books-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+    .admin-book-card {
+        border-radius: var(--radius);
+        padding: 1rem;
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        box-shadow: var(--shadow);
+    }
+    .admin-book-thumb {
+        width: 80px;
+        height: 120px;
+        background: var(--stat-icon-bg);
+        border-radius: 8px;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+    .admin-book-info {
+        flex-grow: 1;
+        min-width: 0;
+    }
+    .admin-book-title {
+        font-weight: 700;
+        font-size: 1rem;
+        margin-bottom: 0.25rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .admin-book-author {
+        font-size: 0.8125rem;
+        color: var(--text-sub);
+        margin-bottom: 0.75rem;
+    }
+    .stock-badge {
+        font-size: 0.75rem;
+        padding: 4px 8px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text-main);
+    }
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 3rem;
+        align-items: center;
+    }
+    .page-info {
+        font-size: 0.875rem;
+        color: var(--text-sub);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<form action="/admin/books" method="GET" class="admin-books-filter glass-card">
+    <input type="text" name="q" value="{{ q }}" class="search-input" placeholder="Search by title, author, or category..." style="border: none; flex-grow: 1; padding: 0 1rem; background: transparent; outline: none; color: var(--text-main);">
+    <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+</form>
+
+{% if not books %}
+<div class="glass-card" style="text-align: center; padding: 5rem; border-radius: 12px;">
+    <h3>No books in inventory matching your search.</h3>
+    <a href="/admin/books" class="btn btn-primary" style="margin-top: 1rem;">Clear Filters</a>
+</div>
+{% else %}
+<div class="admin-books-grid">
+    {% for b in books %}
+    <div class="admin-book-card glass-card">
+        <img src="https://covers.openlibrary.org/b/title/{{ b.title|urlencode }}-S.jpg" 
+             class="admin-book-thumb" 
+             onerror="this.src='https://placehold.co/80x120?text={{ b.title[0] }}';">
+             
+        <div class="admin-book-info">
+            <h3 class="admin-book-title" title="{{ b.title }}">{{ b.title }}</h3>
+            <p class="admin-book-author">{{ b.author }}</p>
+            
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <span class="stock-badge">
+                    <strong>{{ b.available_copies }}</strong> / {{ b.total_copies }}
+                </span>
+                <span class="badge" style="background: var(--stat-icon-bg); color: var(--primary);">{{ b.category }}</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- PAGINATION -->
+<div class="pagination">
+    {% if current_page > 1 %}
+    <a href="/admin/books?page={{ current_page - 1 }}&q={{ q }}" class="btn btn-danger btn-sm">Previous</a>
+    {% else %}
+    <button class="btn btn-disabled btn-sm" disabled>Previous</button>
+    {% endif %}
+
+    <span class="page-info">Page <strong>{{ current_page }}</strong> of {{ total_pages }}</span>
+
+    {% if current_page < total_pages %}
+    <a href="/admin/books?page={{ current_page + 1 }}&q={{ q }}" class="btn btn-primary btn-sm">Next</a>
+    {% else %}
+    <button class="btn btn-disabled btn-sm" disabled>Next</button>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

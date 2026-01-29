@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Library System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="login-page">
+
+    <!-- 3D Animated Background -->
+    <div class="login-bg-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+
+    <!-- Flash Messages (Overlaid) -->
+    <div class="flash-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, msg in messages %}
+          <div class="flash-message flash-{{ category }}">
+              <span>{{ msg }}</span>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    </div>
+
+    <div class="login-card">
+        <div class="login-header">
+            <h1>📚 LibManage</h1>
+            <p>Enter your credentials to access the library dashboard.</p>
+        </div>
+
+        <form method="POST" action="/">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" placeholder="name@example.com" required autofocus>
+            </div>
+
+            <div class="form-group" style="margin-top: 1.5rem;">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 2rem;">
+                SIGN IN TO DASHBOARD
+            </button>
+        </form>
+
+        <div style="margin-top: 2.5rem; text-align: center; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 1.5rem;">
+            <p style="font-size: 0.8rem; color: var(--text-sub); opacity: 0.5; letter-spacing: 0.05em; text-transform: uppercase;">
+                Enterprise Security Guaranteed &bull; 2026
+            </p>
+        </div>
+    </div>
+
+    <!-- Optional: Vanilla JS for 3D tilt effect on card -->
+    <script>
+        const card = document.querySelector('.login-card');
+        document.addEventListener('mousemove', (e) => {
+            const xAxis = (window.innerWidth / 2 - e.pageX) / 60;
+            const yAxis = (window.innerHeight / 2 - e.pageY) / 60;
+            card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+        });
+        
+        document.addEventListener('mouseenter', () => {
+            card.style.transition = 'none';
+        });
+        
+        document.addEventListener('mouseleave', () => {
+            card.style.transition = 'transform 0.5s ease';
+            card.style.transform = `rotateY(0deg) rotateX(0deg)`;
+        });
+    </script>
+</body>
+</html>

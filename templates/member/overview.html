@@ -1,0 +1,71 @@
+{% extends "layout.html" %}
+
+{% block title %}My Dashboard{% endblock %}
+{% block header_title %}My Library Overview{% endblock %}
+{% block header_subtitle %}Track your active borrowings{% endblock %}
+
+{% block content %}
+<!-- Member Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">📖</div>
+        <div class="stat-info">
+            <span class="stat-label">My Issued Books</span>
+            <span class="stat-value">{{ issues|length }}</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-info">
+            <span class="stat-label">Total Fines</span>
+            <span class="stat-value">₹{{ issues|sum(attribute='fine') }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- My Issued Books -->
+<section class="dashboard-section">
+    <div class="section-header">
+        <h2>My Issued Books</h2>
+    </div>
+    <div class="section-content">
+        {% if issues %}
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Book Title</th>
+                        <th>Issue Date</th>
+                        <th>Fine (₹)</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in issues %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ i.title }}</td>
+                        <td>{{ i.issue_date }}</td>
+                        <td>₹{{ i.fine }}</td>
+                        <td>
+                            {% if i.return_date %}
+                            <span class="badge badge-success">Returned</span>
+                            {% elif i.fine > 0 %}
+                            <span class="badge badge-danger">Overdue</span>
+                            {% else %}
+                            <span class="badge badge-pending">Active</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align: center; color: var(--text-sub); padding: 3rem;">
+            <p>No books issued yet. Visit the catalog to request one!</p>
+            <a href="/member/catalog" class="btn btn-primary" style="margin-top: 1rem;">Browse Books</a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

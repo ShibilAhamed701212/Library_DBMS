@@ -1,0 +1,140 @@
+{% extends "layout.html" %}
+
+{% block title %}Issue & Return{% endblock %}
+{% block header_title %}Circulation Center{% endblock %}
+{% block header_subtitle %}Issue books to members and process returns.{% endblock %}
+
+{% block content %}
+<!-- FORMS ROW -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+    <!-- ISSUE BOOK -->
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h2>📤 Issue Book</h2>
+        </div>
+        <div class="section-content glass-card">
+            <form action="/admin/issue" method="POST">
+                <div class="form-group">
+                    <label>Member</label>
+                    <select name="user_id" required>
+                        <option value="" disabled selected>Select user...</option>
+                        {% for u in users %}
+                        <option value="{{ u.user_id }}">{{ u.name }} (ID: {{ u.user_id }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Book</label>
+                    <select name="book_id" required>
+                        <option value="" disabled selected>Select book...</option>
+                        {% for b in books %}
+                        <option value="{{ b.book_id }}">{{ b.title }} (ID: {{ b.book_id }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Complete Issue</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- RETURN BOOK -->
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h2>📥 Return Book</h2>
+        </div>
+        <div class="section-content glass-card">
+            <form action="/admin/return" method="POST">
+                <div class="form-group">
+                    <label>Member</label>
+                    <select name="user_id" required>
+                        <option value="" disabled selected>Select user...</option>
+                        {% for u in users %}
+                        <option value="{{ u.user_id }}">{{ u.name }} (ID: {{ u.user_id }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Book</label>
+                    <select name="book_id" required>
+                        <option value="" disabled selected>Select book...</option>
+                        {% for b in books %}
+                        <option value="{{ b.book_id }}">{{ b.title }} (ID: {{ b.book_id }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-danger" style="width: 100%;">Process Return</button>
+            </form>
+        </div>
+    </section>
+</div>
+
+<!-- ACTIVE ISSUES -->
+<section class="dashboard-section">
+    <div class="section-header">
+        <h2>🔖 Currently Borrowed</h2>
+    </div>
+    <div class="section-content">
+        <div class="table-container glass-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Issue ID</th>
+                        <th>User</th>
+                        <th>Book</th>
+                        <th>Issue Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in active_issues %}
+                    <tr>
+                        <td>#{{ i.issue_id }}</td>
+                        <td style="font-weight: 500;">{{ i.user_name }}</td>
+                        <td>{{ i.book_title }}</td>
+                        <td>{{ i.issue_date }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: var(--text-sub); padding: 2rem;">No active issues.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- PAST ISSUES -->
+<section class="dashboard-section">
+    <div class="section-header">
+        <h2>📚 Borrowing History (Returned)</h2>
+    </div>
+    <div class="section-content">
+        <div class="table-container glass-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>User</th>
+                        <th>Book</th>
+                        <th>Issued</th>
+                        <th>Returned</th>
+                        <th>Fine</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in past_issues %}
+                    <tr>
+                        <td>#{{ i.issue_id }}</td>
+                        <td style="font-weight: 500;">{{ i.user_name }}</td>
+                        <td>{{ i.book_title }}</td>
+                        <td>{{ i.issue_date }}</td>
+                        <td>{{ i.return_date }}</td>
+                        <td><span class="{{ 'text-danger' if i.fine > 0 else 'text-success' }}">₹{{ i.fine }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}

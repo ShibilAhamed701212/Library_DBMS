@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+
+{% block title %}Pending Requests{% endblock %}
+{% block header_title %}Member Requests{% endblock %}
+{% block header_subtitle %}Approve or reject book requests from members.{% endblock %}
+
+{% block content %}
+<section class="dashboard-section">
+    <div class="section-header">
+        <h2>⏳ Pending Requests</h2>
+        <span class="badge badge-pending">{{ pending_requests|length }} New</span>
+    </div>
+    <div class="section-content">
+        <div class="table-container glass-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Date</th>
+                        <th>User</th>
+                        <th>Book</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in pending_requests %}
+                    <tr>
+                        <td>#{{ req.request_id }}</td>
+                        <td>{{ req.request_date }}</td>
+                        <td style="font-weight: 500;">{{ req.user_name }}</td>
+                        <td>{{ req.book_title }}</td>
+                        <td>
+                            <form action="/admin/request/approve" method="POST" style="display:inline;">
+                                <input type="hidden" name="request_id" value="{{ req.request_id }}">
+                                <button type="submit" class="btn btn-primary btn-sm">Approve</button>
+                            </form>
+                            <form action="/admin/request/reject" method="POST" style="display:inline;">
+                                <input type="hidden" name="request_id" value="{{ req.request_id }}">
+                                <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: var(--text-sub); padding: 2rem;">
+                            No pending requests at the moment.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}

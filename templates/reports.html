@@ -1,0 +1,176 @@
+{% extends "layout.html" %}
+
+{% block title %}Reports & Analytics{% endblock %}
+{% block header_title %}Library Analytics{% endblock %}
+{% block header_subtitle %}Performance and usage insights with interactive visualizations.{% endblock %}
+
+{% block head %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- VISUAL OVERVIEW -->
+<div class="widget-grid">
+    <div class="glass-card" style="padding: 1.5rem;">
+        <div class="chart-header">
+            <h3>📈 Monthly Lending Trends</h3>
+        </div>
+        <div class="chart-container">
+            <canvas id="lendingTrendChart"></canvas>
+        </div>
+    </div>
+    <div class="glass-card" style="padding: 1.5rem;">
+        <div class="chart-header">
+            <h3>📊 Category Distribution</h3>
+        </div>
+        <div class="chart-container">
+            <canvas id="categoryDistributionChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- MOST ISSUED BOOKS -->
+<section class="dashboard-section">
+    <div class="section-header">
+        <h2>📚 Most Issued Books</h2>
+        <div style="display: flex; gap: 0.5rem;">
+            <form action="/admin/notify-overdue" method="POST" style="margin: 0;">
+                <button type="submit" class="btn btn-danger btn-sm">📧 Email Overdue Reminders</button>
+            </form>
+            <a class="btn btn-primary btn-sm" href="/reports/export/most_issued">⬇ Export CSV</a>
+        </div>
+    </div>
+    <div class="section-content">
+        <div class="table-container glass-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Book Title</th>
+                        <th>Total Issues</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for _, row in data.most_issued.iterrows() %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ row.title }}</td>
+                        <td><span class="badge badge-success">{{ row.issue_count }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- MOST ACTIVE USERS -->
+<section class="dashboard-section">
+    <div class="section-header">
+        <h2>👥 Top Readers</h2>
+        <a class="btn btn-primary btn-sm" href="/reports/export/active_users">⬇ Export CSV</a>
+    </div>
+    <div class="section-content">
+        <div class="table-container glass-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Total Borrows</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for _, row in data.active_users.iterrows() %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ row.name }}</td>
+                        <td><span class="badge badge-member">{{ row.total_issues }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+    <!-- Data Injection (Linter-friendly) -->
+    <script id="chart-data" type="application/json">
+    {
+        "monthlyLabels": {{ data.monthly['month'].tolist() | tojson | safe }},
+        "monthlyValues": {{ data.monthly['total_issues'].tolist() | tojson | safe }},
+        "categoryLabels": {{ data.categories['category'].tolist() | tojson | safe }},
+        "categoryValues": {{ data.categories['book_count'].tolist() | tojson | safe }}
+    }
+    </script>
+
+    <script>
+    const rawData = JSON.parse(document.getElementById('chart-data').textContent);
+    const monthlyLabels = rawData.monthlyLabels;
+    const monthlyValues = rawData.monthlyValues;
+    const categoryLabels = rawData.categoryLabels;
+    const categoryValues = rawData.categoryValues;
+
+    // 1. Line Chart: Monthly Lending Trends
+    const ctxTrend = document.getElementById('lendingTrendChart').getContext('2d');
+    new Chart(ctxTrend, {
+        type: 'line',
+        data: {
+            labels: monthlyLabels,
+            datasets: [{
+                label: 'Books Issued',
+                data: monthlyValues,
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: '#2563eb',
+                pointRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+
+    // 2. Doughnut Chart: Category Distribution
+    const ctxCat = document.getElementById('categoryDistributionChart').getContext('2d');
+    new Chart(ctxCat, {
+        type: 'doughnut',
+        data: {
+            labels: categoryLabels,
+            datasets: [{
+                data: categoryValues,
+                backgroundColor: [
+                    '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#f43f5e'
+                ],
+                borderWidth: 2,
+                borderColor: 'rgba(255,255,255,0.1)',
+                hoverOffset: 20
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right' }
+            }
+        }
+    });
+</script>
+{% endblock %}
