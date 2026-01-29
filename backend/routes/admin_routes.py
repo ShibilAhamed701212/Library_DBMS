@@ -404,3 +404,21 @@ def admin_add_user():
     flash(result)
     return redirect("/admin/users")
 
+
+@admin_bp.route("/admin/user/delete/<int:user_id>", methods=["POST"])
+@admin_required
+def admin_delete_user(user_id):
+    """
+    Deletes a user account.
+    """
+    from backend.services.user_service import delete_user
+    
+    # Prevent admin from deleting themselves
+    if user_id == session.get("user_id"):
+        flash("❌ You cannot delete your own admin account while logged in.", "error")
+        return redirect("/admin/users")
+
+    result = delete_user(user_id)
+    flash(result)
+    return redirect("/admin/users")
+

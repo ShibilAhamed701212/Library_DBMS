@@ -108,3 +108,25 @@ def member_request_book():
     flash(result)
     return redirect("/member/catalog")
 
+
+@member_bp.route("/member/delete-account", methods=["POST"])
+@member_required
+def member_delete_my_account():
+    """
+    Allows a member to delete their own account.
+    """
+    from flask import flash, redirect, session
+    from backend.services.user_service import delete_user
+    
+    user_id = session.get("user_id")
+    result = delete_user(user_id)
+    
+    if "✅" in result or "successfully" in result.lower():
+        # Clear session after deletion
+        session.clear()
+        flash("Your account has been permanently deleted.")
+        return redirect("/")
+    else:
+        flash(result, "error")
+        return redirect("/member/dashboard")
+

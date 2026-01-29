@@ -45,37 +45,22 @@ def get_connection():
         mysql.connector.connection.MySQLConnection
     """
 
-    # Create and return a MySQL connection using environment variables
-    return mysql.connector.connect(
+    # Base configuration
+    config = {
+        "host": os.getenv("DB_HOST", "127.0.0.1"),
+        "port": int(os.getenv("DB_PORT", 3306)),
+        "user": os.getenv("DB_USER", "app_user"),
+        "password": os.getenv("DB_PASSWORD", "App@123"),
+        "database": os.getenv("DB_NAME", "library_db"),
+        "autocommit": False,
+        "charset": "utf8mb4",
+        "auth_plugin": "mysql_native_password"
+    }
 
-        # Database server address
-        host=os.getenv("DB_HOST", "127.0.0.1"),
-
-        # Database server port (default MySQL port = 3306)
-        port=int(os.getenv("DB_PORT", 3306)),
-
-        # Database username
-        user=os.getenv("DB_USER", "app_user"),
-
-        # Database password
-        password=os.getenv("DB_PASSWORD", "App@123"),
-
-        # Database name to connect to
-        database=os.getenv("DB_NAME", "library_db"),
-
-        # Disable autocommit to allow manual commit/rollback
-        # This is critical for transactional safety
-        autocommit=False,
-
-        # Character set to support full Unicode (emojis, symbols, etc.)
-        charset="utf8mb4",
-
-        # REQUIRED FOR CLOUD (AIVEN):
-        # Aiven and other cloud providers require SSL.
-        # We enable it only if the host is NOT localhost.
-        ssl_disabled=False if os.getenv("DB_HOST", "127.0.0.1") != "127.0.0.1" else True,
-
-        # Authentication plugin used by MySQL
-        # Required for compatibility with MySQL 8+
-        auth_plugin="mysql_native_password"
-    )
+    # REQUIRED FOR CLOUD (AIVEN):
+    # Only enable SSL parameters if we are NOT on localhost
+    if config["host"] != "127.0.0.1":
+        config["ssl_disabled"] = False
+    
+    # Create and return a MySQL connection
+    return mysql.connector.connect(**config)

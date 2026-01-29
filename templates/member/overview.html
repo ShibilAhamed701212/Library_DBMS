@@ -23,14 +23,15 @@
     </div>
 </div>
 
-<!-- My Issued Books -->
+<!-- Active Borrowings -->
 <section class="dashboard-section">
     <div class="section-header">
-        <h2>My Issued Books</h2>
+        <h2>📖 Active Borrowings</h2>
     </div>
     <div class="section-content">
-        {% if issues %}
-        <div class="table-container">
+        {% set active_issues = issues | selectattr('return_date', 'none') | list %}
+        {% if active_issues %}
+        <div class="table-container glass-card">
             <table>
                 <thead>
                     <tr>
@@ -41,15 +42,13 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for i in issues %}
+                    {% for i in active_issues %}
                     <tr>
                         <td style="font-weight: 600;">{{ i.title }}</td>
                         <td>{{ i.issue_date }}</td>
-                        <td>₹{{ i.fine }}</td>
+                        <td style="color: {{ 'var(--danger)' if i.fine > 0 else 'var(--text)' }};">₹{{ i.fine }}</td>
                         <td>
-                            {% if i.return_date %}
-                            <span class="badge badge-success">Returned</span>
-                            {% elif i.fine > 0 %}
+                            {% if i.fine > 0 %}
                             <span class="badge badge-danger">Overdue</span>
                             {% else %}
                             <span class="badge badge-pending">Active</span>
@@ -61,11 +60,65 @@
             </table>
         </div>
         {% else %}
-        <div style="text-align: center; color: var(--text-sub); padding: 3rem;">
-            <p>No books issued yet. Visit the catalog to request one!</p>
-            <a href="/member/catalog" class="btn btn-primary" style="margin-top: 1rem;">Browse Books</a>
+        <div class="glass-card" style="text-align: center; color: var(--text-sub); padding: 2rem;">
+            <p>You have no active borrowings.</p>
+            <a href="/member/catalog" class="btn btn-primary" style="margin-top: 1rem;">Borrow a Book</a>
         </div>
         {% endif %}
+    </div>
+</section>
+
+<!-- Borrowing History -->
+<section class="dashboard-section">
+    <div class="section-header">
+        <h2>📜 Borrowing History</h2>
+    </div>
+    <div class="section-content">
+        {% set history_issues = issues | selectattr('return_date', 'ne', none) | list %}
+        {% if history_issues %}
+        <div class="table-container glass-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Book Title</th>
+                        <th>Issue Date</th>
+                        <th>Return Date</th>
+                        <th>Fine Paid</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in history_issues %}
+                    <tr>
+                        <td style="font-weight: 400; color: var(--text-sub);">{{ i.title }}</td>
+                        <td>{{ i.issue_date }}</td>
+                        <td>{{ i.return_date }}</td>
+                        <td>₹{{ i.fine }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="color: var(--text-sub); opacity: 0.7;">No past borrowing records found.</p>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Account Settings -->
+<section class="dashboard-section" style="margin-top: 4rem; border-top: 1px solid var(--border-color); padding-top: 2rem;">
+    <div class="section-header">
+        <h2 style="color: var(--danger);">⚙️ Account Settings</h2>
+    </div>
+    <div class="section-content glass-card" style="border-color: rgba(220, 53, 69, 0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h3 style="margin-bottom: 0.5rem;">Delete Account</h3>
+                <p style="color: var(--text-sub); font-size: 0.9rem;">Once you delete your account, there is no going back. Please be certain.</p>
+            </div>
+            <form action="/member/delete-account" method="POST" onsubmit="return confirm('⚠️ FINAL WARNING: Are you sure you want to PERMANENTLY delete your account? All your history will be lost.')">
+                <button type="submit" class="btn btn-danger" style="background: var(--danger); border: none;">Delete My Account</button>
+            </form>
+        </div>
     </div>
 </section>
 {% endblock %}

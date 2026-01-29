@@ -40,4 +40,5 @@ if __name__ == "__main__":
     # - Debugger PIN (development only)
     #
     # ⚠️ NEVER use debug=True in production
-    app.run(debug=True)
+    # host='0.0.0.0' makes the server accessible to other devices on your Wi-Fi
+    app.run(debug=True, host='0.0.0.0')
