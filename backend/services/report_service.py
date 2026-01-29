@@ -66,6 +66,10 @@ def most_issued_books():
         """
     )
 
+    # If no results found, return empty DataFrame with columns
+    if not data:
+        return pd.DataFrame(columns=["title", "issue_count"])
+
     # Convert raw DB result into DataFrame
     return pd.DataFrame(data)
 
@@ -97,6 +101,10 @@ def most_active_users():
         """
     )
 
+    # If no results found
+    if not data:
+        return pd.DataFrame(columns=["name", "total_issues"])
+
     # Convert query result to DataFrame
     return pd.DataFrame(data)
 
@@ -127,6 +135,10 @@ def monthly_issue_count():
         """
     )
 
+    # If no data exists
+    if not data:
+        return pd.DataFrame(columns=["month", "total_issues"])
+
     # Convert result into DataFrame
     return pd.DataFrame(data)
 
@@ -147,6 +159,10 @@ def book_category_distribution():
         GROUP BY category
         """
     )
+    # If no data
+    if not data:
+        return pd.DataFrame(columns=["category", "book_count"])
+
     return pd.DataFrame(data)
 
 
