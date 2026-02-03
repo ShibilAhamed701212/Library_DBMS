@@ -3,13 +3,51 @@ from backend.services.chat_service import get_or_create_anon_id
 
 def create_channel(guild_id, category_id, name, type='text', topic=None):
     """Creates a new channel in a guild."""
-    execute("""
+    return execute("""
         INSERT INTO channels (guild_id, category_id, name, type, topic)
         VALUES (%s, %s, %s, %s, %s)
     """, (guild_id, category_id, name, type, topic))
-    return fetch_one("SELECT LAST_INSERT_ID() as id")['id']
 
-def get_channel_messages(channel_id, limit=50):
+# ... (get_channel_messages is fine) ...
+
+# ... (save_message is fine) ...
+
+def get_my_dms(user_id):
+    """Fetches private DM channels for a user."""
+    # Assuming dm_participants table is used.
+    # If not populated, this returns empty, which is fine for now.
+    return fetch_all("""
+        SELECT c.*
+        FROM channels c
+        JOIN dm_participants dp ON c.channel_id = dp.channel_id
+        WHERE dp.user_id = %s AND c.guild_id IS NULL
+        ORDER BY c.created_at DESC
+    """, (user_id,))
+
+def create_dm(user_id, target_user_id):
+    """Creates or Retrieves a DM channel."""
+    # Check if exists
+    # (Complex SQL to find intersection of channel_ids for both users)
+    existing = fetch_one("""
+        SELECT c.channel_id 
+        FROM channels c
+        JOIN dm_participants dp1 ON c.channel_id = dp1.channel_id
+        JOIN dm_participants dp2 ON c.channel_id = dp2.channel_id
+        WHERE c.guild_id IS NULL 
+        AND dp1.user_id = %s 
+        AND dp2.user_id = %s
+    """, (user_id, target_user_id))
+    
+    if existing: return existing['channel_id']
+    
+    # Create
+    cid = execute("INSERT INTO channels (name, type, is_private) VALUES ('DM', 'text', TRUE)")
+    
+    # Add Participants
+    execute("INSERT INTO dm_participants (channel_id, user_id) VALUES (%s, %s)", (cid, user_id))
+    execute("INSERT INTO dm_participants (channel_id, user_id) VALUES (%s, %s)", (cid, target_user_id))
+    
+    return cid
     """Fetches messages for a channel with user profile data."""
     messages = fetch_all("""
         SELECT 
