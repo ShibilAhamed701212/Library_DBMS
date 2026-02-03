@@ -1,0 +1,119 @@
+
+{% extends "layout.html" %}
+
+{% block title %}Advanced Analytics{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block header_title %}📊 Library Intelligence{% endblock %}
+{% block header_subtitle %}Deep dive into borrowing trends and collection performance.{% endblock %}
+
+{% block content %}
+<div class="analytics-grid">
+    <!-- Trends Chart -->
+    <div class="glass-card analytics-card" style="padding: 1.5rem;">
+        <h3 style="margin-bottom: 1.5rem;">📈 Borrowing Trends (Last 30 Days)</h3>
+        <div class="chart-wrapper">
+            <canvas id="trendsChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Category Chart -->
+    <div class="glass-card analytics-card" style="padding: 1.5rem;">
+        <h3 style="margin-bottom: 1.5rem;">🎭 Genre Popularity</h3>
+        <div class="chart-wrapper">
+            <canvas id="categoryChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Status Chart -->
+    <div class="glass-card analytics-card" style="padding: 1.5rem;">
+        <h3 style="margin-bottom: 1.5rem;">📊 Issue Status Distribution</h3>
+        <div class="chart-wrapper">
+            <canvas id="statusChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const resp = await fetch('/admin/analytics/data');
+        const data = await resp.json();
+
+        // 1. Trends Line Chart
+        new Chart(document.getElementById('trendsChart'), {
+            type: 'line',
+            data: {
+                labels: data.trends.labels,
+                datasets: [{
+                    label: 'Books Borrowed',
+                    data: data.trends.values,
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // 2. Category Doughnut Chart
+        new Chart(document.getElementById('categoryChart'), {
+            type: 'doughnut',
+            data: {
+                labels: data.categories.labels,
+                datasets: [{
+                    data: data.categories.values,
+                    backgroundColor: [
+                        '#6366f1', '#a855f7', '#ec4899', '#f43f5e', '#f59e0b', '#10b981'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } }
+                }
+            }
+        });
+
+        // 3. Status Bar Chart
+        new Chart(document.getElementById('statusChart'), {
+            type: 'bar',
+            data: {
+                labels: data.status.labels,
+                datasets: [{
+                    label: 'Total Books',
+                    data: data.status.values,
+                    backgroundColor: ['#6366f1', '#10b981'],
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }
+                }
+            }
+        });
+
+    } catch (err) {
+        console.error("Failed to load analytics:", err);
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,23 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maintenance | LibManage</title>
+    <title>Maintenance | {{ system_settings.library_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: #0f172a; color: white; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+    <div style="text-align: center; padding: 2rem; max-width: 500px; position: relative; z-index: 2;">
+        <div style="font-size: 5rem; margin-bottom: 2rem; animation: float 3s ease-in-out infinite;">🚧</div>
+        <h1 style="font-size: 2.5rem; margin-bottom: 1rem; background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Under Maintenance</h1>
+        <p style="color: #94a3b8; font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem;">
+            {{ system_settings.library_name }} is currently undergoing scheduled maintenance to improve our service. We'll be back online shortly! Thank you for your patience!
+        </p>
+        <div style="margin-top: 2rem;">
+            <a href="/" class="btn btn-primary">Try Refreshing</a>
+        </div>
+    </div>
+</body>
+</html>

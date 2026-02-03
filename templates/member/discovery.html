@@ -1,0 +1,77 @@
+
+{% extends "layout.html" %}
+
+{% block title %}AI Discovery{% endblock %}
+
+{% block header_title %}✨ Mood Discovery{% endblock %}
+{% block header_subtitle %}Tell me your vibe, and I'll find your next obsession.{% endblock %}
+
+{% block content %}
+<section class="dashboard-section" style="max-width: 800px; margin: 0 auto;">
+    <div class="glass-card" style="padding: 2.5rem; text-align: center; border: 1px solid rgba(99, 102, 241, 0.3); background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, transparent 100%);">
+        <div style="font-size: 3rem; margin-bottom: 1.5rem;">🔮</div>
+        <h2 style="margin-bottom: 1rem;">What's your reading vibe today?</h2>
+        <p style="color: var(--text-sub); margin-bottom: 2rem;">"Something cozy for a rainy day", "A dark and twisted mystery", or "An inspiring tale of perseverance".</p>
+        
+        <div style="display: flex; gap: 0.75rem; max-width: 600px; margin: 0 auto;">
+            <input type="text" id="vibeInput" placeholder="Describe your mood..." 
+                   style="flex: 1; padding: 1rem 1.5rem; border-radius: 30px; border: 1px solid var(--border); background: var(--bg); color: var(--text-main); font-size: 1rem; outline: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+            <button id="discoverBtn" class="btn btn-primary" 
+                    style="border-radius: 30px; padding: 0 2rem; background: linear-gradient(135deg, #6366f1, #a855f7); border: none; font-weight: 600;">
+                Discover
+            </button>
+        </div>
+
+        <div id="discoveryLoading" style="display: none; margin-top: 2rem;">
+            <div class="ai-loading" style="font-style: italic; color: var(--text-sub);">
+                ✨ Consulting the Vibe Librarian...
+            </div>
+        </div>
+
+        <div id="discoveryResults" class="glass-card" style="display: none; margin-top: 2rem; padding: 2rem; text-align: left; background: rgba(255,255,255,0.02);">
+            <div id="resultsContent" style="line-height: 1.6;"></div>
+        </div>
+    </div>
+</section>
+
+<script>
+    const vibeInput = document.getElementById('vibeInput');
+    const discoverBtn = document.getElementById('discoverBtn');
+    const loading = document.getElementById('discoveryLoading');
+    const results = document.getElementById('discoveryResults');
+    const content = document.getElementById('resultsContent');
+
+    async function handleDiscovery() {
+        const vibe = vibeInput.value.trim();
+        if(!vibe) return;
+
+        loading.style.display = 'block';
+        results.style.display = 'none';
+        discoverBtn.disabled = true;
+
+        try {
+            const resp = await fetch('/member/ai/discovery', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ vibe })
+            });
+            const data = await resp.json();
+            
+            loading.style.display = 'none';
+            discoverBtn.disabled = false;
+            results.style.display = 'block';
+            
+            // Basic markdown handling for the response
+            content.innerHTML = data.response.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        } catch (err) {
+            loading.style.display = 'none';
+            discoverBtn.disabled = false;
+            content.innerText = "Error: Could not connect to the Vibe Librarian.";
+            results.style.display = 'block';
+        }
+    }
+
+    discoverBtn.addEventListener('click', handleDiscovery);
+    vibeInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') handleDiscovery(); });
+</script>
+{% endblock %}

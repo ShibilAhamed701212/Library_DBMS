@@ -52,6 +52,7 @@
                         <th>Name</th>
                         <th>Email</th>
                         <th>Role</th>
+                        <th>Tier</th>
                         <th>Joined</th>
                         <th>Actions</th>
                     </tr>
@@ -69,15 +70,31 @@
                                 <span class="badge badge-member">Member</span>
                             {% endif %}
                         </td>
-                        <td>{{ u.created_at.strftime('%Y-%m-%d') if u.created_at else 'N/A' }}</td>
                         <td>
-                            {% if session.get('user_id') != u.user_id %}
-                            <form action="/admin/user/delete/{{ u.user_id }}" method="POST" onsubmit="return confirm('⚠️ Are you sure you want to delete this user? This action cannot be undone.')" style="display:inline;">
-                                <button type="submit" class="btn-icon" style="background: none; border: none; cursor: pointer; color: var(--danger); font-size: 1.1rem;" title="Delete User">🗑️</button>
+                            {% if u.role == 'member' %}
+                            <form action="/admin/user/tier" method="POST" style="display: flex; gap: 0.5rem; align-items: center;">
+                                <input type="hidden" name="user_id" value="{{ u.user_id }}">
+                                <select name="tier" onchange="this.form.submit()" style="padding: 4px; border-radius: 4px; font-size: 0.8125rem; border: 1px solid var(--border);">
+                                    <option value="Silver" {% if u.tier == 'Silver' %}selected{% endif %}>🥈 Silver</option>
+                                    <option value="Gold" {% if u.tier == 'Gold' %}selected{% endif %}>🥇 Gold</option>
+                                    <option value="Platinum" {% if u.tier == 'Platinum' %}selected{% endif %}>💎 Platinum</option>
+                                </select>
                             </form>
                             {% else %}
-                            <span style="color: var(--text-sub); font-size: 0.85rem;">(Current)</span>
+                                <span style="color: var(--text-sub); font-size: 0.8125rem;">N/A</span>
                             {% endif %}
+                        </td>
+                        <td>{{ u.created_at.strftime('%Y-%m-%d') if u.created_at else 'N/A' }}</td>
+                        <td>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            {% if session.get('user_id') != u.user_id %}
+                                <form action="/admin/user/delete/{{ u.user_id }}" method="POST" onsubmit="return confirm('⚠️ Are you sure you want to delete this user? This action cannot be undone.')">
+                                    <button type="submit" class="btn-icon" style="background: none; border: none; cursor: pointer; color: var(--danger); font-size: 1.1rem;" title="Delete User">🗑️</button>
+                                </form>
+                            {% else %}
+                                <span style="color: var(--text-sub); font-size: 0.85rem;">(Current)</span>
+                            {% endif %}
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}

@@ -25,7 +25,9 @@ SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
 SMTP_USER = os.getenv("SMTP_USER", "")
 SMTP_PASS = os.getenv("SMTP_PASS", "")
 
-def send_email(to_email: str, subject: str, body: str):
+from email.mime.application import MIMEApplication
+
+def send_email(to_email: str, subject: str, body: str, attachment_path: str = None):
     """
     Direct SMTP email sender.
     If no credentials found, it logs to console (Simulation Mode).
@@ -33,6 +35,8 @@ def send_email(to_email: str, subject: str, body: str):
     if not SMTP_USER or not SMTP_PASS:
         print(f"📧 [SIMULATION] Email to {to_email}")
         print(f"Subject: {subject}")
+        if attachment_path:
+            print(f"Attachment: {attachment_path}")
         print(f"Body: {body}\n")
         return True
 
@@ -43,6 +47,12 @@ def send_email(to_email: str, subject: str, body: str):
         msg['Subject'] = subject
 
         msg.attach(MIMEText(body, 'plain'))
+
+        if attachment_path and os.path.exists(attachment_path):
+            with open(attachment_path, "rb") as f:
+                part = MIMEApplication(f.read(), Name=os.path.basename(attachment_path))
+            part['Content-Disposition'] = f'attachment; filename="{os.path.basename(attachment_path)}"'
+            msg.attach(part)
 
         server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
         server.starttls()

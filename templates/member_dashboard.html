@@ -1,89 +1,645 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Member Dashboard | LibManage</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
-
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <!-- Font Awesome for icons -->
+    <link 
+      rel="stylesheet" 
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+      crossorigin="anonymous" 
+      referrerpolicy="no-referrer" 
+    />
+    <style>
+      /* Enhanced UI Styles */
+      :root {
+        --primary: #4e73df;
+        --primary-dark: #2e59d9;
+        --success: #1cc88a;
+        --danger: #e74a3b;
+        --warning: #f6c23e;
+        --light: #f8f9fc;
+        --dark: #5a5c69;
+      }
+      
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+      }
+      
+      .stat-card {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      
+      .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1);
+      }
+      
+      .stat-icon {
+        font-size: 1.5rem;
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(78, 115, 223, 0.1);
+        color: var(--primary);
+      }
+      
+      .stat-info {
+        flex: 1;
+      }
+      
+      .stat-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.25rem;
+        display: block;
+      }
+      
+      .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #2c3e50;
+      }
+      
+      .quick-actions {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+      
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.6rem 1.25rem;
+        border-radius: 0.35rem;
+        font-weight: 500;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        text-decoration: none;
+      }
+      
+      .btn i {
+        margin-right: 0.5rem;
+      }
+      
+      .btn-primary {
+        background-color: var(--primary);
+        color: white;
+      }
+      
+      .btn-primary:hover {
+        background-color: var(--primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+      }
+      
+      .btn-outline {
+        background: transparent;
+        border: 1px solid #d1d3e2;
+        color: #5a5c69;
+      }
+      
+      .btn-outline:hover {
+        background: #f8f9fc;
+        border-color: #bac8f3;
+        color: var(--primary);
+      }
+      
+      .dashboard-section {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+        margin-bottom: 2rem;
+        overflow: hidden;
+      }
+      
+      .section-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #e3e6f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      
+      .section-header h2 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #2c3e50;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      
+      .section-content {
+        padding: 1.5rem;
+      }
+      
+      .badge {
+        display: inline-block;
+        padding: 0.35em 0.65em;
+        font-size: 0.75em;
+        font-weight: 700;
+        line-height: 1;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: baseline;
+        border-radius: 0.25rem;
+      }
+      
+      .bg-primary {
+        background-color: var(--primary) !important;
+      }
+      
+      .bg-success {
+        background-color: var(--success) !important;
+      }
+      
+      .bg-warning {
+        background-color: var(--warning) !important;
+        color: #1f2d3d;
+      }
+      
+      .bg-danger {
+        background-color: var(--danger) !important;
+      }
+      
+      .bg-secondary {
+        background-color: #6c757d !important;
+      }
+      
+      .text-white {
+        color: white !important;
+      }
+      
+      .table {
+        width: 100%;
+        margin-bottom: 1rem;
+        color: #212529;
+        border-collapse: collapse;
+      }
+      
+      .table th,
+      .table td {
+        padding: 0.75rem;
+        vertical-align: top;
+        border-top: 1px solid #e3e6f0;
+      }
+      
+      .table thead th {
+        vertical-align: bottom;
+        border-bottom: 2px solid #e3e6f0;
+        background-color: #f8f9fc;
+        color: #4e73df;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 0.5px;
+      }
+      
+      .table tbody tr:hover {
+        background-color: rgba(78, 115, 223, 0.05);
+      }
+      
+      .status-badge {
+        padding: 0.35em 0.65em;
+        border-radius: 0.25rem;
+        font-size: 0.75em;
+        font-weight: 600;
+      }
+      
+      .status-active {
+        background-color: rgba(28, 200, 138, 0.1);
+        color: #1cc88a;
+      }
+      
+      .status-overdue {
+        background-color: rgba(231, 74, 59, 0.1);
+        color: #e74a3b;
+      }
+      
+      .status-returned {
+        background-color: rgba(108, 117, 125, 0.1);
+        color: #6c757d;
+      }
+      
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+      
+      .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #4a4b65;
+      }
+      
+      .form-control {
+        display: block;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #6e707e;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #d1d3e2;
+        border-radius: 0.35rem;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+      }
+      
+      .form-control:focus {
+        color: #6e707e;
+        background-color: #fff;
+        border-color: #bac8f3;
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+      }
+      
+      textarea.form-control {
+        min-height: 100px;
+        resize: vertical;
+      }
+      
+      .empty-state {
+        text-align: center;
+        padding: 3rem 1.5rem;
+        color: #6c757d;
+      }
+      
+      .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+      }
+      
+      .empty-state h3 {
+        color: #4a4b65;
+        margin-bottom: 0.5rem;
+      }
+      
+      .empty-state p {
+        margin-bottom: 1.5rem;
+      }
+    </style>
+  </head>
+  <body>
     <div class="app-container">
-        <!-- SIDEBAR -->
-        <aside class="sidebar">
-            <div class="sidebar-logo">
-                <span>📚</span> LibManage
-            </div>
-            
-            <nav class="nav-links">
-                <div class="nav-item">
-                    <a href="/member/dashboard" class="nav-link active">
-                        <span>📊</span> My Dashboard
-                    </a>
-                </div>
-            </nav>
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <div class="sidebar-logo"><span>📚</span> LibManage</div>
 
-            <div style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem;">
-                <a href="/logout" class="nav-link" style="color: #ef4444;">
-                    <span>🚪</span> Logout
+        <nav class="nav-links">
+          <div class="nav-item">
+            <a href="/member/dashboard" class="nav-link active">
+              <i class="fas fa-tachometer-alt"></i> My Dashboard
+            </a>
+          </div>
+          <div class="nav-item">
+            <a href="/member/books" class="nav-link">
+              <i class="fas fa-book"></i> Browse Books
+            </a>
+          </div>
+          <div class="nav-item">
+            <a href="#suggestions" class="nav-link">
+              <i class="fas fa-lightbulb"></i> Suggest a Book
+            </a>
+          </div>
+          <div class="nav-item">
+            <a href="/member/profile" class="nav-link">
+              <i class="fas fa-user"></i> My Profile
+            </a>
+          </div>
+        </nav>
+
+        <div
+          style="
+            margin-top: auto;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 1.5rem;
+          "
+        >
+          <a href="/logout" class="nav-link" style="color: #ef4444">
+            <span>🚪</span> Logout
+          </a>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT -->
+      <main class="main-content">
+        <header style="margin-bottom: 2rem;">
+          <h1 style="font-size: 1.75rem; font-weight: 700; color: #2c3e50; margin-bottom: 0.5rem;">
+            Welcome back, {{ current_user.username }}!
+          </h1>
+          <p style="color: #6c757d; margin: 0;">Here's what's happening with your account today.</p>
+        </header>
+        
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-book-reader"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">Books Borrowed</span>
+              <span class="stat-value">{{ issues|length }}</span>
+            </div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(28, 200, 138, 0.1); color: #1cc88a;">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">Returned</span>
+              <span class="stat-value">{{ issues|selectattr('return_date', 'defined')|list|length }}</span>
+            </div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(78, 115, 223, 0.1); color: #4e73df;">
+              <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">Borrowing</span>
+              <span class="stat-value">{{ issues|selectattr('return_date', 'undefined')|list|length }}</span>
+            </div>
+          </div>
+          
+          <div class="stat-card" style="background: linear-gradient(135deg, #4e73df 0%, #224abe 100%); color: white;">
+            <div class="stat-icon" style="background: rgba(255, 255, 255, 0.2);">
+              <i class="fas fa-lightbulb"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label" style="color: rgba(255, 255, 255, 0.8);">My Suggestions</span>
+              <span class="stat-value" style="color: white;">
+                <a href="#suggestions" style="color: white; text-decoration: none;">
+                  Make a Suggestion
                 </a>
+              </span>
             </div>
-        </aside>
+          </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+          <a href="/member/books" class="btn btn-outline">
+            <i class="fas fa-search"></i> Browse Books
+          </a>
+          <a href="#suggestions" class="btn btn-primary">
+            <i class="fas fa-lightbulb"></i> Suggest a Book
+          </a>
+        </div>
 
-        <!-- MAIN CONTENT -->
-        <main class="main-content">
-            <header>
-                <div class="header-title">
-                    <h1>My Issued Books</h1>
-                    <p>Track your borrowing history.</p>
-                </div>
-            </header>
+        <!-- Active Borrowings -->
+        <section class="dashboard-section">
+          <div class="section-header">
+            <h2><i class="fas fa-book-reader me-2"></i>Active Borrowings</h2>
+            {% set active_issues = issues|selectattr('return_date', 'undefined')|list %}
+            <span class="badge bg-primary">{{ active_issues|length }} Active</span>
+          </div>
+          <div class="section-content">
+            {% if active_issues %}
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Book Title</th>
+                    <th>Issue Date</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for i in issues %}
+                  <tr>
+                    <td style="font-weight: 600">{{ i.title }}</td>
+                    <td>{{ i.issue_date }}</td>
+                    <td>{{ i.due_date }}</td>
+                    <td>
+                      <span
+                        class="{{ 'text-danger' if i.fine > 0 else 'text-success' }}"
+                        >₹{{ i.fine }}</span
+                      >
+                    </td>
+                    <td>
+                      {% if i.return_date %}
+                      <span class="badge badge-success">Returned</span>
+                      {% elif i.fine > 0 %}
+                      <span
+                        class="badge badge-danger"
+                        style="background: #fee2e2; color: #dc2626"
+                        >Overdue</span
+                      >
+                      {% else %}
+                      <span class="badge badge-pending">Active</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <div
+              style="text-align: center; color: var(--text-sub); padding: 3rem"
+            >
+              <span style="font-size: 3rem; display: block; margin-bottom: 1rem"
+                >📖</span
+              >
+              <p>No books issued yet. Start reading today!</p>
+            </div>
+            {% endif %}
+          </div>
+        </section>
 
-            <section class="dashboard-section">
-                <div class="section-content">
-                    {% if issues %}
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Book Title</th>
-                                    <th>Issue Date</th>
-                                    <th>Due Date</th>
-                                    <th>Fine (₹)</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for i in issues %}
-                                <tr>
-                                    <td style="font-weight: 600;">{{ i.title }}</td>
-                                    <td>{{ i.issue_date }}</td>
-                                    <td>{{ i.due_date }}</td>
-                                    <td><span class="{{ 'text-danger' if i.fine > 0 else 'text-success' }}">₹{{ i.fine }}</span></td>
-                                    <td>
-                                        {% if i.return_date %}
-                                        <span class="badge badge-success">Returned</span>
-                                        {% elif i.fine > 0 %}
-                                        <span class="badge badge-danger" style="background: #fee2e2; color: #dc2626;">Overdue</span>
-                                        {% else %}
-                                        <span class="badge badge-pending">Active</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <div style="text-align: center; color: var(--text-sub); padding: 3rem;">
-                        <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">📖</span>
-                        <p>No books issued yet. Start reading today!</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </section>
-        </main>
+        <!-- Suggest a Book Section -->
+        <section class="dashboard-section">
+          <div class="section-header">
+            <h2>💡 Suggest a Book</h2>
+            <p>
+              Help us improve our library by suggesting books you'd like to
+              read.
+            </p>
+          </div>
+          <div class="section-content">
+            <form
+              method="POST"
+              action="{{ url_for('member.member_suggest_book') }}"
+              style="max-width: 500px"
+            >
+              <div style="margin-bottom: 1.5rem">
+                <label
+                  for="book_title"
+                  style="
+                    display: block;
+                    font-weight: 600;
+                    margin-bottom: 0.5rem;
+                  "
+                  >Book Title *</label
+                >
+                <input
+                  type="text"
+                  id="book_title"
+                  name="title"
+                  required
+                  placeholder="Enter book title"
+                  style="
+                    width: 100%;
+                    padding: 0.75rem;
+                    border: 1px solid var(--border);
+                    border-radius: 6px;
+                    background: var(--card-bg);
+                    color: var(--text-main);
+                    font-family: inherit;
+                    outline: none;
+                    transition: all 0.25s ease;
+                    font-size: 0.875rem;
+                  "
+                />
+              </div>
+
+              <div style="margin-bottom: 1.5rem">
+                <label
+                  for="book_author"
+                  style="
+                    display: block;
+                    font-weight: 600;
+                    margin-bottom: 0.5rem;
+                  "
+                  >Author *</label
+                >
+                <input
+                  type="text"
+                  id="book_author"
+                  name="author"
+                  required
+                  placeholder="Enter author name"
+                  style="
+                    width: 100%;
+                    padding: 0.75rem;
+                    border: 1px solid var(--border);
+                    border-radius: 6px;
+                    background: var(--card-bg);
+                    color: var(--text-main);
+                    font-family: inherit;
+                    outline: none;
+                    transition: all 0.25s ease;
+                    font-size: 0.875rem;
+                  "
+                />
+              </div>
+
+              <div style="margin-bottom: 1.5rem">
+                <label
+                  for="book_category"
+                  style="
+                    display: block;
+                    font-weight: 600;
+                    margin-bottom: 0.5rem;
+                  "
+                  >Category</label
+                >
+                <select
+                  id="book_category"
+                  name="category"
+                  style="
+                    width: 100%;
+                    padding: 0.75rem;
+                    border: 1px solid var(--border);
+                    border-radius: 6px;
+                    background: var(--card-bg);
+                    color: var(--text-main);
+                    font-family: inherit;
+                    outline: none;
+                    transition: all 0.25s ease;
+                    font-size: 0.875rem;
+                    cursor: pointer;
+                  "
+                >
+                  <option value="">Select a category</option>
+                  <option value="Fiction">Fiction</option>
+                  <option value="Non-Fiction">Non-Fiction</option>
+                  <option value="Science">Science</option>
+                  <option value="Technology">Technology</option>
+                  <option value="History">History</option>
+                  <option value="Biography">Biography</option>
+                  <option value="Self-Help">Self-Help</option>
+                  <option value="Romance">Romance</option>
+                  <option value="Mystery">Mystery</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div style="margin-bottom: 1.5rem">
+                <label
+                  for="book_reason"
+                  style="
+                    display: block;
+                    font-weight: 600;
+                    margin-bottom: 0.5rem;
+                  "
+                  >Why do you recommend this book?</label
+                >
+                <textarea
+                  id="book_reason"
+                  name="reason"
+                  rows="3"
+                  placeholder="Share your thoughts..."
+                  style="
+                    width: 100%;
+                    padding: 0.75rem;
+                    border: 1px solid var(--border);
+                    border-radius: 6px;
+                    background: var(--card-bg);
+                    color: var(--text-main);
+                    font-family: inherit;
+                    outline: none;
+                    transition: all 0.25s ease;
+                    font-size: 0.875rem;
+                    resize: vertical;
+                  "
+                ></textarea>
+              </div>
+
+              <button
+                type="submit"
+                class="btn btn-primary"
+                style="width: 100%; padding: 0.75rem"
+              >
+                📤 Submit Suggestion
+              </button>
+            </form>
+          </div>
+        </section>
+      </main>
     </div>
-
-</body>
+  </body>
 </html>

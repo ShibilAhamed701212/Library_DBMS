@@ -1,8 +1,63 @@
 {% extends "layout.html" %}
 
 {% block title %}My Dashboard{% endblock %}
-{% block header_title %}My Library Overview{% endblock %}
-{% block header_subtitle %}Track your active borrowings{% endblock %}
+{% block header_title %}My Library Overview 
+    {% if reading_goal %}
+        {% set tier = reading_goal.tier if reading_goal.tier else 'Silver' %}
+        <span class="badge" style="
+            font-size: 0.75rem; 
+            vertical-align: middle; 
+            margin-left: 10px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            {% if tier == 'Platinum' %}
+                background: linear-gradient(135deg, #e5e7eb, #94a3b8); color: #1e293b; border: 1px solid #cbd5e1;
+            {% elif tier == 'Gold' %}
+                background: linear-gradient(135deg, #fde68a, #f59e0b); color: #78350f; border: 1px solid #fbbf24;
+            {% else %}
+                background: linear-gradient(135deg, #f3f4f6, #d1d5db); color: #374151; border: 1px solid #9ca3af;
+            {% endif %}
+        ">
+            {% if tier == 'Platinum' %}💎 Platinum{% elif tier == 'Gold' %}🥇 Gold{% else %}🥈 Silver{% endif %}
+        </span>
+        
+        <!-- Tier Metrics -->
+        <span style="font-size: 0.7rem; color: var(--text-sub); margin-left: 10px; opacity: 0.8;">
+            {% if tier == 'Platinum' %}
+                (Limit: 10 books | 30 days)
+            {% elif tier == 'Gold' %}
+                (Limit: 6 books | 21 days)
+            {% else %}
+                (Limit: 3 books | 14 days)
+            {% endif %}
+        </span>
+    {% endif %}
+    
+    {% if game_stats %}
+    <span class="badge" style="background: linear-gradient(135deg, #6366f1, #a855f7); color: white; margin-left: 8px;">
+        ✨ Level {{ game_stats.level }}
+    </span>
+    {% endif %}
+{% endblock %}
+{% block header_subtitle %}
+    Track your active borrowings and membership privileges.
+    {% if game_stats %}
+    <div style="margin-top: 10px; width: 250px;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-sub); margin-bottom: 4px;">
+            <span>XP: {{ game_stats.xp }}</span>
+            <span>Next Level at {{ (game_stats.level * (game_stats.level + 1) / 2) * 100 }} XP</span>
+        </div>
+        <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
+            {% set total_needed = (game_stats.level * (game_stats.level + 1) / 2) * 100 %}
+            {% set prev_level_xp = ((game_stats.level - 1) * game_stats.level / 2) * 100 %}
+            {% set progress = ((game_stats.xp - prev_level_xp) / (total_needed - prev_level_xp) * 100) if (total_needed - prev_level_xp) > 0 else 0 %}
+            <div style="height: 100%; width: {{ progress }}%; background: #6366f1; box-shadow: 0 0 10px #6366f1;"></div>
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}
 
 {% block content %}
 <!-- Member Stats -->
@@ -18,15 +73,301 @@
         <div class="stat-icon">💰</div>
         <div class="stat-info">
             <span class="stat-label">Total Fines</span>
-            <span class="stat-value">₹{{ issues|sum(attribute='fine') }}</span>
+            <span class="stat-value">{{ system_settings.currency_symbol }}{{ issues|sum(attribute='fine') }}</span>
+        </div>
+    </div>
+    <div class="stat-card" style="background: linear-gradient(135deg, #4e73df 0%, #224abe 100%); color: white;">
+        <div class="stat-icon">🏆</div>
+        <div class="stat-info">
+            <span class="stat-label" style="color: rgba(255,255,255,0.8);">My Achievements</span>
+            <span class="stat-value" style="color: white;">{{ game_stats.badges|length if game_stats else 0 }} Badges</span>
         </div>
     </div>
 </div>
 
-<!-- Active Borrowings -->
+<!-- Trophy Room -->
+{% if game_stats and game_stats.badges %}
 <section class="dashboard-section">
     <div class="section-header">
-        <h2>📖 Active Borrowings</h2>
+        <h2>🏆 My Trophy Room</h2>
+    </div>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        {% for badge in game_stats.badges %}
+        <div class="glass-card" style="padding: 1rem; width: 120px; text-align: center; border: 1px solid rgba(99, 102, 241, 0.3); background: linear-gradient(to bottom, rgba(99, 102, 241, 0.05), transparent);">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">{{ badge.icon }}</div>
+            <div style="font-weight: 700; font-size: 0.8rem;">{{ badge.name }}</div>
+            <div style="font-size: 0.65rem; color: var(--text-sub); line-height: 1.2; margin-top: 4px;">{{ badge.description }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Reading Goal Progress -->
+{% if reading_goal %}
+<div class="glass-card mb-4" style="padding: 1.5rem; background: linear-gradient(to right, rgba(99, 102, 241, 0.05), rgba(79, 70, 229, 0.05)); border: 1px solid rgba(99, 102, 241, 0.2);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.75rem;">
+        <div>
+            <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                <span style="font-size: 1.5rem;">🎯</span> My {{ reading_goal.year }} Reading Goal
+            </h3>
+            <p style="margin: 0.25rem 0 0; color: var(--text-sub); font-size: 0.875rem;">
+                Keep it up! You've read <strong>{{ reading_goal.current_count }}</strong> of <strong>{{ reading_goal.target_count }}</strong> books.
+            </p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Goals and Privacy -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+    <!-- PERSONAL GOAL -->
+    <section class="dashboard-section" style="margin-top: 0;">
+        <div class="section-header">
+            <h2>🎯 Reading Goal</h2>
+        </div>
+        <div class="section-content glass-card" style="padding: 1.5rem;">
+            {% if reading_goal %}
+            <div style="margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-weight: 600;">
+                    <span>Progress ({{ reading_goal.year }})</span>
+                    <span>{{ reading_goal.current_count }} / {{ reading_goal.target_count }} books</span>
+                </div>
+                {% set progress = (reading_goal.current_count / reading_goal.target_count * 100) if reading_goal.target_count > 0 else 0 %}
+                <div style="height: 12px; background: rgba(0,0,0,0.05); border-radius: 6px; overflow: hidden;">
+                    <div style="height: 100%; width: {{ progress if progress <= 100 else 100 }}%; background: linear-gradient(90deg, #6366f1, #a855f7); border-radius: 6px;"></div>
+                </div>
+            </div>
+            
+            <form action="/member/goal/update" method="POST" style="display: flex; gap: 0.5rem;">
+                <input type="number" name="target" value="{{ reading_goal.target_count }}" min="1" max="100" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text-main);">
+                <button type="submit" class="btn btn-primary btn-sm">Set New Goal</button>
+            </form>
+            {% else %}
+            <p style="color: var(--text-sub);">No reading goal found for this year. Start by borrowing a book!</p>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- PRIVACY SETTINGS -->
+    <section class="dashboard-section" style="margin-top: 0;">
+        <div class="section-header">
+            <h2>🔐 Privacy & Community</h2>
+        </div>
+        <div class="section-content glass-card" style="padding: 1.5rem;">
+            <p style="font-size: 0.9rem; color: var(--text-sub); margin-bottom: 1.5rem;">
+                Making your profile public allows fellow members to see your name, tier, and community contributions.
+            </p>
+            <form action="/member/profile/privacy" method="POST" id="privacyForm">
+                <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.02); padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
+                    <div style="font-weight: 600;">Public Profile</div>
+                    <label class="switch" style="position: relative; display: inline-block; width: 50px; height: 24px;">
+                        <input type="checkbox" name="is_public" onchange="document.getElementById('privacyForm').submit()" 
+                            {% if reading_goal.is_public %}checked{% endif %} style="opacity: 0; width: 0; height: 0;">
+                        <span class="slider round" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px;"></span>
+                    </label>
+                </div>
+            </form>
+            <style>
+                input:checked + .slider { background-color: #6366f1; }
+                input:checked + .slider:before { transform: translateX(26px); }
+                .slider:before {
+                    position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px;
+                    background-color: white; transition: .4s; border-radius: 50%;
+                }
+            </style>
+        </div>
+    </section>
+</div>
+
+<!-- Quick Actions -->
+<div class="quick-actions" style="margin: 1.5rem 0;">
+    <a href="{{ url_for('member.member_suggest_book') }}" class="btn btn-primary">
+        <i class="fas fa-lightbulb me-2"></i>Suggest a Book
+    </a>
+    <a href="{{ url_for('member.member_catalog_view') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-book me-2"></i>Browse Books
+    </a>
+</div>
+
+<!-- Smart Recommendations -->
+<section class="dashboard-section mb-4">
+    <div class="section-header">
+        <h2><i class="fas fa-magic me-2" style="color: #6366f1;"></i>Recommended for You</h2>
+    </div>
+    <div class="recommendations-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+        {% for rec in recommendations %}
+        <div class="glass-card recommendation-card" style="padding: 1rem; position: relative; transition: transform 0.2s;">
+            <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ rec.title }}">
+                {{ rec.title }}
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 0.75rem;">
+                {{ rec.author }}
+            </div>
+            <div>
+                <span style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.1); color: #6366f1; padding: 2px 6px; border-radius: 4px;">{{ rec.category }}</span>
+                <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                    <form action="/member/request" method="POST" style="flex: 1;">
+                        <input type="hidden" name="book_id" value="{{ rec.book_id }}">
+                        <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;">Request</button>
+                    </form>
+                    {% if rec.pdf_src %}
+                    <a href="/member/book/read/{{ rec.book_id }}" class="btn btn-outline-secondary btn-sm" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                        <span>📖</span> Read
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<style>
+    .recommendation-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+</style>
+
+<!-- Recent Activity -->
+<section class="dashboard-section mb-4">
+    <div class="section-header">
+        <h2><i class="fas fa-bolt me-2" style="color: var(--primary);"></i>Recent Activity</h2>
+    </div>
+    <div class="glass-card" style="padding: 1.5rem;">
+        {% if not activities %}
+        <p style="color: var(--text-sub); text-align: center; margin: 0;">No recent activities found.</p>
+        {% else %}
+        <div class="activity-timeline">
+            {% for act in activities %}
+            <div class="activity-item" style="display: flex; gap: 1rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
+                <div class="activity-type-icon" style="font-size: 1.25rem;">
+                    {% if act.activity_type == 'BORROW' %}📖
+                    {% elif act.activity_type == 'RETURN' %}✅
+                    {% elif act.activity_type == 'BADGE' %}🏆
+                    {% elif act.activity_type == 'REVIEW' %}⭐
+                    {% elif act.activity_type == 'WISHLIST' %}❤️
+                    {% else %}🔹{% endif %}
+                </div>
+                <div>
+                    <div style="font-weight: 600;">{{ act.description }}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-sub);">{{ act.created_at }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Active Borrowings -->
+<style>
+    /* Enhanced table styles */
+    .table-container {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+        overflow: hidden;
+    }
+    
+    .table-container table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .table-container th {
+        background-color: #f8f9fc;
+        color: #4e73df;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 0.5px;
+        padding: 1rem;
+        text-align: left;
+    }
+    
+    .table-container td {
+        padding: 1rem;
+        border-top: 1px solid #e3e6f0;
+        vertical-align: middle;
+    }
+    
+    .table-container tr:hover {
+        background-color: rgba(78, 115, 223, 0.05);
+    }
+    
+    .badge {
+        font-weight: 500;
+        padding: 0.35em 0.65em;
+        font-size: 0.75em;
+        border-radius: 0.25rem;
+    }
+    
+    .badge-success {
+        background-color: #1cc88a;
+        color: white;
+    }
+    
+    .badge-warning {
+        background-color: #f6c23e;
+        color: #1f2d3d;
+    }
+    
+    .badge-danger {
+        background-color: #e74a3b;
+        color: white;
+    }
+    
+    .btn {
+        border-radius: 0.35rem;
+        font-weight: 500;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.8rem;
+        transition: all 0.2s;
+    }
+    
+    .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 0.15rem 0.5rem rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-primary {
+        background-color: #4e73df;
+        border-color: #4e73df;
+    }
+    
+    .btn-outline-secondary {
+        border-color: #d1d3e2;
+        color: #6e707e;
+    }
+    
+    .btn-outline-secondary:hover {
+        background-color: #f8f9fc;
+        border-color: #bac8f3;
+        color: #4e73df;
+    }
+    
+    .quick-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.05) !important;
+    }
+</style>
+
+<section class="dashboard-section">
+    <div class="section-header d-flex justify-content-between align-items-center">
+        <h2><i class="fas fa-book-reader me-2"></i>Active Borrowings</h2>
+        <span class="badge bg-primary">{{ active_issues|length }} Active</span>
     </div>
     <div class="section-content">
         {% set active_issues = issues | selectattr('return_date', 'none') | list %}
@@ -37,7 +378,7 @@
                     <tr>
                         <th>Book Title</th>
                         <th>Issue Date</th>
-                        <th>Fine (₹)</th>
+                        <th>Fine ({{ system_settings.currency_symbol }})</th>
                         <th>Status</th>
                     </tr>
                 </thead>
@@ -46,7 +387,7 @@
                     <tr>
                         <td style="font-weight: 600;">{{ i.title }}</td>
                         <td>{{ i.issue_date }}</td>
-                        <td style="color: {{ 'var(--danger)' if i.fine > 0 else 'var(--text-main)' }};">₹{{ i.fine }}</td>
+                        <td style="color: {{ 'var(--danger)' if i.fine > 0 else 'var(--text-main)' }};">{{ system_settings.currency_symbol }}{{ i.fine }}</td>
                         <td>
                             {% if i.fine > 0 %}
                             <span class="badge badge-danger">Overdue</span>
@@ -69,9 +410,10 @@
 </section>
 
 <!-- Borrowing History -->
-<section class="dashboard-section">
-    <div class="section-header">
-        <h2>📜 Borrowing History</h2>
+<section class="dashboard-section mt-5">
+    <div class="section-header d-flex justify-content-between align-items-center">
+        <h2><i class="fas fa-history me-2"></i>Borrowing History</h2>
+        <span class="badge bg-secondary">{{ (issues|length) - (active_issues|length) }} Past</span>
     </div>
     <div class="section-content">
         {% set history_issues = issues | selectattr('return_date', 'ne', none) | list %}
@@ -92,7 +434,7 @@
                         <td style="font-weight: 400; color: var(--text-sub);">{{ i.title }}</td>
                         <td>{{ i.issue_date }}</td>
                         <td>{{ i.return_date }}</td>
-                        <td>₹{{ i.fine }}</td>
+                        <td>{{ system_settings.currency_symbol }}{{ i.fine }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -105,9 +447,9 @@
 </section>
 
 <!-- Account Settings -->
-<section class="dashboard-section" style="margin-top: 4rem; border-top: 1px solid var(--border-color); padding-top: 2rem;">
+<section class="dashboard-section mt-5">
     <div class="section-header">
-        <h2 style="color: var(--danger);">⚙️ Account Settings</h2>
+        <h2><i class="fas fa-cog me-2" style="color: #e74a3b;"></i>Account Settings</h2>
     </div>
     <div class="section-content glass-card" style="border-color: rgba(220, 53, 69, 0.2);">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">

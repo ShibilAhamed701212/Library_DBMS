@@ -28,7 +28,7 @@ def fetch_all(query, params=None):
 
     # Create a cursor that returns rows as dictionaries
     # Example: {"user_id": 1, "name": "Admin"}
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(dictionary=True, buffered=True)
 
     try:
         # Execute the SQL query
@@ -60,7 +60,7 @@ def fetch_one(query, params=None):
     conn = get_connection()
 
     # Create a dictionary cursor
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(dictionary=True, buffered=True)
 
     try:
         # Execute SQL query with parameters
@@ -75,6 +75,17 @@ def fetch_one(query, params=None):
 
         # Close database connection
         conn.close()
+
+
+# ---------------------------------------------------------------
+# Compatibility alias used by some routes
+# ---------------------------------------------------------------
+def execute_query(query, params=None):
+    """
+    Compatibility wrapper around execute().
+    Some routes import execute_query; keep this alias to avoid failures.
+    """
+    return execute(query, params)
 
 
 # ===============================
@@ -96,7 +107,7 @@ def execute(query, params=None):
     conn = get_connection()
 
     # Cursor without dictionary mode (not needed for writes)
-    cursor = conn.cursor()
+    cursor = conn.cursor(buffered=True)
 
     try:
         # Execute write query safely with parameters
@@ -104,6 +115,10 @@ def execute(query, params=None):
 
         # Commit the transaction to persist changes
         conn.commit()
+
+        # If it's an INSERT, return the new ID
+        if query.strip().upper().startswith("INSERT"):
+            return cursor.lastrowid
 
         # Return number of affected rows
         return cursor.rowcount

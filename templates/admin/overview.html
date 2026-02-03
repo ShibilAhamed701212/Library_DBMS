@@ -11,27 +11,56 @@
         <div class="stat-icon">👥</div>
         <div class="stat-info">
             <span class="stat-label">Total Users</span>
-            <span class="stat-value">{{ total_users }}</span>
+            <span class="stat-value">{{ quick_stats.total_users }}</span>
         </div>
     </div>
     <div class="stat-card">
         <div class="stat-icon">📚</div>
         <div class="stat-info">
             <span class="stat-label">Total Books</span>
-            <span class="stat-value">{{ total_books }}</span>
+            <span class="stat-value">{{ quick_stats.total_books }}</span>
         </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon">🔖</div>
+        <div class="stat-icon">📑</div>
         <div class="stat-info">
-            <span class="stat-label">Active Issues</span>
-            <span class="stat-value">{{ total_issues }}</span>
+            <span class="stat-label">Total Issues</span>
+            <span class="stat-value">{{ quick_stats.total_issues }}</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-info">
+            <span class="stat-label">Total Fines</span>
+            <span class="stat-value">{{ system_settings.currency_symbol }}{{ quick_stats.total_fines }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- Analytics Charts -->
+<div class="charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.5rem; margin-top: 2rem;">
+    <div class="glass-card" style="padding: 1.5rem; height: 350px; display: flex; flex-direction: column;">
+        <h3 style="margin-bottom: 1rem;">📈 Monthly Borrowing Trends</h3>
+        <div style="flex: 1; position: relative; min-height: 0;">
+            <canvas id="monthlyChart"></canvas>
+        </div>
+    </div>
+    <div class="glass-card" style="padding: 1.5rem; height: 350px; display: flex; flex-direction: column;">
+        <h3 style="margin-bottom: 1rem;">📊 Category Distribution (Top 10)</h3>
+        <div style="flex: 1; position: relative; min-height: 0;">
+            <canvas id="categoryChart"></canvas>
+        </div>
+    </div>
+    <div class="glass-card" style="padding: 1.5rem; height: 350px; display: flex; flex-direction: column;">
+        <h3 style="margin-bottom: 1rem;">👥 User Demographics</h3>
+        <div style="flex: 1; position: relative; min-height: 0;">
+            <canvas id="userChart"></canvas>
         </div>
     </div>
 </div>
 
 <!-- Recent Activity -->
-<section class="dashboard-section">
+<section class="dashboard-section" style="margin-top: 2rem;">
     <div class="section-header">
         <h2>Recent Borrowing Activity</h2>
         <a href="/admin/issues" class="btn btn-primary btn-sm">View All</a>
@@ -65,4 +94,122 @@
         </div>
     </div>
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // 1. Monthly Trends Chart
+    const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+    const monthlyLabels = [{% for s in monthly_stats %}"{{ s.month }}",{% endfor %}];
+    const monthlyData = [{% for s in monthly_stats %}{{ s.count }},{% endfor %}];
+    
+    new Chart(monthlyCtx, {
+        type: 'line',
+        data: {
+            labels: monthlyLabels,
+            datasets: [{
+                label: 'Books Issued',
+                data: monthlyData,
+                borderColor: '#4e73df',
+                backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4,
+                pointBackgroundColor: '#4e73df'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            devicePixelRatio: 2, // High-res for zooming
+            plugins: {
+                legend: { 
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        padding: 20
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1,
+                        precision: 0
+                    }
+                }
+            }
+        }
+    });
+
+    // 2. Category Distribution Chart
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    const catLabels = [{% for s in category_stats %}"{{ s.category }}",{% endfor %}];
+    const catData = [{% for s in category_stats %}{{ s.total_issues }},{% endfor %}];
+    
+    new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: catLabels,
+            datasets: [{
+                data: catData,
+                backgroundColor: [
+                    '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
+                    '#858796', '#5a5c69', '#2c3e50', '#e67e22', '#16a085'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            devicePixelRatio: 2,
+            plugins: {
+                legend: { 
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        padding: 15
+                    }
+                }
+            }
+        }
+    });
+
+    // 3. User Demographics Chart
+    const userCtx = document.getElementById('userChart').getContext('2d');
+    const userLabels = [{% for s in user_stats %}"{{ s.role|capitalize }}",{% endfor %}];
+    const userData = [{% for s in user_stats %}{{ s.count }},{% endfor %}];
+    
+    new Chart(userCtx, {
+        type: 'pie',
+        data: {
+            labels: userLabels,
+            datasets: [{
+                data: userData,
+                backgroundColor: ['#4e73df', '#1cc88a', '#f6c23e'],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            devicePixelRatio: 2,
+            plugins: {
+                legend: { 
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        padding: 20
+                    }
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}

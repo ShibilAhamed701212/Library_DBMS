@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Books Management | LibManage</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/books.css') }}"
+    />
+  </head>
+  <body class="books-page">
+    <!-- Top Navigation Bar -->
+    <nav class="books-navbar">
+      <div class="books-nav-wrapper">
+        <!-- Left Section -->
+        <div class="books-nav-left">
+          <div class="books-nav-logo">
+            <span class="books-nav-icon">📚</span>
+            <span class="books-nav-title">LibManage</span>
+          </div>
+          <ul class="books-nav-menu">
+            <li><a href="#" class="books-nav-link active">Books</a></li>
+            <li><a href="#" class="books-nav-link">Members</a></li>
+            <li><a href="#" class="books-nav-link">Reports</a></li>
+          </ul>
+        </div>
+
+        <!-- Right Section -->
+        <div class="books-nav-right">
+          <div class="books-nav-search">
+            <input
+              type="text"
+              placeholder="Search books..."
+              class="books-nav-search-input"
+            />
+            <span class="books-nav-search-icon">🔍</span>
+          </div>
+          <button class="books-nav-profile">👤</button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="books-flash-container">
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, msg in messages %}
+      <div class="books-flash-message books-flash-{{ category }}">
+        <span class="books-flash-text">{{ msg }}</span>
+      </div>
+      {% endfor %} {% endif %} {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    <div class="books-container">
+      <!-- Header Section -->
+      <div class="books-header">
+        <div class="books-header-content">
+          <h1 class="books-page-title">Book Inventory Management</h1>
+          <p class="books-page-subtitle">
+            Manage your library collection with ease
+          </p>
+        </div>
+        <button class="books-btn-add-primary" id="addBookBtn">
+          <span class="books-btn-icon">+</span>
+          <span class="books-btn-text">Add New Book</span>
+        </button>
+      </div>
+
+      <!-- Filters & Controls Section -->
+      <div class="books-controls">
+        <div class="books-filter-group">
+          <input
+            type="text"
+            placeholder="Search by title, author, or ISBN..."
+            class="books-search-input"
+            id="searchBooks"
+          />
+          <select class="books-filter-select" id="filterCategory">
+            <option value="">All Categories</option>
+            <option value="fiction">Fiction</option>
+            <option value="non-fiction">Non-Fiction</option>
+            <option value="reference">Reference</option>
+            <option value="science">Science</option>
+            <option value="technology">Technology</option>
+          </select>
+          <select class="books-filter-select" id="filterStatus">
+            <option value="">All Status</option>
+            <option value="available">Available</option>
+            <option value="issued">Issued</option>
+            <option value="reserved">Reserved</option>
+          </select>
+        </div>
+        <div class="books-view-toggle">
+          <button class="books-view-btn active" data-view="grid">
+            <span>⊞</span> Grid
+          </button>
+          <button class="books-view-btn" data-view="list">
+            <span>≡</span> List
+          </button>
+        </div>
+      </div>
+
+      <!-- Books Grid/List Container -->
+      <div class="books-grid-container" id="booksContainer">
+        <!-- Book Cards will be dynamically loaded here -->
+
+        <!-- Sample Book Card -->
+        <div class="books-card">
+          <div class="books-card-image">
+            <img
+              src="https://via.placeholder.com/200x300?text=Book+Cover"
+              alt="Book"
+            />
+            <span class="books-card-status available">Available</span>
+          </div>
+          <div class="books-card-content">
+            <h3 class="books-card-title">The Great Gatsby</h3>
+            <p class="books-card-author">F. Scott Fitzgerald</p>
+            <div class="books-card-meta">
+              <span class="books-card-meta-item">
+                <strong>ISBN:</strong> 978-0743273565
+              </span>
+              <span class="books-card-meta-item">
+                <strong>Year:</strong> 1925
+              </span>
+            </div>
+            <div class="books-card-category">
+              <span class="books-badge">Fiction</span>
+            </div>
+          </div>
+          <div class="books-card-actions">
+            <button class="books-btn-action books-btn-edit" title="Edit Book">
+              <span>✏️</span> Edit
+            </button>
+            <button
+              class="books-btn-action books-btn-delete"
+              title="Delete Book"
+            >
+              <span>🗑️</span> Delete
+            </button>
+          </div>
+        </div>
+
+        <!-- Sample Book Card -->
+        <div class="books-card">
+          <div class="books-card-image">
+            <img
+              src="https://via.placeholder.com/200x300?text=Book+Cover"
+              alt="Book"
+            />
+            <span class="books-card-status issued">Issued</span>
+          </div>
+          <div class="books-card-content">
+            <h3 class="books-card-title">To Kill a Mockingbird</h3>
+            <p class="books-card-author">Harper Lee</p>
+            <div class="books-card-meta">
+              <span class="books-card-meta-item">
+                <strong>ISBN:</strong> 978-0061120084
+              </span>
+              <span class="books-card-meta-item">
+                <strong>Year:</strong> 1960
+              </span>
+            </div>
+            <div class="books-card-category">
+              <span class="books-badge">Fiction</span>
+            </div>
+          </div>
+          <div class="books-card-actions">
+            <button class="books-btn-action books-btn-edit" title="Edit Book">
+              <span>✏️</span> Edit
+            </button>
+            <button
+              class="books-btn-action books-btn-delete"
+              title="Delete Book"
+            >
+              <span>🗑️</span> Delete
+            </button>
+          </div>
+        </div>
+
+        <!-- Sample Book Card -->
+        <div class="books-card">
+          <div class="books-card-image">
+            <img
+              src="https://via.placeholder.com/200x300?text=Book+Cover"
+              alt="Book"
+            />
+            <span class="books-card-status available">Available</span>
+          </div>
+          <div class="books-card-content">
+            <h3 class="books-card-title">1984</h3>
+            <p class="books-card-author">George Orwell</p>
+            <div class="books-card-meta">
+              <span class="books-card-meta-item">
+                <strong>ISBN:</strong> 978-0451524935
+              </span>
+              <span class="books-card-meta-item">
+                <strong>Year:</strong> 1949
+              </span>
+            </div>
+            <div class="books-card-category">
+              <span class="books-badge">Fiction</span>
+            </div>
+          </div>
+          <div class="books-card-actions">
+            <button class="books-btn-action books-btn-edit" title="Edit Book">
+              <span>✏️</span> Edit
+            </button>
+            <button
+              class="books-btn-action books-btn-delete"
+              title="Delete Book"
+            >
+              <span>🗑️</span> Delete
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div class="books-empty-state" id="emptyState" style="display: none">
+        <div class="books-empty-icon">📚</div>
+        <h3>No Books Found</h3>
+        <p>
+          No books match your search criteria. Try adjusting your filters or add
+          a new book.
+        </p>
+        <button class="books-btn-add-secondary" id="addBookBtnEmpty">
+          Add Your First Book
+        </button>
+      </div>
+    </div>
+
+    <!-- Add/Edit Book Modal -->
+    <div class="books-modal" id="bookModal">
+      <div class="books-modal-overlay" id="modalOverlay"></div>
+      <div class="books-modal-content">
+        <div class="books-modal-header">
+          <h2 id="modalTitle">Add New Book</h2>
+          <button class="books-modal-close" id="closeModalBtn">&times;</button>
+        </div>
+        <form class="books-form" id="bookForm">
+          <div class="books-form-row">
+            <div class="books-form-group">
+              <label for="bookTitle">Book Title *</label>
+              <input
+                type="text"
+                id="bookTitle"
+                name="title"
+                required
+                placeholder="Enter book title"
+              />
+            </div>
+            <div class="books-form-group">
+              <label for="bookAuthor">Author *</label>
+              <input
+                type="text"
+                id="bookAuthor"
+                name="author"
+                required
+                placeholder="Enter author name"
+              />
+            </div>
+          </div>
+
+          <div class="books-form-row">
+            <div class="books-form-group">
+              <label for="bookISBN">ISBN</label>
+              <input
+                type="text"
+                id="bookISBN"
+                name="isbn"
+                placeholder="Enter ISBN"
+              />
+            </div>
+            <div class="books-form-group">
+              <label for="bookYear">Publication Year</label>
+              <input
+                type="number"
+                id="bookYear"
+                name="year"
+                placeholder="Enter publication year"
+              />
+            </div>
+          </div>
+
+          <div class="books-form-row">
+            <div class="books-form-group">
+              <label for="bookCategory">Category *</label>
+              <select id="bookCategory" name="category" required>
+                <option value="">Select Category</option>
+                <option value="fiction">Fiction</option>
+                <option value="non-fiction">Non-Fiction</option>
+                <option value="reference">Reference</option>
+                <option value="science">Science</option>
+                <option value="technology">Technology</option>
+              </select>
+            </div>
+            <div class="books-form-group">
+              <label for="bookQuantity">Quantity *</label>
+              <input
+                type="number"
+                id="bookQuantity"
+                name="quantity"
+                required
+                placeholder="Enter quantity"
+              />
+            </div>
+          </div>
+
+          <div class="books-form-group full-width">
+            <label for="bookDescription">Description</label>
+            <textarea
+              id="bookDescription"
+              name="description"
+              rows="4"
+              placeholder="Enter book description"
+            ></textarea>
+          </div>
+
+          <div class="books-form-actions">
+            <button type="button" class="books-btn-cancel" id="cancelBtn">
+              Cancel
+            </button>
+            <button type="submit" class="books-btn-submit">Save Book</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="books-modal" id="deleteModal">
+      <div class="books-modal-overlay"></div>
+      <div class="books-modal-content books-modal-compact">
+        <div class="books-modal-header">
+          <h2>Delete Book</h2>
+        </div>
+        <div class="books-modal-body">
+          <p>
+            Are you sure you want to delete this book? This action cannot be
+            undone.
+          </p>
+        </div>
+        <div class="books-form-actions">
+          <button type="button" class="books-btn-cancel" id="cancelDeleteBtn">
+            Cancel
+          </button>
+          <button type="button" class="books-btn-delete-confirm">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Modal Management
+      const bookModal = document.getElementById("bookModal");
+      const deleteModal = document.getElementById("deleteModal");
+      const modalOverlay = document.getElementById("modalOverlay");
+      const addBookBtns = document.querySelectorAll(
+        "#addBookBtn, #addBookBtnEmpty",
+      );
+      const closeModalBtn = document.getElementById("closeModalBtn");
+      const cancelBtn = document.getElementById("cancelBtn");
+      const cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
+      const bookForm = document.getElementById("bookForm");
+
+      // Open Add Book Modal
+      addBookBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.getElementById("modalTitle").textContent = "Add New Book";
+          bookForm.reset();
+          bookModal.classList.add("active");
+        });
+      });
+
+      // Close Modal
+      function closeModal() {
+        bookModal.classList.remove("active");
+        deleteModal.classList.remove("active");
+      }
+
+      closeModalBtn.addEventListener("click", closeModal);
+      cancelBtn.addEventListener("click", closeModal);
+      cancelDeleteBtn.addEventListener("click", closeModal);
+      modalOverlay.addEventListener("click", closeModal);
+
+      // Delete Book
+      document.querySelectorAll(".books-btn-delete").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          deleteModal.classList.add("active");
+        });
+      });
+
+      // Form Submission
+      bookForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        alert("Book saved successfully!");
+        closeModal();
+        bookForm.reset();
+      });
+
+      // Search Functionality
+      const searchInput = document.getElementById("searchBooks");
+      searchInput.addEventListener("input", (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const cards = document.querySelectorAll(".books-card");
+        let visibleCount = 0;
+
+        cards.forEach((card) => {
+          const title = card
+            .querySelector(".books-card-title")
+            .textContent.toLowerCase();
+          const author = card
+            .querySelector(".books-card-author")
+            .textContent.toLowerCase();
+
+          if (title.includes(searchTerm) || author.includes(searchTerm)) {
+            card.style.display = "";
+            visibleCount++;
+          } else {
+            card.style.display = "none";
+          }
+        });
+
+        document.getElementById("emptyState").style.display =
+          visibleCount === 0 ? "flex" : "none";
+      });
+
+      // View Toggle
+      document.querySelectorAll(".books-view-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document
+            .querySelectorAll(".books-view-btn")
+            .forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          const view = btn.dataset.view;
+          document.getElementById("booksContainer").className =
+            `books-grid-container books-${view}-view`;
+        });
+      });
+
+      // Flash Messages Auto-dismiss
+      document.querySelectorAll(".books-flash-message").forEach((msg) => {
+        setTimeout(() => {
+          msg.classList.add("books-flash-fadeout");
+          setTimeout(() => msg.remove(), 300);
+        }, 4000);
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,48 @@
+
+{% extends "layout.html" %}
+
+{% block title %}Support Management{% endblock %}
+{% block header_title %}Support Tickets{% endblock %}
+{% block header_subtitle %}Manage user inquiries and issues.{% endblock %}
+
+{% block content %}
+<div class="glass-card" style="padding: 0; overflow: hidden;">
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead style="background: rgba(0,0,0,0.03); border-bottom: 1px solid var(--border);">
+            <tr>
+                <th style="padding: 1rem; text-align: left;">ID</th>
+                <th style="padding: 1rem; text-align: left;">User</th>
+                <th style="padding: 1rem; text-align: left;">Subject</th>
+                <th style="padding: 1rem; text-align: center;">Status</th>
+                <th style="padding: 1rem; text-align: right;">Date</th>
+                <th style="padding: 1rem;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if not tickets %}
+            <tr><td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-sub);">No tickets found.</td></tr>
+            {% else %}
+            {% for t in tickets %}
+            <tr style="border-bottom: 1px solid var(--border);">
+                <td style="padding: 1rem;">#{{ t.ticket_id }}</td>
+                <td style="padding: 1rem;">
+                    <strong>{{ t.user_name }}</strong><br>
+                    <span style="font-size: 0.8rem; color: var(--text-sub);">{{ t.email }}</span>
+                </td>
+                <td style="padding: 1rem; font-weight: 500;">{{ t.subject }}</td>
+                <td style="padding: 1rem; text-align: center;">
+                    <span class="badge {{ 'badge-success' if t.status == 'closed' else 'badge-warning' }}">
+                        {{ t.status|upper }}
+                    </span>
+                </td>
+                <td style="padding: 1rem; text-align: right; color: var(--text-sub);">{{ t.created_at }}</td>
+                <td style="padding: 1rem;">
+                    <a href="/admin/support/{{ t.ticket_id }}" class="btn btn-primary btn-sm">View</a>
+                </td>
+            </tr>
+            {% endfor %}
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

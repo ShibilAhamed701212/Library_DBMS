@@ -9,3 +9,9 @@ __pycache__/
 dist/
 build/
 .DS_Store
+
+# Temporary/Generated Files
+diag_output.txt
+test_internal_output.txt
+tunnel_log.txt
+tunnel_url.txt

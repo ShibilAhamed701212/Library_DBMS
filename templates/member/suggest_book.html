@@ -1,0 +1,480 @@
+{% extends 'layout.html' %}
+
+{% block title %}Suggest a Book{% endblock %}
+
+{% block header_title %}Suggest a Book{% endblock %}
+{% block header_subtitle %}Help us improve our collection by suggesting new books{% endblock %}
+
+{% block content %}
+<div class="suggest-book-container">
+    <div class="suggest-book-card">
+        <h2 class="suggest-book-title">
+            <i class="fas fa-lightbulb me-2"></i>Suggest a New Book
+        </h2>
+        <p class="suggest-book-intro">
+            Can't find the book you're looking for? Let us know and we'll consider adding it to our collection.
+            All fields are required unless marked as optional.
+        </p>
+        
+        <form id="suggestionForm" class="suggest-book-form">
+            <div class="form-group">
+                <label for="title" class="form-label">
+                    Book Title <span class="required-asterisk">*</span>
+                </label>
+                <input 
+                    type="text" 
+                    class="form-control" 
+                    id="title" 
+                    placeholder="Enter book title"
+                    required
+                >
+                <div class="form-text">Please enter the exact title if possible</div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="author" class="form-label">
+                        Author <span class="required-asterisk">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        class="form-control" 
+                        id="author" 
+                        placeholder="Author's name"
+                        required
+                    >
+                </div>
+                
+                <div class="form-group col-md-6">
+                    <label for="isbn" class="form-label">
+                        ISBN (optional)
+                    </label>
+                    <input 
+                        type="text" 
+                        class="form-control" 
+                        id="isbn" 
+                        placeholder="10 or 13 digit ISBN"
+                    >
+                    <div class="form-text">Helps us find the exact edition</div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="notes" class="form-label">
+                    Additional Notes
+                </label>
+                <textarea 
+                    class="form-control" 
+                    id="notes" 
+                    rows="4"
+                    placeholder="Any additional information about why you're suggesting this book..."
+                ></textarea>
+                <div class="form-text">
+                    Let us know why you think this book would be valuable for our collection
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-paper-plane me-2"></i>Submit Suggestion
+                </button>
+                <div id="formStatus" class="form-status"></div>
+            </div>
+        </form>
+    </div>
+    
+    <div class="suggest-book-card mt-4">
+        <h3 class="suggest-book-subtitle">
+            <i class="fas fa-history me-2"></i>My Previous Suggestions
+        </h3>
+        
+        {% if suggestions %}
+            <div class="table-responsive">
+                <table class="table suggestions-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Author</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="suggestionsTable">
+                        {% for s in suggestions %}
+                        <tr>
+                            <td>{{ s.title }}</td>
+                            <td>{{ s.author or 'N/A' }}</td>
+                            <td>
+                                <span class="status-badge status-{{ s.status|lower }}">
+                                    {{ s.status|title }}
+                                </span>
+                            </td>
+                            <td>{{ s.created_at.strftime('%b %d, %Y') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <p>You haven't made any suggestions yet.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.suggest-book-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+.suggest-book-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.suggest-book-title {
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+.suggest-book-subtitle {
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+.suggest-book-intro {
+    color: #6c757d;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.suggest-book-form {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.required-asterisk {
+    color: #e74c3c;
+}
+
+.form-control {
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e0e0e0;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: #4e73df;
+    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.15);
+}
+
+.form-text {
+    color: #6c757d;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+}
+
+.form-actions {
+    margin-top: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.btn-primary {
+    background-color: #4e73df;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    background-color: #2e59d9;
+    transform: translateY(-1px);
+}
+
+.suggestions-table {
+    width: 100%;
+    margin-top: 1rem;
+    border-collapse: collapse;
+}
+
+.suggestions-table th {
+    background-color: #f8f9fc;
+    color: #4e73df;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid #e3e6f0;
+}
+
+.suggestions-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+}
+
+.suggestions-table tbody tr:hover {
+    background-color: #f8f9fc;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.35em 0.65em;
+    font-size: 0.75em;
+    font-weight: 600;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25rem;
+    text-transform: capitalize;
+}
+
+.status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-approved {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-rejected {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.form-status {
+    margin-left: 1rem;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .suggest-book-card {
+        padding: 1.5rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .form-status {
+        margin: 0.5rem 0 0 0;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('suggestionForm');
+    const formStatus = document.getElementById('formStatus');
+    const suggestionsTable = document.querySelector('#suggestionsTable');
+    
+    // Handle form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Show loading state
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Submitting...';
+        formStatus.textContent = '';
+        
+        // Prepare form data
+        const formData = {
+            title: document.getElementById('title').value.trim(),
+            author: document.getElementById('author').value.trim(),
+            isbn: document.getElementById('isbn').value.trim(),
+            notes: document.getElementById('notes').value.trim()
+        };
+        
+        // Client-side validation
+        if (!formData.title) {
+            showFormError('Please enter a book title');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+            document.getElementById('title').focus();
+            return;
+        }
+        
+        if (!formData.author) {
+            showFormError('Please enter the author\'s name');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+            document.getElementById('author').focus();
+            return;
+        }
+        
+        // Submit the form
+        fetch('{{ url_for("member.member_suggest_book") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => {
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return response.json();
+            } else {
+                // If not JSON, read as text to see what we got
+                return response.text().then(text => {
+                    console.error('Expected JSON but got:', text.substring(0, 200));
+                    throw new Error('Server returned an invalid response. Please try again.');
+                });
+            }
+        })
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            // Show success message
+            formStatus.innerHTML = `
+                <div class="alert alert-success d-flex align-items-center" role="alert">
+                    <i class="fas fa-check-circle me-2"></i>
+                    ${data.message || 'Suggestion submitted successfully!'}
+                </div>
+            `;
+            
+            // Reset form
+            form.reset();
+            
+            // Add the new suggestion to the table
+            if (suggestionsTable) {
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td>${escapeHtml(formData.title)}</td>
+                    <td>${escapeHtml(formData.author) || 'N/A'}</td>
+                    <td><span class="status-badge status-pending">Pending</span></td>
+                    <td>${new Date().toLocaleDateString()}</td>
+                `;
+                
+                // If there's a "no suggestions" message, replace it with the table
+                const emptyState = document.querySelector('.empty-state');
+                if (emptyState) {
+                    const table = document.createElement('table');
+                    table.className = 'table suggestions-table';
+                    table.innerHTML = `
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Author</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="suggestionsTable"></tbody>
+                    `;
+                    emptyState.parentNode.replaceChild(table, emptyState);
+                    suggestionsTable = document.querySelector('#suggestionsTable');
+                }
+                
+                // Add new row at the top
+                if (suggestionsTable) {
+                    if (suggestionsTable.rows.length > 0) {
+                        suggestionsTable.insertBefore(newRow, suggestionsTable.firstChild);
+                    } else {
+                        suggestionsTable.appendChild(newRow);
+                    }
+                }
+            }
+            
+            // Scroll to the top to show the success message
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showFormError(error.message || 'Failed to submit suggestion. Please try again.');
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+            
+            // Clear success message after 5 seconds
+            if (formStatus.querySelector('.alert-success')) {
+                setTimeout(() => {
+                    formStatus.innerHTML = '';
+                }, 5000);
+            }
+        });
+    });
+    
+    // Helper function to show error messages
+    function showFormError(message) {
+        formStatus.innerHTML = `
+            <div class="alert alert-danger d-flex align-items-center" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                ${message}
+            </div>
+        `;
+        
+        // Scroll to the error message
+        formStatus.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    
+    // Helper function to escape HTML
+    function escapeHtml(unsafe) {
+        if (!unsafe) return '';
+        const div = document.createElement('div');
+        div.textContent = unsafe;
+        return div.innerHTML;
+    }
+    
+    // Add animation to form inputs on focus
+    const formInputs = form.querySelectorAll('.form-control');
+    formInputs.forEach(input => {
+        input.addEventListener('focus', function() {
+            this.parentElement.classList.add('focused');
+        });
+        
+        input.addEventListener('blur', function() {
+            this.parentElement.classList.remove('focused');
+        });
+    });
+});
+</script>
+{% endblock %}

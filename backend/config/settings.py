@@ -44,6 +44,8 @@ DB_NAME = os.getenv("DB_NAME", "library_db")
 DB_USER = os.getenv("DB_USER", "app_user")
 
 # Database password
+# WARNING: Default password is for development only.
+# Always set DB_PASSWORD in production via environment variables.
 DB_PASSWORD = os.getenv("DB_PASSWORD", "App@123")
 
 # ===============================

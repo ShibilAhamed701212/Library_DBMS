@@ -43,10 +43,10 @@
             <h2>📥 Return Book</h2>
         </div>
         <div class="section-content glass-card">
-            <form action="/admin/return" method="POST">
+            <form action="/admin/return" method="POST" id="returnBookForm">
                 <div class="form-group">
                     <label>Member</label>
-                    <select name="user_id" required>
+                    <select name="user_id" id="returnMemberSelect" required>
                         <option value="" disabled selected>Select user...</option>
                         {% for u in users %}
                         <option value="{{ u.user_id }}">{{ u.name }} (ID: {{ u.user_id }})</option>
@@ -55,18 +55,66 @@
                 </div>
                 <div class="form-group">
                     <label>Book</label>
-                    <select name="book_id" required>
-                        <option value="" disabled selected>Select book...</option>
-                        {% for b in books %}
-                        <option value="{{ b.book_id }}">{{ b.title }} (ID: {{ b.book_id }})</option>
-                        {% endfor %}
+                    <select name="book_id" id="returnBookSelect" required disabled>
+                        <option value="" disabled selected>Select member first...</option>
                     </select>
+                    <small id="returnBookHelp" style="color: var(--text-sub); margin-top: 0.25rem; display: block;"></small>
                 </div>
-                <button type="submit" class="btn btn-danger" style="width: 100%;">Process Return</button>
+                <button type="submit" class="btn btn-danger" id="returnSubmitBtn" style="width: 100%;" disabled>Process Return</button>
             </form>
         </div>
     </section>
 </div>
+
+<script>
+// Dynamic Return Book filtering - shows only books borrowed by selected member
+document.getElementById('returnMemberSelect').addEventListener('change', async function() {
+    const userId = this.value;
+    const bookSelect = document.getElementById('returnBookSelect');
+    const bookHelp = document.getElementById('returnBookHelp');
+    const submitBtn = document.getElementById('returnSubmitBtn');
+    
+    // Reset and disable while loading
+    bookSelect.innerHTML = '<option value="" disabled selected>Loading...</option>';
+    bookSelect.disabled = true;
+    submitBtn.disabled = true;
+    bookHelp.textContent = '';
+    
+    if (!userId) {
+        bookSelect.innerHTML = '<option value="" disabled selected>Select member first...</option>';
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/user/${userId}/borrowed-books`);
+        if (!response.ok) throw new Error('Failed to fetch books');
+        
+        const books = await response.json();
+        
+        if (books.length === 0) {
+            bookSelect.innerHTML = '<option value="" disabled selected>No borrowed books</option>';
+            bookHelp.textContent = 'This member has no books to return.';
+            bookHelp.style.color = 'var(--warning)';
+            submitBtn.disabled = true;
+        } else {
+            let options = '<option value="" disabled selected>Select book to return...</option>';
+            books.forEach(book => {
+                options += `<option value="${book.book_id}">${book.title} (ID: ${book.book_id})</option>`;
+            });
+            bookSelect.innerHTML = options;
+            bookSelect.disabled = false;
+            bookHelp.textContent = `${books.length} book(s) currently borrowed.`;
+            bookHelp.style.color = 'var(--success)';
+            submitBtn.disabled = false;
+        }
+    } catch (error) {
+        console.error('Error fetching borrowed books:', error);
+        bookSelect.innerHTML = '<option value="" disabled selected>Error loading books</option>';
+        bookHelp.textContent = 'Failed to load borrowed books.';
+        bookHelp.style.color = 'var(--danger)';
+    }
+});
+</script>
 
 <!-- ACTIVE ISSUES -->
 <section class="dashboard-section">
@@ -119,6 +167,7 @@
                         <th>Issued</th>
                         <th>Returned</th>
                         <th>Fine</th>
+                        <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -129,7 +178,20 @@
                         <td>{{ i.book_title }}</td>
                         <td>{{ i.issue_date }}</td>
                         <td>{{ i.return_date }}</td>
-                        <td><span style="color: {{ 'var(--danger)' if i.fine > 0 else 'var(--success)' }};">₹{{ i.fine }}</span></td>
+                        <td><span style="color: {{ 'var(--danger)' if i.fine > 0 else 'var(--success)' }};">{{ system_settings.currency_symbol }}{{ i.fine }}</span></td>
+                        <td>
+                            {% if i.fine > 0 %}
+                                {% if i.fine_paid %}
+                                    <span class="badge badge-success">PAID</span>
+                                {% else %}
+                                    <form action="/admin/fine/pay/{{ i.issue_id }}" method="POST" style="display:inline;">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Collect</button>
+                                    </form>
+                                {% endif %}
+                            {% else %}
+                                <span style="color: var(--text-sub);">-</span>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>

@@ -1,0 +1,124 @@
+{% extends "layout.html" %}
+
+{% block title %}Purchase List{% endblock %}
+{% block header_title %}Purchase List{% endblock %}
+{% block header_subtitle %}Review and finalize book purchases from approved suggestions{% endblock %}
+
+{% block content %}
+<!-- MANUAL ADD SECTION -->
+<div class="glass-card" style="margin-bottom: 2rem; padding: 1.5rem;">
+    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+        <span style="font-size: 1.5rem;">➕</span>
+        <div>
+            <h3 style="margin: 0; font-size: 1.1rem;">Add Book to Purchase List</h3>
+            <p style="margin: 0; font-size: 0.85rem; color: var(--text-sub);">Manually add a book you want to purchase</p>
+        </div>
+    </div>
+    <form action="{{ url_for('admin.admin_add_manual_purchase') }}" method="POST" style="display: grid; grid-template-columns: 1fr 1fr 2fr auto; gap: 1rem; align-items: end;">
+        <div class="form-group" style="margin: 0;">
+            <label>Book Title</label>
+            <input type="text" name="title" placeholder="Enter book title..." required class="form-control">
+        </div>
+        <div class="form-group" style="margin: 0;">
+            <label>Author</label>
+            <input type="text" name="author" placeholder="Enter author name..." required class="form-control">
+        </div>
+        <div class="form-group" style="margin: 0;">
+            <label>Notes (Optional)</label>
+            <input type="text" name="notes" placeholder="ISBN, publisher, reason..." class="form-control">
+        </div>
+        <button type="submit" class="btn btn-primary" style="height: 42px;">
+            <span>📥</span> Add to List
+        </button>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Approved Books (Ready to Purchase)</span>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Suggestion ID</th>
+                        <th>Book Details</th>
+                        <th>Suggested By</th>
+                        <th>Notes</th>
+                        <th>Approved Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in pending_purchases %}
+                    <tr>
+                        <td>#{{ p.suggestion_id }}</td>
+                        <td>
+                            <div style="font-weight: 600; color: #2c3e50;">{{ p.title }}</div>
+                            <div style="font-size: 0.85rem; color: #6c757d;">{{ p.author }}</div>
+                        </td>
+                        <td>
+                            <div>{{ p.user_name }}</div>
+                            <!-- <div style="font-size: 0.8rem; color: #6c757d;">{{ p.email }}</div> -->
+                        </td>
+                        <td>
+                            <div style="max-width: 200px; font-size: 0.9rem;">
+                                {{ p.reason or '-' }}
+                            </div>
+                        </td>
+                        <td>
+                            {{ p.suggestion_date.strftime('%Y-%m-%d') if p.suggestion_date else '-' }}
+                        </td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <form action="{{ url_for('admin.admin_add_purchased_book', suggestion_id=p.suggestion_id) }}" method="POST" onsubmit="return confirm('Confirm purchase? This will add the book to the library inventory.');">
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <span class="icon">➕</span> Add
+                                    </button>
+                                </form>
+                                <form action="{{ url_for('admin.admin_remove_purchase', suggestion_id=p.suggestion_id) }}" method="POST" onsubmit="return confirm('Remove this item from the purchase list?');">
+                                    <button type="submit" class="btn btn-danger btn-sm">
+                                        <span class="icon">🗑️</span> Remove
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 3rem; color: #6c757d;">
+                            <i class="fas fa-shopping-cart fa-3x mb-3" style="opacity: 0.3;"></i>
+                            <p>No books in the purchase list.</p>
+                            <a href="/admin/suggestions" class="btn btn-primary btn-sm mt-2">Go to Suggestions</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table td {
+        vertical-align: middle;
+    }
+    .btn-success {
+        background-color: #10b981;
+        border: none;
+        color: white;
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .btn-success:hover {
+        background-color: #059669;
+        transform: translateY(-1px);
+    }
+</style>
+{% endblock %}

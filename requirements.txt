@@ -1,7 +1,48 @@
-flask
-python-dotenv
-mysql-connector-python
-bcrypt
-pandas
-openpyxl
-gunicorn
+# Core Dependencies
+Flask==2.3.3
+Werkzeug==2.3.7
+Jinja2==3.1.2
+itsdangerous==2.1.2
+click==8.1.6
+flask-socketio==5.3.6
+
+# Database
+mysql-connector-python>=9.0.0,<10.0.0
+SQLAlchemy==2.0.21
+alembic==1.12.1
+
+# Security
+bcrypt==4.0.1
+python-dotenv==1.0.0
+PyJWT==2.8.0
+
+# Data Processing
+pandas>=2.2.0,<3.0.0
+numpy>=2.0.0
+openpyxl>=3.1.2
+
+# Development
+pytest==7.4.2
+black==23.9.1
+flake8==6.1.0
+mypy==1.5.1
+
+# Production
+gunicorn==21.2.0
+
+# Email
+email-validator==2.0.0.post2
+
+# Logging
+python-json-logger==2.0.7
+
+# Utils
+python-dateutil==2.8.2
+pytz==2023.3
+psutil==7.2.2
+pyngrok==7.1.6
+
+# AI / ML
+huggingface_hub==0.17.3
+chromadb==0.4.15
+sentence-transformers==2.2.2

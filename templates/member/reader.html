@@ -1,0 +1,171 @@
+{% extends "layout.html" %}
+
+{% block title %}Reading: {{ book.title }}{% endblock %}
+{% block header_title %}Digital Library Reader{% endblock %}
+{% block header_subtitle %}You are reading: {{ book.title }} by {{ book.author }}{% endblock %}
+
+{% block head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+<style>
+    .reader-container {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        height: calc(100vh - 200px);
+        gap: 1.5rem;
+    }
+    .reader-sidebar {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+    .reader-main {
+        background: #525659; /* Standard PDF reader background */
+        border-radius: var(--radius);
+        overflow: auto;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        padding: 2rem 0;
+    }
+    #pdf-canvas {
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        max-width: 100%;
+    }
+    .reader-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .control-group {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        background: rgba(0,0,0,0.03);
+        border-radius: 8px;
+    }
+    .page-info {
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reader-container">
+    <aside class="reader-sidebar glass-card">
+        <div>
+            <h3 style="margin-bottom: 0.5rem;">📖 Book Details</h3>
+            <p style="font-weight: 600; font-size: 0.9rem; margin: 0;">{{ book.title }}</p>
+            <p style="color: var(--text-sub); font-size: 0.8rem;">By {{ book.author }}</p>
+        </div>
+
+        <div class="reader-controls">
+            <h4 style="font-size: 0.875rem; color: var(--text-sub);">Navigation</h4>
+            <div class="control-group">
+                <button id="prev" class="btn btn-outline-secondary btn-sm" style="padding: 5px 15px;">Prev</button>
+                <div class="page-info">
+                    <span id="page_num">1</span> / <span id="page_count">?</span>
+                </div>
+                <button id="next" class="btn btn-outline-secondary btn-sm" style="padding: 5px 15px;">Next</button>
+            </div>
+
+            <h4 style="font-size: 0.875rem; color: var(--text-sub); margin-top: 1rem;">Zoom</h4>
+            <div class="control-group">
+                <button id="zoom-out" class="btn btn-outline-secondary btn-sm">➖</button>
+                <span id="zoom-val">100%</span>
+                <button id="zoom-in" class="btn btn-outline-secondary btn-sm">➕</button>
+            </div>
+        </div>
+
+        <div style="margin-top: auto;">
+            <a href="/member/dashboard" class="btn btn-primary" style="width: 100%;">Close Reader</a>
+        </div>
+    </aside>
+
+    <main class="reader-main glass-card" id="reader-viewport">
+        <canvas id="pdf-canvas"></canvas>
+    </main>
+</div>
+
+<script>
+    const url = "{{ url_for('static', filename=book.pdf_src) }}";
+    let pdfDoc = null,
+        pageNum = 1,
+        pageRendering = false,
+        pageNumPending = null,
+        scale = 1.5,
+        canvas = document.getElementById('pdf-canvas'),
+        ctx = canvas.getContext('2d');
+
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+    function renderPage(num) {
+        pageRendering = true;
+        pdfDoc.getPage(num).then(function(page) {
+            let viewport = page.getViewport({scale: scale});
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            let renderContext = {
+                canvasContext: ctx,
+                viewport: viewport
+            };
+            let renderTask = page.render(renderContext);
+
+            renderTask.promise.then(function() {
+                pageRendering = false;
+                if (pageNumPending !== null) {
+                    renderPage(pageNumPending);
+                    pageNumPending = null;
+                }
+            });
+        });
+
+        document.getElementById('page_num').textContent = num;
+    }
+
+    function queueRenderPage(num) {
+        if (pageRendering) {
+            pageNumPending = num;
+        } else {
+            renderPage(num);
+        }
+    }
+
+    document.getElementById('prev').addEventListener('click', () => {
+        if (pageNum <= 1) return;
+        pageNum--;
+        queueRenderPage(pageNum);
+    });
+
+    document.getElementById('next').addEventListener('click', () => {
+        if (pageNum >= pdfDoc.numPages) return;
+        pageNum++;
+        queueRenderPage(pageNum);
+    });
+
+    document.getElementById('zoom-in').addEventListener('click', () => {
+        scale += 0.25;
+        document.getElementById('zoom-val').textContent = Math.round(scale * 100) + '%';
+        renderPage(pageNum);
+    });
+
+    document.getElementById('zoom-out').addEventListener('click', () => {
+        if (scale <= 0.5) return;
+        scale -= 0.25;
+        document.getElementById('zoom-val').textContent = Math.round(scale * 100) + '%';
+        renderPage(pageNum);
+    });
+
+    pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) {
+        pdfDoc = pdfDoc_;
+        document.getElementById('page_count').textContent = pdfDoc.numPages;
+        renderPage(pageNum);
+    });
+</script>
+{% endblock %}

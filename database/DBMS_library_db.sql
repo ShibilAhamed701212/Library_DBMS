@@ -121,7 +121,8 @@ CREATE TABLE books (
     author VARCHAR(100) NOT NULL,                 -- Author name
     category VARCHAR(50),                         -- Optional category
     total_copies INT NOT NULL CHECK (total_copies >= 0),       -- Total stock
-    available_copies INT NOT NULL CHECK (available_copies >= 0) -- Available stock
+    available_copies INT NOT NULL CHECK (available_copies >= 0), -- Available stock
+    cover_image_url VARCHAR(255) DEFAULT NULL     -- Cover image URL
 );
 
 
@@ -190,6 +191,28 @@ CREATE TABLE IF NOT EXISTS book_requests (
     CONSTRAINT fk_requests_book
         FOREIGN KEY (book_id)
         REFERENCES books(book_id)
+        ON DELETE CASCADE
+);
+
+-- ------------------------------------------------------
+-- BOOK SUGGESTIONS TABLE (for member suggestions)
+-- ------------------------------------------------------
+-- Tracks suggested books from members for admin review
+-- ------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS book_suggestions (
+    suggestion_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    author VARCHAR(100) NOT NULL,
+    isbn VARCHAR(20),
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('pending','approved','rejected') DEFAULT 'pending',
+
+    CONSTRAINT fk_suggestions_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(user_id)
         ON DELETE CASCADE
 );
 

@@ -1,0 +1,55 @@
+
+{% extends "layout.html" %}
+
+{% block title %}Developer API Keys{% endblock %}
+{% block header_title %}Developer Portal{% endblock %}
+{% block header_subtitle %}Generate keys for programmatic access to the catalog.{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+    <div class="glass-card" style="padding: 2rem; margin-bottom: 2rem;">
+        <h2 style="margin-top: 0;">How to use your API Key</h2>
+        <p style="color: var(--text-sub);">
+            You can use your API key to fetch the library catalog as JSON. Include the key in the <code>X-API-Key</code> header of your request.
+        </p>
+        <div style="background: rgba(0,0,0,0.05); padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--primary); font-family: monospace; font-size: 0.9rem;">
+            curl -H "X-API-Key: YOUR_KEY_HERE" http://{{ request.host }}/api/external/catalog
+        </div>
+    </div>
+
+    <form action="/member/api-keys/generate" method="POST" style="margin-bottom: 2rem;">
+        <button type="submit" class="btn btn-primary">➕ Generate New API Key</button>
+    </form>
+
+    <div class="glass-card" style="padding: 0; overflow: hidden;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead style="background: rgba(0,0,0,0.03); border-bottom: 1px solid var(--border);">
+                <tr>
+                    <th style="padding: 1rem; text-align: left;">Key (Partial)</th>
+                    <th style="padding: 1rem; text-align: left;">Created At</th>
+                    <th style="padding: 1rem; text-align: right;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if not keys %}
+                <tr><td colspan="3" style="padding: 2rem; text-align: center; color: var(--text-sub);">No API keys generated yet.</td></tr>
+                {% else %}
+                {% for k in keys %}
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 1rem; font-family: monospace;">
+                        {{ k.api_key[:8] }}************************{{ k.api_key[-4:] }}
+                    </td>
+                    <td style="padding: 1rem; color: var(--text-sub);">{{ k.created_at }}</td>
+                    <td style="padding: 1rem; text-align: right;">
+                        <form action="/member/api-keys/delete/{{ k.key_id }}" method="POST" style="display: inline;" onsubmit="return confirm('Revoke this key?');">
+                            <button type="submit" class="btn btn-danger btn-sm">Revoke</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

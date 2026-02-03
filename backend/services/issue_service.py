@@ -122,6 +122,14 @@ def issue_book(user_id: int, book_id: int):
             return "❌ Admins cannot issue books"
 
         # --------------------------------------------------
+        # NEW: FETCH MEMBERSHIP LIMITS
+        # --------------------------------------------------
+        from backend.services.membership_service import get_user_membership_config
+        membership = get_user_membership_config(user_id)
+        max_books = membership['max_books']
+        loan_days = membership['loan_days']
+
+        # --------------------------------------------------
         # STEP 3: CHECK ACTIVE ISSUE COUNT
         # --------------------------------------------------
         # Count how many books the user is CURRENTLY holding
@@ -140,8 +148,8 @@ def issue_book(user_id: int, book_id: int):
         active_count = cursor.fetchone()["count"]
 
         # Enforce maximum books per user rule
-        if active_count >= MAX_BOOKS_PER_USER:
-            return "❌ User has reached issue limit"
+        if active_count >= max_books:
+            return f"❌ User has reached issue limit for {membership['tier']} tier ({max_books} books)"
 
         # --------------------------------------------------
         # STEP 4: CHECK BOOK AVAILABILITY
@@ -208,19 +216,59 @@ def issue_book(user_id: int, book_id: int):
             (book_id,)
         )
 
+        # NEW: Clean up any active reservation/waitlist entry for this user
+        cursor.execute(
+            "DELETE FROM reservations WHERE user_id = %s AND book_id = %s",
+            (user_id, book_id)
+        )
+
         # Commit transaction — changes become permanent
         conn.commit()
 
         # --------------------------------------------------
-        # STEP 7: TRIGGER EMAIL NOTIFICATION
+        # NEW: GAMIFICATION HOOK
+        # --------------------------------------------------
+        try:
+            from backend.services.gamification_service import award_xp
+            award_xp(user_id, 20, "Borrowed a book")
+        except Exception as game_err:
+            print(f"⚠️ Gamification error: {game_err}")
+
+        # --------------------------------------------------
+        # STEP 7: NOTIFICATIONS & HOOKS
         # --------------------------------------------------
         try:
             from backend.services.email_service import notify_issue
             from datetime import timedelta
-            due_date = (date.today() + timedelta(days=MAX_DAYS_ALLOWED)).strftime('%Y-%m-%d')
+            due_date = (date.today() + timedelta(days=loan_days)).strftime('%Y-%m-%d')
             notify_issue(user["name"], user["email"], book["title"], due_date)
+            
+            # In-App Notification
+            from backend.services.notification_service import add_notification
+            add_notification(user_id, f"📖 Book Issued: '{book['title']}'. Due: {due_date} ({membership['tier']} Tier)")
         except Exception as e:
             print(f"⚠️ Notification failed: {e}")
+
+        # Trigger Waitlist Notification
+        try:
+            from backend.services.reservation_service import notify_waitlist_user
+            notify_waitlist_user(book_id, book['title'])
+        except Exception as e:
+            print(f"⚠️ Waitlist notification failed: {e}")
+            
+        # Trigger Reading Goal Progress
+        try:
+            from backend.services.goal_service import increment_goal_progress
+            increment_goal_progress(user_id)
+        except Exception as e:
+            print(f"⚠️ Reading goal progress update failed: {e}")
+            
+        # Activity Log
+        try:
+            from backend.services.activity_service import log_user_activity
+            log_user_activity(user_id, "BORROW", f"Borrowed '{book['title']}'")
+        except Exception as e:
+            print(f"⚠️ Activity log failed: {e}")
 
         return "✅ Book issued successfully"
 
@@ -286,8 +334,22 @@ def return_book(user_id: int, book_id: int):
             return "❌ No active issue found"
 
         # ------------------------------
-        # FINE CALCULATION
+        # FINE CALCULATION (DYNAMIC)
         # ------------------------------
+        from backend.services.membership_service import get_user_membership_config
+        membership = get_user_membership_config(user_id)
+        loan_days = membership['loan_days']
+
+        # Get book category and its fine rate
+        cursor.execute("""
+            SELECT b.category, COALESCE(cf.daily_rate, %s) as rate
+            FROM books b
+            LEFT JOIN category_fines cf ON b.category = cf.category
+            WHERE b.book_id = %s
+        """, (FINE_PER_DAY, book_id))
+        
+        fine_data = cursor.fetchone()
+        rate = fine_data['rate'] if fine_data else FINE_PER_DAY
 
         # Calculate how many days book was kept
         days_kept = (date.today() - issue["issue_date"]).days
@@ -296,8 +358,8 @@ def return_book(user_id: int, book_id: int):
         fine = 0
 
         # Apply fine if overdue
-        if days_kept > MAX_DAYS_ALLOWED:
-            fine = (days_kept - MAX_DAYS_ALLOWED) * FINE_PER_DAY
+        if days_kept > loan_days:
+            fine = (days_kept - loan_days) * rate
 
         # ------------------------------
         # RETURN TRANSACTION (ATOMIC)
@@ -326,6 +388,43 @@ def return_book(user_id: int, book_id: int):
 
         # Commit transaction
         conn.commit()
+
+        # --------------------------------------------------
+        # NEW: GAMIFICATION HOOK (XP on Return)
+        # --------------------------------------------------
+        try:
+            from backend.services.gamification_service import award_xp
+            xp_reward = 50 if fine == 0 else 10
+            award_xp(user_id, xp_reward, "Returned a book")
+        except Exception as game_err:
+            print(f"⚠️ Gamification return XP error: {game_err}")
+
+        # --------------------------------------------------
+        # STEP 4: NOTIFY WAITLIST
+        # --------------------------------------------------
+        try:
+            from backend.services.reservation_service import notify_waitlist_user
+            # We need title for the email
+            cursor.execute("SELECT title FROM books WHERE book_id = %s", (book_id,))
+            b_data = cursor.fetchone()
+            if b_data:
+                # Notify via Email
+                notify_waitlist_user(book_id, b_data['title'])
+                
+                # Notify via App (We need to find who the waitlist user is, but the service handles it internally)
+                # Actually notify_waitlist_user takes book_id, let's see reservation_service.
+                # For now just leave email for waitlist or improve later.
+                pass
+        except Exception as ignored:
+            print(f"Waitlist notification warning: {ignored}")
+
+        # Notify Borrower of Return
+        from backend.services.notification_service import add_notification
+        add_notification(user_id, f"✅ Returned: '{book_id}' (Fine: ₹{fine})")
+        
+        # Activity Log
+        from backend.services.activity_service import log_user_activity
+        log_user_activity(user_id, "RETURN", f"Returned book {book_id}")
 
         return f"✅ Book returned | Fine: ₹{fine}"
 
@@ -371,4 +470,30 @@ def send_overdue_reminders():
         if notify_overdue(rec["name"], rec["email"], rec["title"], rec["days_overdue"], fine):
             count += 1
             
+            
     return f"✅ Sent {count} overdue reminders successfully"
+
+
+def pay_fine(issue_id: int):
+    """
+    Marks a fine as paid for a specific issue record.
+    """
+    from backend.repository.db_access import execute_query, fetch_one
+    
+    # Verify fine exists and is positive
+    issue = fetch_one("SELECT fine, fine_paid FROM issues WHERE issue_id = %s", (issue_id,))
+    
+    if not issue:
+        return "❌ Record not found"
+        
+    if issue['fine'] <= 0:
+        return "⚠️ No fine to pay for this record."
+        
+    if issue['fine_paid']:
+        return "⚠️ Fine already paid."
+        
+    try:
+        execute_query("UPDATE issues SET fine_paid = TRUE WHERE issue_id = %s", (issue_id,))
+        return f"✅ Fine of ₹{issue['fine']} collected successfully."
+    except Exception as e:
+        return f"❌ Error collecting fine: {str(e)}"

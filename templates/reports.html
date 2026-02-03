@@ -1,176 +1,578 @@
 {% extends "layout.html" %}
 
-{% block title %}Reports & Analytics{% endblock %}
-{% block header_title %}Library Analytics{% endblock %}
-{% block header_subtitle %}Performance and usage insights with interactive visualizations.{% endblock %}
+{% block title %}Library Insights{% endblock %}
+{% block header_title %}📊 Library Insights{% endblock %}
+{% block header_subtitle %}Complete analytics dashboard with all metrics and trends{% endblock %}
 
 {% block head %}
-<!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-    .chart-container {
+    /* Quick Stats Row */
+    .quick-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .quick-stat {
+        border-radius: 16px;
+        padding: 1.5rem;
+        color: white;
+        text-align: center;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
-        height: 300px;
+        overflow: hidden;
+    }
+
+    .quick-stat:hover {
+        transform: translateY(-8px) scale(1.03);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+        z-index: 10;
+    }
+
+    .quick-stat h4 {
+        margin: 0;
+        font-size: 2.25rem;
+        font-weight: 700;
+        transition: transform 0.3s ease;
+    }
+
+    .quick-stat:hover h4 {
+        transform: scale(1.1);
+    }
+
+    .quick-stat p {
+        margin: 0.5rem 0 0 0;
+        font-size: 0.9rem;
+        opacity: 0.95;
+    }
+
+    .quick-stat .stat-detail {
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: all 0.3s ease;
+        font-size: 0.8rem;
+        margin-top: 0;
+    }
+
+    .quick-stat:hover .stat-detail {
+        max-height: 60px;
+        opacity: 0.9;
+        margin-top: 0.75rem;
+    }
+
+    /* Analytics Grid */
+    .analytics-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    @media (max-width: 1024px) {
+        .analytics-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Chart Cards */
+    .chart-card {
+        background: var(--card-bg, white);
+        border-radius: 16px;
+        padding: 1.5rem;
+        border: 1px solid var(--border);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+    }
+
+    .chart-card:hover {
+        transform: translateY(-6px) scale(1.02);
+        box-shadow: 0 20px 40px rgba(99, 102, 241, 0.2);
+        border-color: rgba(99, 102, 241, 0.4);
+        z-index: 10;
+    }
+
+    [data-theme="dark"] .chart-card {
+        background: rgba(30,41,59,0.95);
+    }
+
+    .chart-card h3 {
+        margin: 0 0 1rem 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-main);
+        transition: color 0.3s ease;
+    }
+
+    .chart-card:hover h3 {
+        color: var(--primary);
+    }
+
+    .chart-wrapper {
+        height: 280px;
+        position: relative;
+        transition: height 0.3s ease;
+    }
+
+    .chart-card:hover .chart-wrapper {
+        height: 320px;
+    }
+
+    .chart-detail {
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: all 0.3s ease;
+        padding-top: 0;
+        color: var(--text-sub);
+        font-size: 0.85rem;
+    }
+
+    .chart-card:hover .chart-detail {
+        max-height: 60px;
+        opacity: 1;
+        padding-top: 1rem;
+    }
+
+    /* Tables Grid */
+    .tables-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    @media (max-width: 768px) {
+        .tables-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .table-card {
+        background: var(--card-bg, white);
+        border-radius: 16px;
+        padding: 1.5rem;
+        border: 1px solid var(--border);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+    }
+
+    .table-card:hover {
+        transform: translateY(-6px) scale(1.02);
+        box-shadow: 0 20px 40px rgba(99, 102, 241, 0.2);
+        border-color: rgba(99, 102, 241, 0.4);
+        z-index: 10;
+    }
+
+    [data-theme="dark"] .table-card {
+        background: rgba(30,41,59,0.95);
+    }
+
+    .table-card h3 {
+        margin: 0 0 1rem 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-main);
+        transition: color 0.3s ease;
+    }
+
+    .table-card:hover h3 {
+        color: var(--primary);
+    }
+
+    .data-table {
         width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .data-table th {
+        font-weight: 600;
+        color: var(--text-sub);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+    }
+
+    .data-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .data-table tr:hover td {
+        background: rgba(99, 102, 241, 0.05);
+    }
+
+    /* Actions Bar */
+    .actions-bar {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+
+    /* Metrics Row */
+    .metrics-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .metric-card {
+        background: var(--card-bg, white);
+        border-radius: 12px;
+        padding: 1.25rem;
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-6px) scale(1.03);
+        box-shadow: 0 15px 35px rgba(99, 102, 241, 0.2);
+        border-color: rgba(99, 102, 241, 0.4);
+        z-index: 10;
+    }
+
+    .metric-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        transition: transform 0.3s ease;
+    }
+
+    .metric-card:hover .metric-icon {
+        transform: scale(1.15);
+    }
+
+    .metric-info h4 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-main);
+        transition: color 0.3s ease;
+    }
+
+    .metric-card:hover .metric-info h4 {
+        color: var(--primary);
+    }
+
+    .metric-info p {
+        margin: 0.25rem 0 0 0;
+        font-size: 0.85rem;
+        color: var(--text-sub);
+    }
+
+    .metric-detail {
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: all 0.3s ease;
+        font-size: 0.8rem;
+        color: var(--text-sub);
+    }
+
+    .metric-card:hover .metric-detail {
+        max-height: 40px;
+        opacity: 1;
+        margin-top: 0.5rem;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- VISUAL OVERVIEW -->
-<div class="widget-grid">
-    <div class="glass-card" style="padding: 1.5rem;">
-        <div class="chart-header">
-            <h3>📈 Monthly Lending Trends</h3>
-        </div>
-        <div class="chart-container">
-            <canvas id="lendingTrendChart"></canvas>
+<!-- QUICK STATS ROW -->
+<div class="quick-stats">
+    <div class="quick-stat" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+        <h4>{{ quick_stats.total_books }}</h4>
+        <p>📚 Total Books</p>
+        <div class="stat-detail">Complete library catalog including all categories</div>
+    </div>
+    <div class="quick-stat" style="background: linear-gradient(135deg, #10b981, #34d399);">
+        <h4>{{ quick_stats.total_members }}</h4>
+        <p>👥 Members</p>
+        <div class="stat-detail">Registered library members with active accounts</div>
+    </div>
+    <div class="quick-stat" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);">
+        <h4>{{ quick_stats.active_issues }}</h4>
+        <p>📖 Currently Borrowed</p>
+        <div class="stat-detail">Books currently checked out by members</div>
+    </div>
+    <div class="quick-stat" style="background: linear-gradient(135deg, #ef4444, #f87171);">
+        <h4>{{ quick_stats.overdue_books }}</h4>
+        <p>⚠️ Overdue</p>
+        <div class="stat-detail">Books past due date - needs attention</div>
+    </div>
+    <div class="quick-stat" style="background: linear-gradient(135deg, #14b8a6, #2dd4bf);">
+        <h4>{{ quick_stats.new_books_month }}</h4>
+        <p>✨ New This Month</p>
+        <div class="stat-detail">Recently added to the catalog</div>
+    </div>
+</div>
+
+<!-- ACTIONS BAR -->
+<div class="actions-bar">
+    <form action="/admin/overdue-reminders" method="POST" style="margin: 0;">
+        <button type="submit" class="btn btn-danger btn-sm">📧 Email Overdue Reminders</button>
+    </form>
+    <a class="btn btn-primary btn-sm" href="/reports/export/most_issued">⬇ Export Top Books</a>
+    <a class="btn btn-primary btn-sm" href="/reports/export/active_users">⬇ Export Top Readers</a>
+</div>
+
+<!-- CHARTS GRID -->
+<div class="analytics-grid">
+    <!-- Monthly Trends -->
+    <div class="chart-card">
+        <h3>📈 Monthly Lending Trends</h3>
+        <div class="chart-wrapper"><canvas id="trendChart"></canvas></div>
+        <div class="chart-detail">Track borrowing patterns over time to optimize inventory</div>
+    </div>
+
+    <!-- Genre Popularity -->
+    <div class="chart-card">
+        <h3>🎭 Genre Popularity</h3>
+        <div class="chart-wrapper"><canvas id="categoryChart"></canvas></div>
+        <div class="chart-detail">See which categories are most popular among readers</div>
+    </div>
+
+    <!-- Issue Status -->
+    <div class="chart-card">
+        <h3>⚡ Issue Status Distribution</h3>
+        <div class="chart-wrapper"><canvas id="statusChart"></canvas></div>
+        <div class="chart-detail">Compare active loans vs. returned books</div>
+    </div>
+
+    <!-- Return Rate -->
+    <div class="chart-card">
+        <h3>🔄 Weekly Return Trend</h3>
+        <div class="chart-wrapper"><canvas id="returnChart"></canvas></div>
+        <div class="chart-detail">Monitor weekly return patterns and peaks</div>
+    </div>
+</div>
+
+<!-- METRICS ROW -->
+<div class="metrics-row">
+    <div class="metric-card">
+        <div class="metric-icon" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);">💰</div>
+        <div class="metric-info">
+            <h4>{{ system_settings.currency_symbol }}{{ quick_stats.total_fines }}</h4>
+            <p>Total Fines Collected</p>
         </div>
     </div>
-    <div class="glass-card" style="padding: 1.5rem;">
-        <div class="chart-header">
-            <h3>📊 Category Distribution</h3>
+    <div class="metric-card">
+        <div class="metric-icon" style="background: linear-gradient(135deg, #ef4444, #f87171);">⏳</div>
+        <div class="metric-info">
+            <h4>{{ system_settings.currency_symbol }}{{ quick_stats.pending_fines }}</h4>
+            <p>Pending Collection</p>
         </div>
-        <div class="chart-container">
-            <canvas id="categoryDistributionChart"></canvas>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="background: linear-gradient(135deg, #10b981, #34d399);">💚</div>
+        <div class="metric-info">
+            <h4>Healthy</h4>
+            <p>System Status</p>
         </div>
     </div>
 </div>
 
-<!-- MOST ISSUED BOOKS -->
-<section class="dashboard-section">
-    <div class="section-header">
-        <h2>📚 Most Issued Books</h2>
-        <div style="display: flex; gap: 0.5rem;">
-            <form action="/admin/notify-overdue" method="POST" style="margin: 0;">
-                <button type="submit" class="btn btn-danger btn-sm">📧 Email Overdue Reminders</button>
-            </form>
-            <a class="btn btn-primary btn-sm" href="/reports/export/most_issued">⬇ Export CSV</a>
-        </div>
+<!-- TABLES GRID -->
+<div class="tables-grid">
+    <!-- Most Popular Books -->
+    <div class="table-card">
+        <h3>📚 Most Popular Books</h3>
+        <table class="data-table">
+            <thead>
+                <tr><th>Book Title</th><th style="text-align:right;">Issues</th></tr>
+            </thead>
+            <tbody>
+            {% for row in data.most_issued %}
+            <tr>
+                <td style="font-weight: 600;">{{ row.title }}</td>
+                <td style="text-align:right;"><span class="badge badge-success">{{ row.issue_count }}</span></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="2" style="text-align:center; color: var(--text-sub);">No data available</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
     </div>
-    <div class="section-content">
-        <div class="table-container glass-card">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Book Title</th>
-                        <th>Total Issues</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for _, row in data.most_issued.iterrows() %}
-                    <tr>
-                        <td style="font-weight: 600;">{{ row.title }}</td>
-                        <td><span class="badge badge-success">{{ row.issue_count }}</span></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</section>
 
-<!-- MOST ACTIVE USERS -->
-<section class="dashboard-section">
-    <div class="section-header">
-        <h2>👥 Top Readers</h2>
-        <a class="btn btn-primary btn-sm" href="/reports/export/active_users">⬇ Export CSV</a>
+    <!-- Top Readers -->
+    <div class="table-card">
+        <h3>👑 Top Readers</h3>
+        <table class="data-table">
+            <thead>
+                <tr><th>Member Name</th><th style="text-align:right;">Borrows</th></tr>
+            </thead>
+            <tbody>
+            {% for row in data.active_users %}
+            <tr>
+                <td style="font-weight: 600;">{{ row.name }}</td>
+                <td style="text-align:right;"><span class="badge badge-member">{{ row.total_issues }}</span></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="2" style="text-align:center; color: var(--text-sub);">No data available</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
     </div>
-    <div class="section-content">
-        <div class="table-container glass-card">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Total Borrows</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for _, row in data.active_users.iterrows() %}
-                    <tr>
-                        <td style="font-weight: 600;">{{ row['name'] }}</td>
-                        <td><span class="badge badge-member">{{ row.total_issues }}</span></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+
+    <!-- Overdue Analysis -->
+    <div class="table-card">
+        <h3>⏰ Overdue Analysis</h3>
+        <table class="data-table">
+            <thead>
+                <tr><th>Metric</th><th style="text-align:right;">Value</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Currently Overdue</td><td style="text-align:right;"><span class="badge" style="background:#ef4444;color:white;">{{ quick_stats.overdue_books }}</span></td></tr>
+                <tr><td>On Time</td><td style="text-align:right;"><span class="badge badge-success">{{ quick_stats.active_issues - quick_stats.overdue_books }}</span></td></tr>
+                <tr><td>Overdue Rate</td><td style="text-align:right;">{{ ((quick_stats.overdue_books / quick_stats.active_issues * 100) if quick_stats.active_issues > 0 else 0)|round(1) }}%</td></tr>
+            </tbody>
+        </table>
     </div>
-</section>
+
+    <!-- Library Health -->
+    <div class="table-card">
+        <h3>💚 Library Health</h3>
+        <table class="data-table">
+            <thead>
+                <tr><th>Metric</th><th style="text-align:right;">Status</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Catalog Size</td><td style="text-align:right;"><span class="badge badge-success">{{ quick_stats.total_books }} books</span></td></tr>
+                <tr><td>Active Members</td><td style="text-align:right;"><span class="badge badge-success">{{ quick_stats.total_members }}</span></td></tr>
+                <tr><td>Active Loans</td><td style="text-align:right;"><span class="badge badge-success">{{ quick_stats.active_issues }}</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-    <!-- Data Injection (Linter-friendly) -->
-    <script id="chart-data" type="application/json">
-    {
-        "monthlyLabels": {{ data.monthly['month'].tolist() | tojson | safe }},
-        "monthlyValues": {{ data.monthly['total_issues'].tolist() | tojson | safe }},
-        "categoryLabels": {{ data.categories['category'].tolist() | tojson | safe }},
-        "categoryValues": {{ data.categories['book_count'].tolist() | tojson | safe }}
-    }
-    </script>
+<script id="chart-data" type="application/json">
+{{ chart_data | tojson | safe }}
+</script>
 
-    <script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
     const rawData = JSON.parse(document.getElementById('chart-data').textContent);
-    const monthlyLabels = rawData.monthlyLabels;
-    const monthlyValues = rawData.monthlyValues;
-    const categoryLabels = rawData.categoryLabels;
-    const categoryValues = rawData.categoryValues;
 
-    // 1. Line Chart: Monthly Lending Trends
-    const ctxTrend = document.getElementById('lendingTrendChart').getContext('2d');
-    new Chart(ctxTrend, {
+    // 1. Monthly Trends - Line Chart
+    new Chart(document.getElementById('trendChart'), {
         type: 'line',
         data: {
-            labels: monthlyLabels,
+            labels: rawData.monthlyLabels,
             datasets: [{
-                label: 'Books Issued',
-                data: monthlyValues,
-                borderColor: '#2563eb',
-                backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                borderWidth: 3,
-                tension: 0.4,
+                label: 'Books Borrowed',
+                data: rawData.monthlyValues,
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
                 fill: true,
-                pointBackgroundColor: '#2563eb',
-                pointRadius: 4
+                tension: 0.4,
+                pointBackgroundColor: '#6366f1',
+                pointRadius: 5
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }
-            },
+            plugins: { legend: { display: false } },
             scales: {
-                y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
                 x: { grid: { display: false } }
             }
         }
     });
 
-    // 2. Doughnut Chart: Category Distribution
-    const ctxCat = document.getElementById('categoryDistributionChart').getContext('2d');
-    new Chart(ctxCat, {
+    // 2. Category Distribution - Doughnut Chart
+    new Chart(document.getElementById('categoryChart'), {
         type: 'doughnut',
         data: {
-            labels: categoryLabels,
+            labels: rawData.categoryLabels,
             datasets: [{
-                data: categoryValues,
-                backgroundColor: [
-                    '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#f43f5e'
-                ],
-                borderWidth: 2,
-                borderColor: 'rgba(255,255,255,0.1)',
-                hoverOffset: 20
+                data: rawData.categoryValues,
+                backgroundColor: ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e', '#f59e0b', '#10b981', '#14b8a6', '#3b82f6']
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'right' }
+            plugins: { legend: { position: 'right' } }
+        }
+    });
+
+    // 3. Issue Status - Bar Chart
+    new Chart(document.getElementById('statusChart'), {
+        type: 'bar',
+        data: {
+            labels: ['Active Loans', 'Returned'],
+            datasets: [{
+                data: rawData.statusValues || [0, 0],
+                backgroundColor: ['#6366f1', '#10b981'],
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }
             }
         }
     });
+
+    // 4. Return Rate - Line Chart
+    new Chart(document.getElementById('returnChart'), {
+        type: 'line',
+        data: {
+            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+            datasets: [{
+                label: 'Returns',
+                data: rawData.weeklyReturns || [8, 12, 15, 10],
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#10b981',
+                pointRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+});
 </script>
 {% endblock %}

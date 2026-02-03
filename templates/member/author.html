@@ -1,0 +1,43 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ author.name }}{% endblock %}
+{% block header_title %}{{ author.name }}{% endblock %}
+{% block header_subtitle %}Author Profile & Bibliography{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 1fr 3fr; gap: 2rem;">
+    <!-- Author Bio -->
+    <aside>
+        <div class="glass-card" style="padding: 1.5rem; text-align: center;">
+            <div style="width: 150px; height: 150px; border-radius: 50%; overflow: hidden; margin: 0 auto 1.5rem; background: var(--stat-icon-bg); display: flex; align-items: center; justify-content: center;">
+                {% if author.photo_src %}
+                <img src="{{ author.photo_src }}" alt="{{ author.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                {% else %}
+                <span style="font-size: 4rem;">✍️</span>
+                {% endif %}
+            </div>
+            <p style="text-align: left; line-height: 1.6; color: var(--text-sub);">
+                {{ author.bio or "No biography available for this author yet." }}
+            </p>
+        </div>
+    </aside>
+
+    <!-- Author's Books -->
+    <section class="dashboard-section" style="margin-top: 0;">
+        <div class="section-header">
+            <h2>📚 Books by {{ author.name }}</h2>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem;">
+            {% for b in books %}
+            <div class="glass-card" style="padding: 1.25rem; display: flex; flex-direction: column;">
+                <h4 style="margin: 0 0 0.5rem 0;">{{ b.title }}</h4>
+                <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center;">
+                    <span class="badge">{{ b.category }}</span>
+                    <a href="/member/catalog?q={{ b.title|urlencode }}" class="btn btn-sm btn-outline-primary">View</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

@@ -8,7 +8,7 @@ Centralising this avoids bugs and inconsistencies.
 import bcrypt
 
 
-def hash_password(plain_password: str) -> bytes:
+def hash_password(plain_password: str) -> str:
     """
     Hashes a plain-text password using bcrypt.
 
@@ -27,11 +27,11 @@ def hash_password(plain_password: str) -> bytes:
     # Hash password + salt
     hashed_password = bcrypt.hashpw(password_bytes, salt)
 
-    # Return raw bytes (store as VARBINARY in DB)
-    return hashed_password
+    # Return UTF-8 string representation suitable for VARCHAR storage
+    return hashed_password.decode("utf-8")
 
 
-def verify_password(plain_password: str, hashed_password: bytes) -> bool:
+def verify_password(plain_password: str, hashed_password) -> bool:
     """
     Verifies a plain password against a stored bcrypt hash.
     """
@@ -39,9 +39,15 @@ def verify_password(plain_password: str, hashed_password: bytes) -> bool:
     # Convert plain password to bytes
     password_bytes = plain_password.encode("utf-8")
 
+    # Support both str and bytes for the stored hash
+    if isinstance(hashed_password, str):
+        hashed_bytes = hashed_password.encode("utf-8")
+    else:
+        hashed_bytes = hashed_password
+
     try:
         # bcrypt safely checks hash
-        return bcrypt.checkpw(password_bytes, hashed_password)
+        return bcrypt.checkpw(password_bytes, hashed_bytes)
     except ValueError:
         # Covers corrupted hashes or invalid formats
         return False

@@ -1,0 +1,329 @@
+{% extends "layout.html" %}
+
+{% block title %}System Settings{% endblock %}
+{% block header_title %}System Settings{% endblock %}
+{% block header_subtitle %}Comprehensive control for your library ecosystem.{% endblock %}
+
+{% block content %}
+<style>
+    .settings-layout {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        gap: 2rem;
+        align-items: start;
+    }
+    .settings-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        position: sticky;
+        top: 2rem;
+    }
+    .nav-btn {
+        padding: 1rem;
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 12px;
+        text-align: left;
+        color: var(--text-sub);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .nav-btn:hover { background: rgba(255, 255, 255, 0.05); color: var(--text-main); }
+    .nav-btn.active {
+        background: var(--stat-icon-bg);
+        border: 1px solid var(--border);
+        color: var(--primary-color);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .tab-pane { display: none; animation: fadeIn 0.3s ease; }
+    .tab-pane.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .settings-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; color: var(--text-main); }
+    .form-control { width: 100%; padding: 0.8rem; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text-main); font-size: 0.95rem; }
+    .section-header { margin: 0 0 1.5rem 0; font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem; }
+    
+
+
+    @media (max-width: 768px) {
+        .settings-layout { grid-template-columns: 1fr; }
+        .settings-nav { flex-direction: row; overflow-x: auto; padding-bottom: 1rem; position: relative; top: 0; }
+        .nav-btn { white-space: nowrap; }
+    }
+</style>
+
+
+
+<div class="settings-layout">
+    <!-- Sidebar Navigation -->
+    <div class="settings-nav">
+        <button class="nav-btn active" onclick="showTab('identity')">🏛️ Library Identity</button>
+        <button class="nav-btn" onclick="showTab('rules')">📖 Operational Rules</button>
+        <button class="nav-btn" onclick="showTab('financials')">💰 Financials & Fines</button>
+        <button class="nav-btn" onclick="showTab('ui')">🎨 UI & Appearance</button>
+        <button class="nav-btn" onclick="showTab('system')">🛠️ System & Security</button>
+    </div>
+
+    <!-- Content Sections -->
+    <div class="settings-content">
+        <form action="/admin/settings" method="POST" id="settingsForm">
+            <input type="hidden" name="action" value="update_general">
+
+            <!-- Tab 1: Identity -->
+            <div id="identity" class="tab-pane active glass-card" style="padding: 2.5rem;">
+                <h2 class="section-header">🏛️ Library Identity</h2>
+                <div class="settings-grid">
+                    <div class="form-group">
+                        <label>Library Name</label>
+                        <input type="text" name="library_name" value="{{ system_settings.library_name }}" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Branding Emoji</label>
+                        <input type="text" name="branding_emoji" value="{{ system_settings.branding_emoji }}" class="form-control">
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Library Tagline</label>
+                        <input type="text" name="library_tagline" value="{{ system_settings.library_tagline }}" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Main Contact Email</label>
+                        <input type="email" name="library_email" value="{{ system_settings.library_email }}" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="text" name="library_phone" value="{{ system_settings.library_phone }}" class="form-control">
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Physical Address</label>
+                        <input type="text" name="library_address" value="{{ system_settings.library_address }}" class="form-control">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Rules -->
+            <div id="rules" class="tab-pane glass-card" style="padding: 2.5rem;">
+                <h2 class="section-header">📖 Operational Rules</h2>
+                <div class="settings-grid">
+                    <div class="form-group">
+                        <label>Max Books Per User</label>
+                        <input type="number" name="max_books_per_user" value="{{ system_settings.max_books_per_user }}" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Default Issue Days</label>
+                        <input type="number" name="default_issue_days" value="{{ system_settings.default_issue_days }}" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Max Renewals Possible</label>
+                        <input type="number" name="max_renewals" value="{{ system_settings.max_renewals }}" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Reservation Expiry (Days)</label>
+                        <input type="number" name="reservation_expiry_days" value="{{ system_settings.reservation_expiry_days }}" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Max Pending Requests</label>
+                        <input type="number" name="max_pending_requests" value="{{ system_settings.max_pending_requests }}" class="form-control">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Financials -->
+            <div id="financials" class="tab-pane glass-card" style="padding: 2.5rem;">
+                <h2 class="section-header">💰 Financials & Fines</h2>
+                <div class="settings-grid">
+                    <div class="form-group">
+                        <label>Currency Symbol</label>
+                        <input type="text" name="currency_symbol" value="{{ system_settings.currency_symbol }}" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Daily Fine Rate (Base)</label>
+                        <input type="number" name="daily_fine_rate" value="{{ system_settings.daily_fine_rate }}" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Fine Grace Period (Days)</label>
+                        <input type="number" name="fine_grace_period" value="{{ system_settings.fine_grace_period }}" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Max Fine Cap</label>
+                        <input type="number" name="fine_cap" value="{{ system_settings.fine_cap }}" class="form-control">
+                    </div>
+                </div>
+
+                <!-- Category Fine Form (RE-ADDED) -->
+                <div style="padding: 1.5rem; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 2rem;">
+                    <h3 style="margin: 0 0 1rem 0; font-size: 1rem;">➕ Add/Update Category Fine</h3>
+                    <div style="display: flex; gap: 1rem; align-items: flex-end;">
+                        <input type="hidden" name="action_fine" id="fineAction" value="update_fine">
+                        <div class="form-group" style="flex: 2; margin-bottom: 0;">
+                            <label>Category</label>
+                            <input type="text" id="fineCategory" list="categoryList" placeholder="e.g., Rare Books" class="form-control">
+                            <datalist id="categoryList">
+                                {% for f in category_fines %}<option value="{{ f.category }}">{% endfor %}
+                            </datalist>
+                        </div>
+                        <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                            <label>Daily Rate ({{ system_settings.currency_symbol }})</label>
+                            <input type="number" id="fineRate" step="0.5" class="form-control">
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="submitFineForm()">Update Rate</button>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 1rem; font-size: 1rem;">Existing Category Fines</h3>
+                <div style="overflow: hidden; border: 1px solid var(--border); border-radius: 12px; margin: 1rem 0 2rem 0;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead style="background: rgba(0,0,0,0.02);">
+                            <tr>
+                                <th style="padding: 1rem; text-align: left; border-bottom: 1px solid var(--border);">Category</th>
+                                <th style="padding: 1rem; text-align: right; border-bottom: 1px solid var(--border);">Rate</th>
+                                <th style="padding: 1rem; text-align: center; border-bottom: 1px solid var(--border);">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for f in category_fines %}
+                            <tr style="border-bottom: 1px solid var(--border);">
+                                <td style="padding: 1rem;">{{ f.category }}</td>
+                                <td style="padding: 1rem; text-align: right; font-weight: 600;">{{ system_settings.currency_symbol }}{{ f.daily_rate }}</td>
+                                <td style="padding: 1rem; text-align: center;">
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="deleteFine('{{ f.category }}')">🗑️</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab 4: UI -->
+            <div id="ui" class="tab-pane glass-card" style="padding: 2.5rem;">
+                <h2 class="section-header">🎨 UI & Appearance</h2>
+                <div class="settings-grid">
+                    <div class="form-group">
+                        <label>Default Interface Theme</label>
+                        <select name="default_theme" class="form-control">
+                            <option value="auto" {{ 'selected' if system_settings.default_theme == 'auto' }}>System Default (Auto)</option>
+                            <option value="dark" {{ 'selected' if system_settings.default_theme == 'dark' }}>Modern Dark Mode</option>
+                            <option value="light" {{ 'selected' if system_settings.default_theme == 'light' }}>Clean Light Mode</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>System Accent Color</label>
+                        <input type="color" name="accent_color" value="{{ system_settings.accent_color }}" class="form-control" style="height: 48px; padding: 4px;">
+                    </div>
+                    <div class="form-group">
+                        <label>Pagination Page Size</label>
+                        <input type="number" name="pagination_size" value="{{ system_settings.pagination_size }}" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Show Book Cover Images</label>
+                        <select name="show_cover_images" class="form-control">
+                            <option value="true" {{ 'selected' if system_settings.show_cover_images == 'true' }}>Enabled</option>
+                            <option value="false" {{ 'selected' if system_settings.show_cover_images == 'false' }}>Disabled (Performance)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Sidebar Style</label>
+                        <select name="sidebar_style" class="form-control">
+                            <option value="full" {{ 'selected' if system_settings.sidebar_style == 'full' }}>Standard (Full Width)</option>
+                            <option value="slim" {{ 'selected' if system_settings.sidebar_style == 'slim' }}>Compact (Icon Only)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 5: System -->
+            <div id="system" class="tab-pane glass-card" style="padding: 2.5rem;">
+                <h2 class="section-header">🛠️ System & Security</h2>
+                <div class="settings-grid">
+                    <div class="form-group">
+                        <label>New User Registration</label>
+                        <select name="registration_mode" class="form-control">
+                            <option value="open" {{ 'selected' if system_settings.registration_mode == 'open' }}>Open (Public)</option>
+                            <option value="admin" {{ 'selected' if system_settings.registration_mode == 'admin' }}>Admin Invited Only</option>
+                            <option value="closed" {{ 'selected' if system_settings.registration_mode == 'closed' }}>Closed (Disabled)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Allow Member Suggestions</label>
+                        <select name="allow_suggestions" class="form-control">
+                            <option value="true" {{ 'selected' if system_settings.allow_suggestions == 'true' }}>Allow</option>
+                            <option value="false" {{ 'selected' if system_settings.allow_suggestions == 'false' }}>Disallow</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="padding: 1.5rem; background: var(--stat-icon-bg); border: 1px solid var(--danger); border-radius: 12px; margin-top: 2rem; display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <strong style="display: block; font-size: 1.1rem;">🚧 Maintenance Mode</strong>
+                        <span style="font-size: 0.85rem; color: var(--text-sub);">Restricts member access while active.</span>
+                    </div>
+                    <button type="button" class="btn {{ 'btn-success' if maintenance_mode else 'btn-danger' }}" onclick="toggleMaintenance()">
+                        {{ 'Exit Maintenance' if maintenance_mode else 'Enter Maintenance' }}
+                    </button>
+                </div>
+            </div>
+
+            <div style="margin-top: 2rem; display: flex; justify-content: flex-end; gap: 1rem;">
+                <button type="reset" class="btn" style="border: 1px solid var(--border);">Cancel Changes</button>
+                <button type="submit" class="btn btn-primary" style="padding: 0.8rem 2.5rem; font-weight: 600;">Save All Settings</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Helper Hidden Forms -->
+<form id="maintenanceForm" action="/admin/settings" method="POST" style="display:none;">
+    <input type="hidden" name="action" value="maintenance">
+    <input type="hidden" name="maintenance_mode" value="{{ 'false' if maintenance_mode else 'true' }}">
+</form>
+<form id="deleteFineForm" action="/admin/settings" method="POST" style="display:none;">
+    <input type="hidden" name="action" value="delete_fine">
+    <input type="hidden" name="category" id="deleteCategoryInput">
+</form>
+<!-- Fine Update Helper -->
+<form id="fineHelperForm" action="/admin/settings" method="POST" style="display:none;">
+    <input type="hidden" name="action" value="update_fine">
+    <input type="hidden" name="category" id="helperCat">
+    <input type="hidden" name="daily_rate" id="helperRate">
+</form>
+
+<script>
+    function showTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+
+    function toggleMaintenance() {
+        if(confirm("Change system maintenance status?")) document.getElementById('maintenanceForm').submit();
+    }
+
+    function deleteFine(cat) {
+        if(confirm(`Delete fine rate for ${cat}?`)) {
+            document.getElementById('deleteCategoryInput').value = cat;
+            document.getElementById('deleteFineForm').submit();
+        }
+    }
+
+    function submitFineForm() {
+        const cat = document.getElementById('fineCategory').value;
+        const rate = document.getElementById('fineRate').value;
+        if(!cat || !rate) return alert("Please fill both category and rate.");
+        document.getElementById('helperCat').value = cat;
+        document.getElementById('helperRate').value = rate;
+        document.getElementById('fineHelperForm').submit();
+    }
+</script>
+{% endblock %}

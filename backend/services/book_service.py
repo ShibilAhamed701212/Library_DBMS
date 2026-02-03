@@ -29,83 +29,99 @@ from backend.repository.db_access import fetch_all, fetch_one, execute
 # ADD BOOK
 # ===============================
 
-def add_book(title: str, author: str, category: str, total_copies: int):
+def add_book(title, author_id, category, total_copies, pdf_src=None, series_id=None, series_order=None):
     """
-    Adds a new book to the library.
-
-    Rules:
-    - total_copies must be positive
-    - available_copies initially equals total_copies
+    Adds a new book to the library with relational author/series support.
     """
 
-    # -----------------------------
-    # BASIC VALIDATION
-    # -----------------------------
-
-    # Ensure total copies is a positive number
     if total_copies <= 0:
         return "❌ Total copies must be positive"
 
-    # -----------------------------
-    # INSERT BOOK RECORD
-    # -----------------------------
-
-    # Insert new book into database
-    execute(
+    book_id = execute(
         """
         INSERT INTO books
-            (title, author, category, total_copies, available_copies)
+            (title, author_id, category, total_copies, available_copies, pdf_src, series_id, series_order)
         VALUES
-            (%s, %s, %s, %s, %s)
+            (%s, %s, %s, %s, %s, %s, %s, %s)
         """,
-        # available_copies starts equal to total_copies
-        (title, author, category, total_copies, total_copies)
+        (title, author_id, category, total_copies, total_copies, pdf_src, series_id, series_order)
     )
 
-    # Confirm successful insertion
-    return "✅ Book added successfully"
+    return book_id
+
+
+# ===============================
+# UPDATE BOOK
+# ===============================
+
+def update_book(book_id, title, author_id, category, total_copies, series_id=None, series_order=None):
+    """
+    Updates existing book details and intelligently manages inventory counts.
+    """
+    book = get_book(book_id)
+    if not book:
+        return "❌ Book not found"
+
+    # Calculate stock adjustment
+    diff = total_copies - book['total_copies']
+    new_available = book['available_copies'] + diff
+
+    if new_available < 0:
+        return f"❌ Cannot reduce stock to {total_copies}. {abs(new_available)} copies are currently issued."
+
+    execute(
+        """
+        UPDATE books 
+        SET title = %s, author_id = %s, category = %s, total_copies = %s, 
+            available_copies = %s, series_id = %s, series_order = %s
+        WHERE book_id = %s
+        """,
+        (title, author_id, category, total_copies, new_available, series_id, series_order, book_id)
+    )
+
+    return "✅ Book updated successfully"
 
 
 # ===============================
 # VIEW ALL BOOKS (PAGINATED & SEARCHABLE)
 # ===============================
 
-def view_books_paginated(page: int = 1, per_page: int = 10, search_query: str = ""):
+def view_books_paginated(page: int = 1, per_page: int = 10, search_query: str = "", author_id: int = None, category_filter: str = None):
     """
-    Fetches books with pagination and server-side filtering.
-    
-    Args:
-        page (int): Current page number
-        per_page (int): Records per page
-        search_query (str): Keyword for title, author, or category
-        
-    Returns:
-        dict: { books, total, page, total_pages }
+    Fetches books with enriched author and series metadata.
     """
     offset = (page - 1) * per_page
     
-    # Build dynamic query for data
-    query = "SELECT * FROM books"
+    # Base Query with JOINs
+    query = """
+        SELECT b.*, a.name as author_name, s.name as series_title 
+        FROM books b
+        LEFT JOIN authors a ON b.author_id = a.author_id
+        LEFT JOIN series s ON b.series_id = s.series_id
+        WHERE 1=1
+    """
     params = []
     
     if search_query:
-        query += " WHERE title LIKE %s OR author LIKE %s OR category LIKE %s"
+        query += " AND (b.title LIKE %s OR a.name LIKE %s OR b.category LIKE %s)"
         pattern = f"%{search_query}%"
         params.extend([pattern, pattern, pattern])
         
-    query += " ORDER BY title ASC LIMIT %s OFFSET %s"
+    if author_id:
+        query += " AND b.author_id = %s"
+        params.append(author_id)
+        
+    if category_filter:
+        query += " AND b.category = %s"
+        params.append(category_filter)
+        
+    count_query = query.replace("SELECT b.*, a.name as author_name, s.name as series_title", "SELECT COUNT(*) AS c", 1)
+    count_params = params.copy()
+    
+    query += " ORDER BY b.title ASC LIMIT %s OFFSET %s"
     params.extend([per_page, offset])
     
     books = fetch_all(query, tuple(params))
-    
-    # Build query for total count
-    count_query = "SELECT COUNT(*) AS c FROM books"
-    count_params = []
-    
-    if search_query:
-        count_query += " WHERE title LIKE %s OR author LIKE %s OR category LIKE %s"
-        count_params.extend([pattern, pattern, pattern])
-        
     total_count = fetch_one(count_query, tuple(count_params))["c"]
     
     import math
@@ -132,18 +148,16 @@ def view_books():
 
 def get_book(book_id: int):
     """
-    Fetch a single book by its ID.
-
-    Args:
-        book_id (int): Primary key of the book
-
-    Returns:
-        dict or None
+    Fetch a single book with author and series info.
     """
-
-    # Retrieve book record matching given ID
     return fetch_one(
-        "SELECT * FROM books WHERE book_id = %s",
+        """
+        SELECT b.*, a.name as author_name, s.name as series_title 
+        FROM books b
+        LEFT JOIN authors a ON b.author_id = a.author_id
+        LEFT JOIN series s ON b.series_id = s.series_id
+        WHERE b.book_id = %s
+        """,
         (book_id,)
     )
 
@@ -175,3 +189,61 @@ def delete_book(book_id: int):
 
     # Confirm deletion
     return "🗑️ Book deleted successfully"
+
+
+def import_books_csv(file_stream):
+    """
+    Imports books from a CSV file stream.
+    Expected columns: Title, Author, Category, Copies
+    """
+    import pandas as pd
+    import io
+    
+    try:
+        # Read CSV
+        df = pd.read_csv(file_stream)
+        
+        # Normalize headers: strip space, lower case
+        df.columns = [c.strip().lower() for c in df.columns]
+        
+        required = {'title', 'author', 'category', 'copies'}
+        if not required.issubset(df.columns):
+            return f"❌ CSV missing required columns: {required - set(df.columns)}"
+            
+        success_count = 0
+        errors = []
+        
+        for index, row in df.iterrows():
+            try:
+                title = str(row['title']).strip()
+                author = str(row['author']).strip()
+                category = str(row['category']).strip()
+                copies = int(row['copies'])
+                
+                if copies < 1:
+                    errors.append(f"Row {index+1}: Copies must be > 0")
+                    continue
+                    
+                # Call add_book
+                add_book(title, author, category, copies)
+                success_count += 1
+                
+            except Exception as row_err:
+                errors.append(f"Row {index+1}: {str(row_err)}")
+                
+        result = f"✅ Imported {success_count} books."
+        if errors:
+            result += f" ( {len(errors)} failed inputs)"
+            # Optionally log errors
+            
+        return result
+        
+    except Exception as e:
+        return f"❌ Import failed: {str(e)}"
+
+def get_all_authors():
+    """Returns authors from the normalized authors table."""
+    return fetch_all("SELECT * FROM authors ORDER BY name ASC")
+
+def get_all_categories():
+    return fetch_all("SELECT DISTINCT category FROM books ORDER BY category")

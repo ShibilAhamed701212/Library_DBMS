@@ -1,127 +1,760 @@
-{% extends "layout.html" %}
-
-{% block title %}Manage Books{% endblock %}
-{% block header_title %}Book Inventory{% endblock %}
-{% block header_subtitle %}View, add, or update the library's physical collection.{% endblock %}
-
-{% block head %}
+{% extends "layout.html" %} {% block title %}Manage Books{% endblock %} {% block
+header_title %}Book Inventory{% endblock %} {% block header_subtitle %}View,
+add, or update the library's physical collection.{% endblock %} {% block head %}
 <style>
-    .admin-books-filter {
+  .admin-books-filter {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    border-radius: 12px;
+  }
+  .admin-books-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+  }
+  .admin-book-card {
+    padding: var(--space-md);
+    display: flex;
+    gap: 1rem;
+    transition: all 0.3s ease;
+    overflow: hidden;
+  }
+  .admin-book-card:hover {
+    transform: translateY(-5px);
+  }
+  .admin-book-thumb {
+    width: 90px;
+    min-height: 120px;
+    background: var(--bg);
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+  .admin-book-info {
+    flex-grow: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .admin-book-title {
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+    color: var(--text-main);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.3;
+  }
+  .admin-book-author {
+    font-size: 0.875rem;
+    color: var(--text-sub);
+    margin-bottom: 0.5rem;
+  }
+  .stock-badge {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    background: rgba(0,0,0,0.05);
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  [data-theme="dark"] .stock-badge {
+    background: rgba(255,255,255,0.1);
+  }
+  .pagination {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 3rem;
+    align-items: center;
+  }
+  .page-info {
+    font-size: 0.875rem;
+    color: var(--text-sub);
+  }
+</style>
+{% endblock %} {% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; margin-bottom: 2rem; background: transparent;">
+  <form action="/admin/books" method="GET" style="display: flex; flex: 1; margin: 0; gap: 0.5rem;">
+    <input
+      type="text"
+      name="q"
+      value="{{ q }}"
+      class="search-input"
+      placeholder="Search inventory..."
+      style="border: none; background: transparent; flex: 1;"
+    />
+    <button type="submit" class="btn btn-primary btn-sm" style="min-width: 80px;">Filter</button>
+  </form>
+  
+  <div style="display: flex; gap: 0.75rem; margin-left: 2rem; padding-left: 2rem; border-left: 1px solid var(--border);">
+      <button class="btn btn-outline-secondary" onclick="openModal('importBookModal')" style="white-space: nowrap;">
+        📂 Import CSV
+      </button>
+      <button class="btn btn-primary" onclick="openModal('addBookModal')" style="white-space: nowrap;">
+        ➕ Add Book
+      </button>
+  </div>
+</div>
+
+<!-- Import Modal -->
+<div id="importBookModal" class="modal-overlay">
+    <div class="modal-content glass-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md);">
+            <h2 style="margin: 0;">Bulk Import</h2>
+            <button type="button" class="btn-close" onclick="closeModal('importBookModal')" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-sub);">✕</button>
+        </div>
+        <p style="color: var(--text-sub); margin-bottom: var(--space-lg);">Upload a CSV with columns: <code>Title, Author, Category, Copies</code></p>
+        
+        <form action="/admin/books/import" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label>Select CSV File</label>
+                <input type="file" name="csv_file" accept=".csv" required>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: var(--space-lg);">
+                <button type="submit" class="btn btn-primary">Upload</button>
+                <button type="button" class="btn btn-outline-secondary" onclick="closeModal('importBookModal')">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+            {% if not books %}
+            <tr>
+              <td colspan="8" class="text-center py-4">
+                <div class="text-muted">
+                  <i class="fas fa-book-open fa-3x mb-3"></i>
+                  <h4>No books found</h4>
+                  <p>Try adjusting your search or add a new book to the library.</p>
+                  <a href="/admin/books" class="btn btn-primary mt-2">
+                    <i class="fas fa-sync-alt mr-2"></i>Reset Filters
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+<!-- Smart Genre Filter Bar -->
+<style>
+    .filter-bar-container {
         display: flex;
-        gap: 1rem;
-        margin-bottom: 2rem;
-        padding: 1rem;
-        border-radius: 12px;
+        gap: 0.75rem;
+        overflow-x: auto;
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
     }
-    .admin-books-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 1.5rem;
+    .filter-bar-container::-webkit-scrollbar {
+        display: none;
     }
-    .admin-book-card {
-        border-radius: var(--radius);
-        padding: 1rem;
-        display: flex;
-        gap: 1rem;
-        align-items: center;
-        box-shadow: var(--shadow);
-    }
-    .admin-book-thumb {
-        width: 80px;
-        height: 120px;
-        background: var(--stat-icon-bg);
-        border-radius: 8px;
-        object-fit: cover;
-        flex-shrink: 0;
-    }
-    .admin-book-info {
-        flex-grow: 1;
-        min-width: 0;
-    }
-    .admin-book-title {
-        font-weight: 700;
-        font-size: 1rem;
-        margin-bottom: 0.25rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .admin-book-author {
-        font-size: 0.8125rem;
-        color: var(--text-sub);
-        margin-bottom: 0.75rem;
-    }
-    .stock-badge {
-        font-size: 0.75rem;
-        padding: 4px 8px;
-        background: var(--bg);
+    .filter-chip {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        background: rgba(255,255,255,0.5);
         border: 1px solid var(--border);
-        border-radius: 6px;
-        color: var(--text-main);
-    }
-    .pagination {
-        display: flex;
-        justify-content: center;
-        gap: 1rem;
-        margin-top: 3rem;
-        align-items: center;
-    }
-    .page-info {
-        font-size: 0.875rem;
         color: var(--text-sub);
+        font-size: 0.9rem;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: all 0.2s;
+        backdrop-filter: blur(4px);
+    }
+    .filter-chip:hover {
+        background: white;
+        color: var(--primary);
+        transform: translateY(-2px);
+    }
+    .filter-chip.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+        font-weight: 600;
+        box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
     }
 </style>
-{% endblock %}
-
-{% block content %}
-<form action="/admin/books" method="GET" class="admin-books-filter glass-card">
-    <input type="text" name="q" value="{{ q }}" class="search-input" placeholder="Search by title, author, or category..." style="border: none; flex-grow: 1; padding: 0 1rem; background: transparent; outline: none; color: var(--text-main);">
-    <button type="submit" class="btn btn-primary btn-sm">Filter</button>
-</form>
-
-{% if not books %}
-<div class="glass-card" style="text-align: center; padding: 5rem; border-radius: 12px;">
-    <h3>No books in inventory matching your search.</h3>
-    <a href="/admin/books" class="btn btn-primary" style="margin-top: 1rem;">Clear Filters</a>
+<div id="genre-filter-bar" class="filter-bar-container">
+    <!-- Chips injected via JS -->
 </div>
-{% else %}
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const cards = document.querySelectorAll('.admin-book-card');
+    const categories = new Set();
+    
+    // Extract unique categories
+    cards.forEach(card => {
+        const cat = card.getAttribute('data-category');
+        if(cat && cat !== 'None') categories.add(cat);
+    });
+    
+    if(categories.size > 0) {
+        const bar = document.getElementById('genre-filter-bar');
+        
+        // Add "All" Chip
+        const allChip = document.createElement('div');
+        allChip.className = 'filter-chip active';
+        allChip.innerText = 'All Books';
+        allChip.onclick = () => filterBooks('all', allChip);
+        bar.appendChild(allChip);
+        
+        // Add Category Chips
+        Array.from(categories).sort().forEach(cat => {
+            const chip = document.createElement('div');
+            chip.className = 'filter-chip';
+            chip.innerText = cat;
+            chip.onclick = () => filterBooks(cat, chip);
+            bar.appendChild(chip);
+        });
+    }
+});
+
+function filterBooks(category, btn) {
+    // UI Update
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    
+    // Reset series filter when changing category
+    document.querySelectorAll('.series-chip').forEach(c => c.classList.remove('active'));
+    const allSeriesChip = document.querySelector('.series-chip');
+    if(allSeriesChip) allSeriesChip.classList.add('active');
+    
+    // Filter Logic
+    const cards = document.querySelectorAll('.admin-book-card');
+    cards.forEach(card => {
+        if(category === 'all' || card.getAttribute('data-category') === category) {
+            card.style.display = 'flex';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+</script>
+
+
 <div class="admin-books-grid">
-    {% for b in books %}
-    <div class="admin-book-card glass-card">
-        <img src="https://covers.openlibrary.org/b/title/{{ b.title|urlencode }}-S.jpg" 
-             class="admin-book-thumb" 
-             onerror="this.src='https://placehold.co/80x120?text={{ b.title[0] }}';">
-             
-        <div class="admin-book-info">
-            <h3 class="admin-book-title" title="{{ b.title }}">{{ b.title }}</h3>
-            <p class="admin-book-author">{{ b.author }}</p>
-            
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-                <span class="stock-badge">
-                    <strong>{{ b.available_copies }}</strong> / {{ b.total_copies }}
-                </span>
-                <span class="badge" style="background: var(--stat-icon-bg); color: var(--primary);">{{ b.category }}</span>
-            </div>
-        </div>
+  {% for b in books %}
+  <div class="admin-book-card glass-card" data-category="{{ b.category }}">
+    <img
+      src="https://covers.openlibrary.org/b/title/{{ b.title|urlencode }}-S.jpg"
+      class="admin-book-thumb"
+      onerror="this.src='https://placehold.co/80x120?text={{ b.title[0] }}';"
+    />
+
+    <div class="admin-book-info">
+      <h3 class="admin-book-title" title="{{ b.title }}">{{ b.title }}</h3>
+      <p class="admin-book-author">by {{ b.author_name or 'N/A' }}</p>
+
+      <div
+        style="
+          display: flex;
+          gap: 0.5rem;
+          align-items: center;
+          margin-bottom: 0.75rem;
+        "
+      >
+        <span class="stock-badge">
+          <strong>{{ b.available_copies }}</strong> / {{ b.total_copies }}
+        </span>
+        <span
+          class="badge"
+          style="background: var(--stat-icon-bg); color: var(--primary)"
+          >{{ b.category }}</span
+        >
+      </div>
+
+      <div style="display: flex; gap: 0.5rem; margin-top: auto; padding-top: 0.75rem;">
+        <button
+          class="btn btn-primary btn-sm edit-btn"
+          style="padding: 0.4rem 0.75rem; display: flex; align-items: center; justify-content: center; gap: 4px; font-weight: 600; font-size: 0.8rem;"
+          data-id="{{ b.book_id }}"
+          data-title="{{ b.title }}"
+        >
+          <span>✏️</span> Edit
+        </button>
+        <button
+          class="btn btn-outline-secondary btn-sm delete-btn"
+          style="padding: 0.4rem 0.75rem; display: flex; align-items: center; justify-content: center; gap: 4px; font-weight: 600; font-size: 0.8rem;"
+          data-id="{{ b.book_id }}"
+          data-title="{{ b.title }}"
+        >
+          <span>🗑️</span> Delete
+        </button>
+      </div>
     </div>
-    {% endfor %}
+  </div>
+  {% endfor %}
 </div>
 
 <!-- PAGINATION -->
 <div class="pagination">
-    {% if current_page > 1 %}
-    <a href="/admin/books?page={{ current_page - 1 }}&q={{ q }}" class="btn btn-danger btn-sm">Previous</a>
-    {% else %}
-    <button class="btn btn-disabled btn-sm" disabled>Previous</button>
-    {% endif %}
+  {% if current_page > 1 %}
+  <a
+    href="/admin/books?page={{ current_page - 1 }}&q={{ q }}"
+    class="btn btn-danger btn-sm"
+    >Previous</a
+  >
+  {% else %}
+  <button class="btn btn-disabled btn-sm" disabled>Previous</button>
+  {% endif %}
 
-    <span class="page-info">Page <strong>{{ current_page }}</strong> of {{ total_pages }}</span>
+  <span class="page-info"
+    >Page <strong>{{ current_page }}</strong> of {{ total_pages }}</span
+  >
 
-    {% if current_page < total_pages %}
-    <a href="/admin/books?page={{ current_page + 1 }}&q={{ q }}" class="btn btn-primary btn-sm">Next</a>
-    {% else %}
-    <button class="btn btn-disabled btn-sm" disabled>Next</button>
-    {% endif %}
+  {% if current_page < total_pages %}
+  <a
+    href="/admin/books?page={{ current_page + 1 }}&q={{ q }}"
+    class="btn btn-primary btn-sm"
+    >Next</a
+  >
+  {% else %}
+  <button class="btn btn-disabled btn-sm" disabled>Next</button>
+  {% endif %}
 </div>
 {% endif %}
+
+<!-- Add Book Modal -->
+<div id="addBookModal" class="modal-overlay">
+  <div class="modal-content glass-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md);">
+        <h2 style="margin: 0;">Add New Book</h2>
+        <button type="button" class="btn-close" onclick="closeModal('addBookModal')" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-sub);">✕</button>
+    </div>
+    
+    <!-- Integrated ISBN Fetcher -->
+    <div style="background: rgba(99, 102, 241, 0.05); padding: 1rem; border-radius: 12px; margin-bottom: var(--space-lg); border: 1px solid rgba(99, 102, 241, 0.2);">
+        <label style="color: var(--primary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;">✨ Smart ISBN Auto-Fill</label>
+        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+            <input type="text" id="isbnInput" placeholder="Enter ISBN-13..." style="flex: 1;">
+            <button type="button" id="fetchIsbnBtn" class="btn btn-primary" style="background: linear-gradient(135deg, #6366f1, #a855f7); border: none; padding: 0 1.5rem;">Fetch</button>
+        </div>
+        <small id="isbnFeedback" style="display: block; margin-top: 0.5rem; font-size: 0.75rem;"></small>
+    </div>
+
+    <form id="addBookForm" action="/admin/book/add" method="POST" enctype="multipart/form-data" style="display: grid; gap: 1.25rem;">
+      <div class="form-group" style="margin: 0;">
+        <label>Title *</label>
+        <input type="text" id="bookTitle" name="title" required placeholder="Enter book title">
+      </div>
+
+      <div class="form-group" style="margin: 0;">
+        <label>Author (Select or Type New) *</label>
+        <div style="position: relative;">
+            <input type="text" name="new_author_name" list="authorList" required placeholder="Type to search or add new author...">
+            <datalist id="authorList">
+                {% for a in authors %}
+                <option value="{{ a.name }}">
+                {% endfor %}
+            </datalist>
+            <!-- Hidden ID field if we want to prioritize ID selection, but name-based lookup is safer for mixed mode -->
+            <input type="hidden" name="author_id"> 
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
+          <div class="form-group" style="margin: 0;">
+              <label>Series (Optional)</label>
+              <input type="text" name="new_series_name" list="seriesList" placeholder="Search or add new series...">
+              <datalist id="seriesList">
+                  {% for s in series_list %}
+                  <option value="{{ s.title }}">
+                  {% endfor %}
+              </datalist>
+          </div>
+          <div class="form-group" style="margin: 0;">
+              <label>Order #</label>
+              <input type="number" name="series_order" min="1" placeholder="1">
+          </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group" style="margin: 0;">
+            <label>Category *</label>
+            <select id="bookCategory" name="category" required>
+              <option value="">Select Category</option>
+              <option value="Fiction">Fiction</option>
+              <option value="Non-Fiction">Non-Fiction</option>
+              <option value="Science">Science</option>
+              <option value="Technology">Technology</option>
+              <option value="Reference">Reference</option>
+              <option value="Biography">Biography</option>
+              <option value="History">History</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label>Total Copies *</label>
+            <input type="number" id="bookCopies" name="copies" required min="1" placeholder="1">
+          </div>
+      </div>
+
+       <div class="form-group" style="margin: 0;">
+        <label>Upload E-Book (PDF)</label>
+        <input type="file" name="pdf_file" accept="application/pdf">
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: var(--space-md);">
+        <button type="submit" class="btn btn-primary">Add Book</button>
+        <button type="button" class="btn btn-outline-secondary" onclick="closeModal('addBookModal')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Book Modal -->
+<div id="editBookModal" class="modal-overlay">
+  <div class="modal-content glass-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md);">
+        <h2 style="margin: 0;">Edit Book</h2>
+        <button type="button" class="btn-close" onclick="closeModal('editBookModal')" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-sub);">✕</button>
+    </div>
+
+    <form id="editBookForm" method="POST" style="display: grid; gap: 1.25rem;">
+      <div class="form-group" style="margin: 0;">
+        <label>Title *</label>
+        <input type="text" id="editTitle" name="title" required>
+      </div>
+
+      <div class="form-group" style="margin: 0;">
+        <label>Author (Select or Type New) *</label>
+        <div style="position: relative;">
+            <input type="text" id="editAuthorName" name="new_author_name" list="authorListEdit" required placeholder="Type to search or add new author...">
+            <datalist id="authorListEdit">
+                {% for a in authors %}
+                <option value="{{ a.name }}">
+                {% endfor %}
+            </datalist>
+            <input type="hidden" name="author_id" id="editAuthorId">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
+          <div class="form-group" style="margin: 0;">
+              <label>Series (Optional)</label>
+              <input type="text" id="editSeriesName" name="new_series_name" list="seriesListEdit" placeholder="Search or add new series...">
+              <datalist id="seriesListEdit">
+                  {% for s in series_list %}
+                  <option value="{{ s.title }}">
+                  {% endfor %}
+              </datalist>
+              <input type="hidden" name="series_id" id="editSeriesId">
+          </div>
+          <div class="form-group" style="margin: 0;">
+              <label>Order #</label>
+              <input type="number" id="editOrder" name="series_order" min="1">
+          </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group" style="margin: 0;">
+            <label>Category *</label>
+            <select id="editCategory" name="category" required>
+              <option value="Fiction">Fiction</option>
+              <option value="Non-Fiction">Non-Fiction</option>
+              <option value="Science">Science</option>
+              <option value="Technology">Technology</option>
+              <option value="Reference">Reference</option>
+              <option value="Biography">Biography</option>
+              <option value="History">History</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label>Total Copies *</label>
+            <input type="number" id="editCopies" name="copies" required min="1">
+          </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: var(--space-md);">
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <button type="button" class="btn btn-outline-secondary" onclick="closeModal('editBookModal')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteBookModal" class="modal-overlay">
+  <div class="modal-content glass-card" style="max-width: 400px; text-align: center">
+    <div style="display: flex; justify-content: flex-end;">
+        <button type="button" class="btn-close" onclick="closeModal('deleteBookModal')" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-sub);">✕</button>
+    </div>
+    <div style="font-size: 3rem; margin-bottom: var(--space-md);">🗑️</div>
+    <h3 style="margin-bottom: var(--space-sm)">Delete Book</h3>
+    <p id="deleteMessage" style="color: var(--text-sub); margin-bottom: var(--space-xs)"></p>
+    <p style="color: var(--danger); font-size: 0.875rem; font-weight: 600; margin-bottom: var(--space-lg)">
+       ⚠️ This action cannot be undone.
+    </p>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem">
+      <button type="button" class="btn btn-outline-secondary" onclick="closeModal('deleteBookModal')">Cancel</button>
+      <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+  let bookToDelete = null;
+
+  function openModal(modalId) {
+    document.getElementById(modalId).style.display = "flex";
+  }
+
+  function closeModal(modalId) {
+    document.getElementById(modalId).style.display = "none";
+  }
+
+  document.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = "<span>⏳</span>...";
+        btn.disabled = true;
+
+        try {
+            const resp = await fetch(`/admin/books/get/${id}`);
+            
+            // Safety check for HTML responses (like redirects/errors)
+            const contentType = resp.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                const text = await resp.text();
+                const preview = text.substring(0, 200).replace(/</g, "&lt;");
+                throw new Error(`Server returned status ${resp.status} (${contentType}). \nPreview: ${preview}...`);
+            }
+
+            const result = await resp.json();
+            if (!result.success) throw new Error(result.error || "Unknown error");
+            
+            const book = result.data;
+
+            // Populate Form
+            document.getElementById("editTitle").value = book.title;
+            
+            // Handle Author (Input + Datalist)
+            document.getElementById("editAuthorName").value = book.author_name || ""; 
+            // document.getElementById("editAuthorId").value = book.author_id; // Optional
+
+            document.getElementById("editCategory").value = book.category;
+            document.getElementById("editCopies").value = book.total_copies;
+            
+            // Handle Series (Input + Datalist)
+            document.getElementById("editSeriesName").value = book.series_title || "";
+            // document.getElementById("editSeriesId").value = book.series_id; // Optional
+            
+            document.getElementById("editOrder").value = book.series_order || "";
+            
+            document.getElementById("editBookForm").action = `/admin/book/edit/${id}`;
+            
+            openModal("editBookModal");
+        } catch (err) {
+            alert("❌ Error: " + err.message);
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    });
+  });
+
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        bookToDelete = btn.dataset.id;
+        document.getElementById("deleteMessage").textContent =
+          'Are you sure you want to delete "' + btn.dataset.title + '"?';
+        openModal("deleteBookModal");
+    });
+  });
+
+  document
+    .getElementById("confirmDeleteBtn")
+    .addEventListener("click", function () {
+      if (bookToDelete) {
+        // Create a form to submit POST request
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/admin/book/delete/' + bookToDelete;
+        document.body.appendChild(form);
+        form.submit();
+      }
+    });
+
+  /* ISBN Fetcher Logic */
+  document.getElementById('fetchIsbnBtn').addEventListener('click', async () => {
+    const isbn = document.getElementById('isbnInput').value.trim();
+    const feedback = document.getElementById('isbnFeedback');
+    const btn = document.getElementById('fetchIsbnBtn');
+    
+    if(!isbn) {
+        feedback.innerText = "❌ Please enter an ISBN first.";
+        return;
+    }
+    
+    feedback.innerText = "🔍 Searching global databases...";
+    feedback.style.color = "var(--text-sub)";
+    btn.disabled = true;
+    
+    try {
+        const resp = await fetch('/admin/book/fetch-metadata', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ isbn })
+        });
+        
+        const data = await resp.json();
+        btn.disabled = false;
+        
+        if(data.error) {
+            feedback.innerText = "⚠️ " + data.error;
+            feedback.style.color = "#ef4444";
+        } else {
+            // Populate form
+            document.getElementById('bookTitle').value = data.title;
+            
+            // Handle Category select
+            const catSelect = document.getElementById('bookCategory');
+            let found = false;
+            for(let opt of catSelect.options) {
+                if(opt.value.toLowerCase() === data.category.toLowerCase()) {
+                    catSelect.value = opt.value;
+                    found = true;
+                    break;
+                }
+            }
+            if(!found) {
+                // Add new category if doesn't exist
+                const newOpt = new Option(data.category, data.category);
+                catSelect.add(newOpt);
+                catSelect.value = data.category;
+            }
+            
+            // Handle Author (Requires checking IDs)
+            const authorSelect = document.querySelector('select[name="author_id"]');
+            if(data.author_id) {
+                authorSelect.value = data.author_id;
+                feedback.innerHTML = "✅ Found: <strong>" + data.title.replace(/'/g, "\\'") + "</strong> by " + data.author_name.replace(/'/g, "\\'");
+            } else {
+                feedback.innerHTML = "⚠️ Found <strong>" + data.title.replace(/'/g, "\\'") + "</strong>, but author <strong>" + data.author_name.replace(/'/g, "\\'") + "</strong> needs to be added first.";
+            }
+            feedback.style.color = "#10b981";
+        }
+    } catch (err) {
+        btn.disabled = false;
+        feedback.innerText = "❌ Connection error.";
+        feedback.style.color = "#ef4444";
+    }
+  });
+
+  document
+    .getElementById("addBookForm")
+    .addEventListener("submit", function (e) {
+      // Logic removed to allow real submission
+    });
+
+  // Close modal when clicking outside
+  document
+    .getElementById("addBookModal")
+    .addEventListener("click", function (e) {
+      if (e.target === this) closeModal("addBookModal");
+    });
+  document
+    .getElementById("deleteBookModal")
+    .addEventListener("click", function (e) {
+      if (e.target === this) closeModal("deleteBookModal");
+    });
+</script>
+<script>
+// Redesigned Series Modal Logic
+let currentSeriesId = null;
+let currentSeriesTitle = '';
+
+function backToSeriesGrid() {
+    document.getElementById('series-detail-view').style.display = 'none';
+    document.getElementById('series-grid-view').style.display = 'flex';
+}
+
+async function openSeriesDetails(seriesId, title) {
+    currentSeriesId = seriesId;
+    currentSeriesTitle = title;
+    
+    // UI Switch
+    document.getElementById('series-grid-view').style.display = 'none';
+    document.getElementById('series-detail-view').style.display = 'flex';
+    
+    // Set Header
+    document.getElementById('detail-series-title').innerText = title;
+    
+    const container = document.getElementById('detail-books-container');
+    container.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-sub);">Loading books...</div>';
+    
+    // Fetch Data
+    try {
+        const res = await fetch(`/api/series/${seriesId}/books`);
+        const books = await res.json();
+        
+        if (books.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 4rem;">
+                    <div style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem;">📚</div>
+                    <p style="color: var(--text-sub);">No books in this series yet.</p>
+                </div>`;
+        } else {
+            let html = '<div class="book-list-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">';
+            books.forEach(b => {
+                html += `
+                <div style="display: flex; gap: 1rem; padding: 1rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; align-items: center;">
+                    <div style="font-size: 2rem;">📖</div>
+                    <div>
+                        <h4 style="margin: 0; font-size: 1rem;">${b.title}</h4>
+                        <span class="badge badge-pending">Vol. ${b.series_order || '?'}</span>
+                    </div>
+                </div>`;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+    } catch (err) {
+        console.error(err);
+        container.innerHTML = `<div style="color: var(--danger); text-align: center;">Error loading content.</div>`;
+    }
+}
+
+function renameCurrentSeries() {
+    const newName = prompt("Rename series:", currentSeriesTitle);
+    if(newName && newName !== currentSeriesTitle) {
+        // Create hidden form to submit
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/admin/series/rename';
+        const idInput = document.createElement('input');
+        idInput.name = 'series_id'; idInput.value = currentSeriesId;
+        const nameInput = document.createElement('input');
+        nameInput.name = 'new_name'; nameInput.value = newName;
+        form.appendChild(idInput); form.appendChild(nameInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function deleteCurrentSeries() {
+    if(confirm("Delete this series? Books will remain in library.")) {
+         const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/admin/series/delete/' + currentSeriesId;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
 {% endblock %}

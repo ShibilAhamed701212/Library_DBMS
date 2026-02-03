@@ -19,7 +19,6 @@ def create_request(user_id: int, book_id: int):
         return "❌ Request Failed: No book selected"
 
     import mysql.connector
-    print(f"DEBUG: create_request called for user={user_id}, book={book_id}")
 
     try:
         # Check if user already has a pending or approved request for this book
@@ -32,11 +31,9 @@ def create_request(user_id: int, book_id: int):
             (user_id, book_id)
         )
         if existing:
-            print("DEBUG: Request exists already")
             return "⚠️ You already have a pending request for this book"
 
         # Insert request
-        print("DEBUG: Inserting request...")
         execute(
             """
             INSERT INTO book_requests (user_id, book_id, request_date, status)
@@ -44,19 +41,14 @@ def create_request(user_id: int, book_id: int):
             """,
             (user_id, book_id, date.today())
         )
-        print("DEBUG: Insert successful")
         return "✅ Request sent to admin"
     
     except mysql.connector.Error as err:
-        print(f"DEBUG: MySQL Error: {err}")
         if err.errno == 1146: # Table doesn't exist
             return "❌ Error: 'book_requests' table missing. Contact Admin to run DB setup."
         raise err
 
 def get_pending_requests():
-    """
-    Fetches all pending requests with user and book details.
-    """
     """
     Fetches all pending requests with user and book details.
     """

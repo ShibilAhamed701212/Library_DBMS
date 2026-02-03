@@ -12,10 +12,26 @@ from backend.repository.db_access import fetch_all, fetch_one, execute
 from backend.utils.security import hash_password
 
 
+def get_user_by_id(user_id: int):
+    """
+    Returns a user by their ID.
+    """
+    return fetch_one(
+        """
+        SELECT user_id, name, email, role, created_at, profile_pic, bio
+        FROM users WHERE user_id = %s
+        """,
+        (user_id,)
+    )
+
+
 def add_user(name: str, email: str, role: str, password: str = "Lib@123"):
     """
     Adds a new user to the system.
     Default password is forced to be changed on first login.
+    
+    WARNING: Default password is for development only.
+    Always provide a secure password in production.
     """
 
     # Check if user already exists
@@ -90,3 +106,12 @@ def is_admin(user_id: int) -> bool:
     )
 
     return bool(user and user["role"] == "admin")
+
+def update_user_bio(user_id: int, bio: str):
+    """
+    Updates the biography/description of a user.
+    """
+    return execute(
+        "UPDATE users SET bio = %s WHERE user_id = %s",
+        (bio, user_id)
+    )

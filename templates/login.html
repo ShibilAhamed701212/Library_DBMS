@@ -1,79 +1,128 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | Library System</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body class="login-page">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login | {{ system_settings.library_name }} - Library Management System</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+  <body class="login-page">
+    <!-- Gradient Background -->
+    <div class="login-gradient-bg"></div>
 
-    <!-- 3D Animated Background -->
-    <div class="login-bg-shapes">
-        <div class="shape shape-1"></div>
-        <div class="shape shape-2"></div>
-        <div class="shape shape-3"></div>
+    <!-- Flash Messages -->
+    <div class="login-flash-container">
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, msg in messages %}
+      <div class="login-flash-message login-flash-{{ category }}">
+        <span class="login-flash-text">{{ msg }}</span>
+      </div>
+      {% endfor %} {% endif %} {% endwith %}
     </div>
 
-    <!-- Flash Messages (Overlaid) -->
-    <div class="flash-container">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, msg in messages %}
-          <div class="flash-message flash-{{ category }}">
-              <span>{{ msg }}</span>
+    <!-- Main Container -->
+    <div class="login-container">
+      <!-- Left Section: Branding -->
+      <div class="login-branding">
+        <div class="login-logo-wrapper">
+          <div class="login-logo-icon">📚</div>
+          <h1 class="login-title">{{ system_settings.library_name }}</h1>
+        </div>
+        <p class="login-subtitle">Professional Library Management System</p>
+        <p class="login-description">
+          Manage your library collection efficiently with our comprehensive
+          platform designed for modern librarians.
+        </p>
+        <div class="login-features">
+          <div class="login-feature-item">
+            <span class="login-feature-icon">✓</span>
+            <span>Advanced Book Management</span>
           </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-    </div>
-
-    <div class="login-card">
-        <div class="login-header">
-            <h1>📚 LibManage</h1>
-            <p>Enter your credentials to access the library dashboard.</p>
+          <div class="login-feature-item">
+            <span class="login-feature-icon">✓</span>
+            <span>User & Member Management</span>
+          </div>
+          <div class="login-feature-item">
+            <span class="login-feature-icon">✓</span>
+            <span>Real-time Analytics</span>
+          </div>
         </div>
+      </div>
 
-        <form method="POST" action="/">
-            <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" placeholder="name@example.com" required autofocus>
+      <!-- Right Section: Login Form -->
+      <div class="login-form-wrapper">
+        <div class="login-form-card">
+          <div class="login-form-header">
+            <h2>Welcome Back</h2>
+            <p>Sign in to your account to continue</p>
+          </div>
+
+          <form method="POST" action="/" class="login-form">
+            <div class="login-form-group">
+              <label for="email" class="login-label">Email Address</label>
+              <div class="login-input-wrapper">
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  placeholder="Enter your email address"
+                  required
+                  autofocus
+                  class="login-input"
+                />
+                <span class="login-input-icon">✉️</span>
+              </div>
             </div>
 
-            <div class="form-group" style="margin-top: 1.5rem;">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="••••••••" required>
+            <div class="login-form-group">
+              <label for="password" class="login-label">Password</label>
+              <div class="login-input-wrapper">
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  placeholder="Enter your password"
+                  required
+                  class="login-input"
+                />
+                <span class="login-input-icon">🔒</span>
+              </div>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 2rem;">
-                SIGN IN TO DASHBOARD
+            <button type="submit" class="login-btn-submit">
+              <span class="login-btn-text">Sign In</span>
+              <span class="login-btn-arrow">→</span>
             </button>
-        </form>
+          </form>
 
-        <div style="margin-top: 2.5rem; text-align: center; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 1.5rem;">
-            <p style="font-size: 0.8rem; color: var(--text-sub); opacity: 0.5; letter-spacing: 0.05em; text-transform: uppercase;">
-                Enterprise Security Guaranteed &bull; 2026
+          <div class="login-footer">
+            <p class="login-footer-text">
+              © 2026 {{ system_settings.library_name }}. All rights reserved.
             </p>
+          </div>
         </div>
+      </div>
     </div>
 
-    <!-- Optional: Vanilla JS for 3D tilt effect on card -->
     <script>
-        const card = document.querySelector('.login-card');
-        document.addEventListener('mousemove', (e) => {
-            const xAxis = (window.innerWidth / 2 - e.pageX) / 60;
-            const yAxis = (window.innerHeight / 2 - e.pageY) / 60;
-            card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+      // Smooth message dismissal
+      document.querySelectorAll(".login-flash-message").forEach((msg) => {
+        setTimeout(() => {
+          msg.classList.add("login-flash-fadeout");
+          setTimeout(() => msg.remove(), 300);
+        }, 4000);
+      });
+
+      // Click to dismiss message
+      document.querySelectorAll(".login-flash-message").forEach((msg) => {
+        msg.addEventListener("click", () => {
+          msg.classList.add("login-flash-fadeout");
+          setTimeout(() => msg.remove(), 300);
         });
-        
-        document.addEventListener('mouseenter', () => {
-            card.style.transition = 'none';
-        });
-        
-        document.addEventListener('mouseleave', () => {
-            card.style.transition = 'transform 0.5s ease';
-            card.style.transform = `rotateY(0deg) rotateX(0deg)`;
-        });
+      });
     </script>
-</body>
+  </body>
 </html>

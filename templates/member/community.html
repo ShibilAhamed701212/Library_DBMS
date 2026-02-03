@@ -1,0 +1,1482 @@
+{% extends "layout.html" %}
+
+{% block title %}Community Hub{% endblock %}
+{% block header_title %}Community Hub 2.0{% endblock %}
+{% block header_subtitle %}Connect with the Community{% endblock %}
+
+{% block head %}
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- Bootstrap 5 for Modals -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+:root {
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    --primary-glow: rgba(124, 58, 237, 0.4);
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --chat-sidebar-width: 320px;
+    --accent: #c084fc;
+}
+
+body {
+    background: radial-gradient(circle at top left, #1e1b4b, #0f172a);
+    color: var(--text-main);
+    font-family: 'Outfit', sans-serif;
+    margin: 0;
+}
+
+.main-content {
+    padding: 20px var(--space-lg) !important;
+}
+
+.messenger-container {
+    flex: 1;
+    display: flex;
+    height: 100%; 
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.community-layout {
+    display: flex;
+    gap: 16px;
+    height: calc(100vh - 200px);
+    margin: 20px auto;
+    max-width: 1400px;
+    align-items: stretch;
+}
+
+/* Sidebar Navigation Bar */
+.activity-bar {
+    width: 72px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 0;
+    gap: 20px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+}
+
+.nav-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.nav-icon:hover {
+    border-radius: 16px;
+    background: var(--primary-gradient);
+    transform: scale(1.1);
+}
+
+.nav-icon.active {
+    border-radius: 16px;
+    background: var(--primary-gradient);
+    box-shadow: 0 0 15px var(--primary-glow);
+}
+
+/* Sidebar */
+.messenger-sidebar {
+    width: var(--chat-sidebar-width);
+    border-right: 1px solid var(--glass-border);
+    display: flex;
+    flex-direction: column;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-header {
+    padding: 24px;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.search-box {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.search-box input {
+    background: transparent;
+    border: none;
+    color: white;
+    outline: none;
+    width: 100%;
+    font-size: 0.9rem;
+}
+
+.chat-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+}
+
+.chat-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 4px;
+}
+
+.chat-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(6px);
+    box-shadow: -4px 0 0 0 var(--accent);
+}
+
+.chat-item.active {
+    background: var(--primary-gradient);
+    box-shadow: 0 10px 15px -3px rgba(124, 58, 237, 0.3);
+}
+
+.chat-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    object-fit: cover;
+    border: 2px solid var(--glass-border);
+}
+
+.chat-info {
+    flex: 1;
+}
+
+.chat-name {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 2px;
+}
+
+.chat-preview {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* Main Chat Area */
+.chat-window {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.chat-top-bar {
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.active-chat-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.messages-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Message Bubbles */
+.msg-bubble {
+    max-width: 70%;
+    padding: 14px 20px;
+    border-radius: 20px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    position: relative;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.msg-other {
+    align-self: flex-start;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-bottom-left-radius: 4px;
+}
+
+.msg-me {
+    align-self: flex-end;
+    background: var(--primary-gradient);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.msg-meta {
+    font-size: 0.7rem;
+    margin-top: 6px;
+    opacity: 0.6;
+}
+
+/* Input Box */
+.input-area {
+    padding: 24px 32px;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.glass-input-wrapper {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.glass-input-wrapper input {
+    background: transparent;
+    border: none;
+    color: white;
+    flex: 1;
+    padding: 10px;
+    outline: none;
+    font-size: 1rem;
+}
+
+.btn-send {
+    background: var(--primary-gradient);
+    border: none;
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.btn-send:hover {
+    transform: scale(1.1) rotate(-5deg);
+    box-shadow: 0 0 20px rgba(124, 58, 237, 0.5);
+}
+
+/* User Identity Bar (Bottom Left) */
+.identity-bar {
+    padding: 20px;
+    border-top: 1px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.identity-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.identity-user img {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+}
+
+/* --- Anonymous Toggle Switch --- */
+.anon-switch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+}
+
+.switch input { opacity: 0; width: 0; height: 0; }
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #334155;
+  transition: .4s;
+  border-radius: 20px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 14px; width: 14px;
+  left: 3px; bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background: var(--primary-gradient);
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+.glass-modal-content {
+    background: rgba(15, 23, 42, 0.95) !important;
+    backdrop-filter: blur(40px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    border-radius: 28px;
+    box-shadow: 0 0 100px rgba(0,0,0,1);
+    color: white !important;
+    position: relative;
+    z-index: 10001; /* Extremely high */
+    pointer-events: auto !important;
+}
+
+.modal {
+    z-index: 10000 !important;
+}
+
+.modal-backdrop {
+    z-index: 9999 !important;
+}
+
+.glass-modal-content .form-label {
+    color: #ffffff !important; 
+    font-weight: 700 !important;
+    letter-spacing: 1.5px;
+    font-size: 0.85rem !important;
+    margin-bottom: 12px;
+    display: block;
+}
+
+.glass-modal-content .form-control, 
+.glass-modal-content .form-select {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: white !important;
+    border-radius: 14px;
+    padding: 12px 16px;
+}
+
+.glass-modal-content .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.btn-close-custom {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+
+@media (max-width: 1024px) {
+    .community-layout {
+        flex-direction: column;
+        height: auto;
+        gap: 12px;
+        margin: 10px;
+    }
+    .activity-bar {
+        width: 100%;
+        height: auto;
+        flex-direction: row;
+        justify-content: center;
+        padding: 12px;
+        gap: 16px;
+        border-radius: 16px;
+    }
+    .messenger-container {
+        height: 600px;
+    }
+}
+
+/* Custom Tab Pills */
+.tab-pill {
+    padding: 10px 0;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    flex: 1;
+    text-align: center;
+}
+
+.tab-pill:hover {
+    color: white;
+}
+
+.tab-pill.active {
+    color: #c084fc; /* Accent */
+    border-bottom: 2px solid #c084fc;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="community-layout">
+    <!-- Navigation Bar -->
+    <div class="activity-bar">
+        <div class="nav-icon active" onclick="switchTab('public')" id="tab-public" title="Public Hub">🌐</div>
+        <div class="nav-icon" onclick="switchTab('personal')" id="tab-personal" title="Personal Chats">👤</div>
+        <div class="nav-icon" onclick="switchTab('group')" id="tab-group" title="Private Groups">👥</div>
+    </div>
+
+    <div class="messenger-container">
+        <!-- Sidebar -->
+        <div class="messenger-sidebar">
+        <div class="sidebar-header">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                <h2 style="font-size: 1.5rem; font-weight: 700; margin:0; background: var(--primary-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Messages</h2>
+                <div style="display:flex; gap:12px;">
+                    <button class="btn btn-sm btn-outline-light d-flex align-items-center justify-content-center" style="border-radius:10px; width:32px; height:32px; font-weight:700;" onclick="showNewChatModal()" title="New DM">👤</button>
+                    <button class="btn btn-sm btn-outline-light d-flex align-items-center justify-content-center" style="border-radius:10px; width:32px; height:32px; font-weight:700;" onclick="showCreateGroupModal()" title="Create Group">+</button>
+                </div>
+            </div>
+            <div class="search-box">
+                <span>🔍</span>
+                <input type="text" placeholder="Search conversations..." id="chatSearch">
+            </div>
+        </div>
+
+        <div class="chat-list" id="chatListContainer">
+            <!-- Dynamic Items -->
+            <div id="dynamicChatList"></div>
+        </div>
+
+        <!-- Identity Area -->
+        <div class="identity-bar">
+            <div class="identity-user">
+                <img src="{{ url_for('static', filename=session.get('profile_pic', 'default.jpg')) }}" id="myAvatar">
+                <div>
+                    <div style="font-weight: 600; font-size: 0.9rem;">{{ session.get('name') }} <span style="font-size: 0.65rem; opacity: 0.5; font-weight: 400; margin-left: 2px;">#{{ 1000000000 + (session.get('user_id')|int) }}</span></div>
+                    <div class="anon-switch">
+                        <span>Go Anonymous</span>
+                        <label class="switch">
+                            <input type="checkbox" id="anonToggle" onchange="toggleAnonymous()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <button style="background:none; border:none; cursor:pointer; font-size:1.2rem;" onclick="showSettingsModal()">⚙️</button>
+        </div>
+    </div>
+
+    <!-- Main Window -->
+    <div class="chat-window">
+        <div class="chat-top-bar">
+            <div class="active-chat-info">
+                <div id="activeChatIcon" style="background: var(--primary-gradient); width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">🌐</div>
+                <div>
+                    <h3 style="margin:0; font-size:1.1rem; font-weight:700;" id="activeChatName">Global Hub</h3>
+                    <div style="font-size:0.75rem; color:var(--accent)" id="activeChatStatus">Live Community</div>
+                </div>
+            </div>
+            <div style="display:flex; gap:16px;">
+                <button class="btn btn-sm btn-outline-light" style="border-radius:10px;">📋 Logs</button>
+                <button class="btn btn-sm btn-outline-light" style="border-radius:10px;">🛡️ Rules</button>
+            </div>
+        </div>
+
+        <div class="messages-area" id="messageArea">
+            <!-- Messages go here -->
+        </div>
+
+        <div class="input-area">
+            <div class="glass-input-wrapper">
+                <!-- Add Chat/Group Button -->
+                <button title="New Chat" style="background:none; border:none; font-size:1.1rem; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; margin-left:8px; margin-right:8px; transition:color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-muted)'" onclick="showNewChatModal()">
+                    <i class="fas fa-user-plus"></i>
+                </button>
+                
+                <!-- File Upload Button -->
+                <button title="Attach File" style="background:none; border:none; font-size:1.1rem; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; margin-right:8px; transition:color 0.2s; position:relative; z-index:10;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-muted)'" onclick="console.log('📎 Clicked'); document.getElementById('chatUploadInput').click()">
+                    <i class="fas fa-paperclip"></i>
+                </button>
+                <input type="file" id="chatUploadInput" style="display:none;" onchange="handleFileUpload(this)">
+
+                <input type="text" placeholder="Type a message..." id="messageInput">
+                <button class="btn-send" id="sendBtn">➤</button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+
+<!-- Create Group Modal -->
+<div class="modal" id="createGroupModal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Community Groups</h5>
+                <button type="button" class="btn-close-custom" onclick="forceCloseModals()">&times;</button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Tabs -->
+                <div class="d-flex gap-3 mb-4 border-bottom" style="border-color: rgba(255,255,255,0.1)!important; padding-bottom: 0px;">
+                    <div class="tab-pill active" onclick="switchGroupModalTab('create')" id="tab-pill-create">Create Group</div>
+                    <div class="tab-pill" onclick="switchGroupModalTab('join')" id="tab-pill-join">Join by ID</div>
+                </div>
+
+                <!-- Create View -->
+                <div id="view-create">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-uppercase">Group Name</label>
+                        <input type="text" class="form-control" id="newGroupName" placeholder="Enter group name">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-uppercase">Privacy</label>
+                        <select class="form-select" id="groupPrivacy">
+                            <option value="public" style="background: #1e1b4b;">Public Hub</option>
+                            <option value="private" style="background: #1e1b4b;">Private (Invite only)</option>
+                        </select>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button class="btn btn-primary w-100" onclick="submitCreateChannel()" style="background: var(--primary-gradient); border: none; border-radius: 12px; padding: 12px; font-weight: 600;">Create Group</button>
+                    </div>
+                </div>
+
+                <!-- Join View -->
+                <div id="view-join" style="display:none;">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-uppercase">Group ID or Public ID</label>
+                        <input type="text" class="form-control" id="joinGroupId" placeholder="e.g. 1000000005">
+                        <div class="form-text text-muted mt-2">Ask the group admin for their Public ID.</div>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button class="btn btn-primary w-100" onclick="joinChannelById()" style="background: var(--primary-gradient); border: none; border-radius: 12px; padding: 12px; font-weight: 600;">Join Group</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal" id="settingsModal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Chat Settings</h5>
+                <button type="button" class="btn-close-custom" onclick="forceCloseModals()">&times;</button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="channelSettingsView">
+                    <h6 class="text-accent mb-3 fw-bold">Group Management</h6>
+                    <button class="btn btn-danger w-100 mb-3" onclick="deleteCurrentChannel()" style="border-radius:12px;">Delete Group</button>
+                    <button class="btn btn-outline-light w-100" onclick="editChannelName()" style="border-radius:12px;">Rename Group</button>
+                </div>
+                <hr class="my-4" style="border-color: rgba(255,255,255,0.2);">
+                <div id="accountSettingsView">
+                    <h6 class="text-accent mb-3 fw-bold">Your Account</h6>
+                    <a href="/logout" class="btn btn-outline-danger w-100" style="border-radius:12px;">Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Connections Hub Modal -->
+<!-- Connections Hub Modal (Refactored) -->
+<div class="modal" id="newChatModal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Connections Hub</h5>
+                <button type="button" class="btn-close-custom" onclick="forceCloseModals()">&times;</button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Tabs -->
+                <div class="d-flex gap-3 mb-4 border-bottom" style="border-color: rgba(255,255,255,0.1)!important; padding-bottom: 0px;">
+                    <div class="tab-pill active" onclick="switchConnectionsTab('find')" id="tab-pill-find">Find People</div>
+                    <div class="tab-pill" onclick="switchConnectionsTab('requests')" id="tab-pill-requests">
+                        Requests <span id="requestsBadge" class="badge bg-danger rounded-pill ms-1" style="display:none">0</span>
+                    </div>
+                </div>
+
+                <!-- Find View -->
+                <div id="view-find">
+                    <div class="search-box mb-4" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
+                        <span>🔍</span>
+                        <input type="text" placeholder="Search by name..." id="userSearchInput" onkeyup="searchUsers()" style="color: white !important;">
+                    </div>
+                    <div id="userSearchResults" style="max-height: 250px; overflow-y: auto;">
+                        <!-- Results -->
+                    </div>
+                </div>
+
+                <!-- Requests View -->
+                <div id="view-requests" style="display:none;">
+                     <div id="pendingInvitesList" style="max-height: 300px; overflow-y: auto;"></div>
+                     <div id="noInvitesMsg" class="text-center text-muted mt-4" style="display:none">No pending requests</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Context Menu -->
+<div id="msgContextMenu" class="context-menu" style="display:none; position:fixed; z-index:20000; background:#1e293b; border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:6px; box-shadow:0 10px 25px rgba(0,0,0,0.5); min-width:150px; backdrop-filter: blur(20px);">
+    <div class="context-item" onclick="ctxReply()" style="padding:10px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9rem; border-radius:8px; display:flex; gap:10px; align-items:center;">
+        <span>↩️</span> Reply
+    </div>
+    <div class="context-item" onclick="ctxCopy()" style="padding:10px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9rem; border-radius:8px; display:flex; gap:10px; align-items:center;">
+        <span>📋</span> Copy Text
+    </div>
+    <div class="context-item owner-only" onclick="ctxEdit()" style="padding:10px 16px; cursor:pointer; color:#facc15; font-size:0.9rem; border-radius:8px; display:flex; gap:10px; align-items:center;">
+        <span>✏️</span> Edit
+    </div>
+    <div class="context-item owner-only" onclick="ctxDelete()" style="padding:10px 16px; cursor:pointer; color:#ef4444; font-size:0.9rem; border-radius:8px; display:flex; gap:10px; align-items:center;">
+        <span>🗑️</span> Delete
+    </div>
+</div>
+
+
+
+<style>
+.context-item:hover {
+    background: rgba(255,255,255,0.1);
+}
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+<script>
+    // Global modal instances to prevent multiple backdrops
+    let createGroupModal, settingsModal, newChatModal;
+
+    const socket = io();
+    const myId = parseInt("{{ session.get('user_id') | default('-1') }}");
+    const PUBLIC_ID_OFFSET = 1000000000;
+    
+    function formatPublicId(id) {
+        if (!id || id == -1) return '';
+        return '#' + (parseInt(id) + PUBLIC_ID_OFFSET);
+    }
+    
+    let currentChannelId = 1; // Default to Global
+    let isAnonymousMode = {{ 'true' if session.get('is_anon') else 'false' }}; // Initialize from template
+    
+    async function toggleAnonymous() {
+        console.log("🎭 toggleAnonymous called");
+        isAnonymousMode = document.getElementById('anonToggle').checked; // Update global state from checkbox
+        console.log("🎭 Anonymous Mode:", isAnonymousMode);
+        try {
+            const res = await fetch('/chat/anonymous', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ is_anon: isAnonymousMode })
+            });
+            console.log("🎭 Server Response:", res.status);
+            
+            // Update UI
+            const avatar = document.getElementById('myAvatar');
+            if (isAnonymousMode) { // Use the global variable here
+                avatar.style.filter = 'grayscale(100%) brightness(0.5)';
+                console.log("🎭 Avatar grayed out");
+            } else {
+                avatar.style.filter = '';
+                console.log("🎭 Avatar restored");
+            }
+        } catch(e) {
+            console.error("❌ Failed to toggle anonymous:", e);
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initialize Modals properly
+        const cgEl = document.getElementById('createGroupModal');
+        const stEl = document.getElementById('settingsModal');
+        const ncEl = document.getElementById('newChatModal');
+
+        // FORCE MOVE TO BODY: This fixes all stacking context issues
+        if(cgEl) { document.body.appendChild(cgEl); createGroupModal = new bootstrap.Modal(cgEl, { backdrop: true, keyboard: true }); }
+        if(stEl) { document.body.appendChild(stEl); settingsModal = new bootstrap.Modal(stEl, { backdrop: true, keyboard: true }); }
+        if(ncEl) { document.body.appendChild(ncEl); newChatModal = new bootstrap.Modal(ncEl, { backdrop: true, keyboard: true }); }
+
+        // Cleanup any lingering backdrops on load
+        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+
+        // Initial setup
+        loadConversation('global');
+        fetchConversations();
+
+        // Listeners
+        document.getElementById('sendBtn').onclick = sendMessage;
+        document.getElementById('messageInput').onkeypress = (e) => { if(e.keyCode === 13) sendMessage(); };
+    });
+
+    let currentTab = 'public';
+    let allConversations = { public: [], personal: [], group: [] };
+
+    async function fetchConversations() {
+        try {
+            const res = await fetch('/chat/conversations');
+            const data = await res.json();
+            if(data.success) {
+                allConversations = data.conversations;
+                renderChatList();
+            }
+        } catch (e) { console.error("Fetch Error:", e); }
+    }
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.nav-icon').forEach(el => el.classList.remove('active'));
+        document.getElementById(`tab-${tab}`).classList.add('active');
+        renderChatList();
+    }
+
+    function renderChatList() {
+        const container = document.getElementById('dynamicChatList');
+        container.innerHTML = '';
+        
+        const list = allConversations[currentTab] || [];
+        
+        if (list.length === 0) {
+            container.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-muted); font-size:0.8rem;">No conversations in this category.</div>`;
+            return;
+        }
+
+        list.forEach(item => {
+            const div = document.createElement('div');
+            div.className = `chat-item ${currentChannelId == item.channel_id ? 'active' : ''}`;
+            div.id = `chat-${item.channel_id}`;
+            div.onclick = () => loadConversation(item.channel_id, item.name, item.type);
+            
+            const icon = (item.type === 'personal') ? '👤' : (item.type === 'group' ? '👥' : '🌐');
+            
+            div.innerHTML = `
+                <div style="background: var(--primary-gradient); width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">${icon}</div>
+                <div class="chat-info">
+                    <div class="chat-name">${item.name} <span style="font-size: 0.65rem; opacity: 0.5; font-weight: 400;">#${item.public_id}</span></div>
+                    <div class="chat-preview">${item.guild_name || 'Active hub'}</div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    // Call on load
+    fetchConversations();
+
+    async function loadConversation(id, name, type) {
+        currentChannelId = (id === 'global') ? 1 : id;
+        
+        // UI Updates
+        document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
+        const activeItem = document.getElementById(`chat-${id}`);
+        if(activeItem) activeItem.classList.add('active');
+
+        const displayName = name || (id === 'global' ? 'Global Community' : 'Private chat');
+        const displayId = (id === 'global') ? '#1000000001' : formatPublicId(id);
+        
+        let iconMarkup = '🌐';
+        let statusText = 'Live Community';
+        
+        if (type === 'personal') {
+            iconMarkup = '👤';
+            statusText = 'Peer-to-Peer';
+        } else if (type === 'group') {
+            iconMarkup = '👥';
+            statusText = 'Private Group';
+        } else if (id === 'global') {
+            iconMarkup = '🌐';
+            statusText = 'Global Community';
+        }
+        
+        document.getElementById('activeChatName').innerHTML = `${displayName} <span style="font-size: 0.8rem; opacity: 0.5; font-weight: 400; margin-left: 8px;">${displayId}</span>`;
+        document.getElementById('activeChatIcon').innerHTML = iconMarkup;
+        document.getElementById('activeChatStatus').innerText = statusText;
+
+        // Join Socket Room - Ensure string ID
+        socket.emit('join_channel', { channel_id: String(currentChannelId) });
+
+        // Fetch History
+        const res = await fetch(`/chat/channels/${currentChannelId}/messages`);
+        const data = await res.json();
+        const container = document.getElementById('messageArea');
+        container.innerHTML = '';
+        
+        if(data.success) {
+            data.messages.reverse().forEach(renderMessage);
+            scrollToBottom();
+        }
+    }
+
+    function renderMessage(msg) {
+        const container = document.getElementById('messageArea');
+        const div = document.createElement('div');
+        
+        // Data Normalization
+        const sender = msg.sender_name || (msg.user_profile && msg.user_profile.name) || 'Anonymous';
+        const sId = msg.user_id || msg.sender_id || (msg.user_profile && msg.user_profile.id);
+        const content = msg.content || msg.message_text || msg.message || "";
+        const time = msg.created_at || 'Just now';
+        
+        // Identify if it belongs to current user
+        const isMe = (msg.sender_type === 'me') || (String(sId) === String(myId));
+        
+        div.className = `msg-bubble ${isMe ? 'msg-me' : 'msg-other'}`;
+        div.dataset.mid = msg.message_id; 
+        
+        const publicHandle = sId ? `<span style="font-weight:400; font-size:0.65rem; opacity:0.5; margin-left:4px;">${formatPublicId(sId)}</span>` : '';
+        
+        let attachmentHtml = '';
+        if(msg.attachment) {
+            if(msg.attachment.type === 'image') {
+                attachmentHtml = `<img src="${msg.attachment.url}" style="max-width:200px; border-radius:8px; display:block; margin-bottom:4px; cursor:pointer;" onclick="window.open(this.src)">`;
+            } else {
+                attachmentHtml = `<a href="${msg.attachment.url}" target="_blank" style="display:flex; align-items:center; gap:8px; background:rgba(0,0,0,0.2); padding:8px; border-radius:8px; text-decoration:none; color:inherit; margin-bottom:4px;">
+                    <i class="fas fa-file"></i> <span>${msg.attachment.name || 'File'}</span>
+                </a>`;
+            }
+        }
+
+        let replyHtml = '';
+        if(msg.reply_to) {
+             replyHtml = `<div style="border-left:2px solid var(--primary); padding-left:8px; font-size:0.75rem; opacity:0.7; margin-bottom:4px;">Reply to: ${msg.reply_to.content || '...'}</div>`;
+        }
+
+        div.innerHTML = `
+            <div style="font-weight:700; font-size:0.75rem; margin-bottom:4px; opacity:0.8;">${sender}${publicHandle}</div>
+            ${replyHtml}
+            ${attachmentHtml}
+            <div class="msg-content" style="word-break: break-word;">${content}</div>
+            <div class="msg-meta">${time}</div>
+        `;
+        container.appendChild(div);
+    }
+
+    function sendMessage() {
+        const input = document.getElementById('messageInput');
+        const txt = input.value.trim();
+        
+        // --- Edit Mode ---
+        if(isEditing && editingMessageId) {
+            socket.emit('edit_message', {
+                channel_id: String(currentChannelId),
+                message_id: editingMessageId,
+                new_content: txt
+            });
+            cancelEdit();
+            return;
+        }
+
+        // --- Normal Send ---
+        const replyCtx = document.getElementById('replyContextBanner');
+        const replyId = replyCtx ? replyCtx.dataset.mid : null;
+        
+        if(!txt && !currentAttachment) return;
+
+        socket.emit('send_message', {
+            channel_id: String(currentChannelId),
+            message: txt,
+            attachment: currentAttachment,
+            reply_to_id: replyId,
+            is_anon: isAnonymousMode
+        });
+        
+        input.value = '';
+        currentAttachment = null;
+        if(replyCtx) cancelReply();
+        cancelAttachment();
+    }
+    
+    // Reply Context UI
+    function cancelReply() {
+        const banner = document.getElementById('replyContextBanner');
+        if(banner) banner.remove();
+    }
+    
+    function cancelAttachment() {
+        currentAttachment = null;
+        const banner = document.getElementById('attachmentPreviewBanner');
+        if(banner) banner.remove();
+         // Also clear file input so change event triggers again for same file
+         const fileInput = document.getElementById('chatUploadInput');
+         if(fileInput) fileInput.value = '';
+    }
+
+    socket.on('receive_message', (msg) => {
+        console.log("📩 Message Received:", msg);
+        if(String(msg.channel_id) === String(currentChannelId)) {
+            renderMessage(msg);
+            scrollToBottom();
+        } else {
+            console.log("🙈 Message ignored (wrong channel):", msg.channel_id, "vs", currentChannelId);
+        }
+    });
+
+    socket.on('error', (err) => {
+        console.error("❌ Socket Error:", err);
+        alert("Chat Error: " + (err.message || "Unknown error"));
+    });
+
+    function scrollToBottom() {
+        const area = document.getElementById('messageArea');
+        area.scrollTop = area.scrollHeight;
+    }
+
+    function showCreateGroupModal() {
+        createGroupModal.show();
+    }
+
+    function showSettingsModal() {
+        settingsModal.show();
+    }
+
+    function forceCloseModals() {
+        if(createGroupModal) createGroupModal.hide();
+        if(settingsModal) settingsModal.hide();
+        if(newChatModal) newChatModal.hide();
+        
+        // Safety cleanup for UI persistence
+        setTimeout(() => {
+            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }, 100);
+    }
+
+    function showNewChatModal() {
+        newChatModal.show();
+        fetchPendingInvites();
+    }
+
+    async function submitCreateChannel() {
+        const name = document.getElementById('newGroupName').value.trim();
+        const privacy = document.getElementById('groupPrivacy').value;
+        if(!name) return;
+
+        const res = await fetch('/chat/channels', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                name: name,
+                type: 'text',
+                is_private: (privacy === 'private')
+            })
+        });
+        const data = await res.json();
+        if(data.success) {
+            createGroupModal.hide();
+            // Refresh list or just select
+            loadConversation(data.channel_id, name);
+            // Optionally reload whole list if it was a public one
+        }
+    }
+
+    async function searchUsers() {
+        const query = document.getElementById('userSearchInput').value.trim();
+        if(query.length < 2) return;
+
+        const res = await fetch(`/member/search_users_json?q=${query}`);
+        const data = await res.json();
+        const results = document.getElementById('userSearchResults');
+        results.innerHTML = '';
+
+        if(data.users) {
+            data.users.forEach(u => {
+                if(u.user_id == myId) return;
+                const div = document.createElement('div');
+                div.className = 'chat-item';
+                div.style.background = 'rgba(255,255,255,0.05)';
+                div.innerHTML = `
+                    <img src="/static/${u.profile_pic || 'default.jpg'}" class="chat-avatar">
+                    <div class="chat-info">
+                        <div class="chat-name">${u.name} <span style="font-size: 0.65rem; opacity: 0.5; font-weight: 400;">${formatPublicId(u.user_id)}</span></div>
+                        <div class="chat-preview">${u.role}</div>
+                    </div>
+                    <button class="btn btn-sm btn-primary" style="height:fit-content; border-radius:10px; font-size:0.7rem;" onclick="sendInvite(${u.user_id}, 'DM')">Connect</button>
+                `;
+                results.appendChild(div);
+            });
+        }
+    }
+
+    async function sendInvite(targetId, type, channelId = null) {
+        const res = await fetch('/chat/invites/send', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                target_user_id: targetId,
+                target_channel_id: channelId,
+                type: type
+            })
+        });
+        const data = await res.json();
+        if(data.success) {
+            alert("Request sent successfully!");
+        }
+    }
+
+    async function joinChannelById() {
+        const publicId = document.getElementById('joinGroupId').value.trim().replace('#', '');
+        if(!publicId || isNaN(publicId)) return;
+        
+        // Convert back to DB ID
+        const dbId = parseInt(publicId) - PUBLIC_ID_OFFSET;
+        
+        const res = await fetch(`/chat/join/${dbId}`, { method: 'POST' });
+        const data = await res.json();
+        if(data.success) {
+            forceCloseModals();
+            loadConversation(dbId);
+            // Optionally reload sidebar
+        } else {
+            alert(data.message || "Could not join group.");
+        }
+    }
+
+    async function fetchPendingInvites() {
+        const res = await fetch('/chat/invites/pending');
+        const data = await res.json();
+        const section = document.getElementById('pendingInvitesSection');
+        const list = document.getElementById('pendingInvitesList');
+        
+        if(data.success && data.invites.length > 0) {
+            section.style.display = 'block';
+            list.innerHTML = '';
+            data.invites.forEach(inv => {
+                const div = document.createElement('div');
+                div.className = 'chat-item';
+                div.style.background = 'rgba(255,255,255,0.05)';
+                let subtitle = inv.type === 'DM' ? 'Wants to chat' : `Joins ${inv.channel_name || 'Group'}`;
+                div.innerHTML = `
+                    <img src="/static/${inv.sender_pic || 'default.jpg'}" class="chat-avatar">
+                    <div class="chat-info">
+                        <div class="chat-name">${inv.sender_name}</div>
+                        <div class="chat-preview">${subtitle}</div>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-sm btn-success" style="border-radius:10px;" onclick="handleInvite('${inv.invite_id}', 'accept')">✓</button>
+                        <button class="btn btn-sm btn-danger" style="border-radius:10px;" onclick="handleInvite('${inv.invite_id}', 'reject')">✕</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        } else {
+            section.style.display = 'none';
+        }
+    }
+
+    async function handleInvite(inviteId, action) {
+        const res = await fetch('/chat/invites/handle', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ invite_id: inviteId, action: action })
+        });
+        const data = await res.json();
+        if(data.success) {
+            fetchPendingInvites();
+            if(action === 'accept') {
+                fetchConversations();
+                if(data.channel_id) loadConversation(data.channel_id);
+            }
+        }
+    }
+
+    async function deleteCurrentChannel() {
+        if(currentChannelId === 1) return alert("Cannot delete Global Hub");
+        if(!confirm("Are you sure you want to delete this group?")) return;
+
+        // Note: Need a route for this too. 
+        // For now, let's assume it's implemented.
+        const res = await fetch(`/chat/channels/${currentChannelId}`, { method: 'DELETE' });
+        if(res.ok) {
+            settingsModal.hide();
+            loadConversation('global');
+            fetchConversations();
+        }
+    }
+
+    async function editChannelName() {
+        const newName = prompt("Enter new name:");
+        if(!newName) return;
+        const res = await fetch(`/chat/channels/${currentChannelId}`, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: newName})
+        });
+        if(res.ok) {
+            document.getElementById('activeChatName').innerText = newName;
+            fetchConversations();
+        }
+    }
+
+    // --- NEW FEATURES IMPLEMENTATION ---
+
+    // 1. Invitations Logic
+    async function fetchPendingInvites() {
+        console.log("Fetching pending invites...");
+        try {
+            const res = await fetch('/chat/invites/pending');
+            const data = await res.json();
+            const list = document.getElementById('pendingInvitesList');
+            const badge = document.getElementById('requestsBadge');
+            const noMsg = document.getElementById('noInvitesMsg');
+            
+            if(!list) return; // Guard
+            list.innerHTML = '';
+            
+            if(data.success && data.invites && data.invites.length > 0) {
+                badge.style.display = 'inline-block';
+                badge.innerText = data.invites.length;
+                if(noMsg) noMsg.style.display = 'none';
+                
+                data.invites.forEach(inv => {
+                    const isGroup = (inv.type === 'GROUP');
+                    const subtitle = isGroup ? `Group Invite: ${inv.channel_name}` : 'Friend Request';
+                    const div = document.createElement('div');
+                    div.className = 'd-flex align-items-center justify-content-between p-2 mb-2';
+                    div.style.background = 'rgba(255,255,255,0.05)';
+                    div.style.borderRadius = '12px';
+                    div.innerHTML = `
+                        <div class="d-flex align-items-center gap-2">
+                             <div style="width:32px; height:32px; background:#6366f1; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white;">${inv.sender_name ? inv.sender_name[0] : '?'}</div>
+                             <div>
+                                 <div style="font-weight:bold; font-size:0.9rem; color:white;">${inv.sender_name}</div>
+                                 <div style="font-size:0.75rem; opacity:0.7; color:#cbd5e1;">${subtitle}</div>
+                             </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-success" onclick="handleInvite('${inv.invite_id}', 'accept')">✓</button>
+                            <button class="btn btn-sm btn-danger" onclick="handleInvite('${inv.invite_id}', 'reject')">✕</button>
+                        </div>
+                    `;
+                    list.appendChild(div);
+                });
+            } else {
+                badge.style.display = 'none';
+                if(noMsg) noMsg.style.display = 'block';
+            }
+        } catch(e) { console.error("Error fetching invites:", e); }
+    }
+
+    function showNewChatModal() {
+        fetchPendingInvites();
+        newChatModal.show();
+    }
+
+    // --- Message Actions Logic ---
+
+    // 1. Context Menu
+    let ctxMessageId = null;
+    let ctxContent = null;
+    let ctxIsMe = false;
+
+    document.getElementById('messageArea').addEventListener('contextmenu', function(e) {
+        let target = e.target.closest('.msg-bubble');
+        if(!target) return;
+        
+        e.preventDefault();
+        ctxMessageId = target.dataset.mid;
+        // Select content securely
+        const contentEl = target.querySelector('.msg-content');
+        ctxContent = contentEl ? contentEl.innerText : target.children[target.children.length-2].innerText; // Fallback
+        ctxIsMe = target.classList.contains('msg-me');
+        
+        // Show menu at mouse position
+        const menu = document.getElementById('msgContextMenu');
+        console.log("🖱️ Opening Context Menu at", e.clientX, e.clientY);
+        
+        menu.style.display = 'block';
+        menu.style.left = e.clientX + 'px';
+        menu.style.top = e.clientY + 'px';
+        menu.style.zIndex = '20000'; // Ensure it's on top of everything
+        
+        document.querySelectorAll('.owner-only').forEach(el => {
+            el.style.display = ctxIsMe ? 'flex' : 'none';
+        });
+    });
+
+    document.addEventListener('click', () => {
+        const menu = document.getElementById('msgContextMenu');
+        if(menu) menu.style.display = 'none';
+    });
+
+    function ctxCopy() {
+        navigator.clipboard.writeText(ctxContent);
+        // Toast/Alert replacement could go here
+    }
+
+    async function ctxDelete() {
+        if(!confirm("Delete this message?")) return;
+        socket.emit('delete_message', {
+            channel_id: currentChannelId,
+            message_id: ctxMessageId
+        });
+    }
+
+    // Edit State
+    let isEditing = false;
+    let editingMessageId = null;
+
+    function ctxEdit() {
+        isEditing = true;
+        editingMessageId = ctxMessageId;
+        
+        const inp = document.getElementById('messageInput');
+        inp.value = ctxContent;
+        inp.focus();
+
+        // Show Edit Banner
+        let banner = document.getElementById('editContextBanner');
+        if(!banner) {
+            banner = document.createElement('div');
+            banner.id = 'editContextBanner';
+            banner.style.padding = '8px';
+            banner.style.background = 'rgba(255,255,255,0.1)';
+            banner.style.borderLeft = '3px solid #facc15'; // Yellow for edit
+            banner.style.fontSize = '0.8rem';
+            banner.style.marginBottom = '8px';
+            
+            // Insert before input wrapper (inside input-area)
+            // Fix: The class is .input-area, but we want to insert inside it, before .glass-input-wrapper
+            const container = document.querySelector('.input-area');
+            const wrapper = document.querySelector('.glass-input-wrapper');
+            container.insertBefore(banner, wrapper);
+        }
+        
+        banner.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="text-warning fw-bold">✏️ Editing Message</span>
+                <button onclick="cancelEdit()" style="background:none; border:None; color:inherit;">✕</button>
+            </div>
+            <div style="opacity:0.7; font-style:italic;">${ctxContent.substring(0,50)}...</div>
+        `;
+        
+        // Change send button icon to checkmark temporarily
+        document.getElementById('sendBtn').innerHTML = '✓';
+    }
+
+    function cancelEdit() {
+        isEditing = false;
+        editingMessageId = null;
+        document.getElementById('messageInput').value = '';
+        const banner = document.getElementById('editContextBanner');
+        if(banner) banner.remove();
+        document.getElementById('sendBtn').innerHTML = '➤';
+    }
+
+    function ctxReply() {
+        // Fix: Use correct selector for banner insertion
+        // We want to insert it inside .input-area, before .glass-input-wrapper
+        const container = document.querySelector('.input-area');
+        const wrapper = document.querySelector('.glass-input-wrapper');
+        
+        let banner = document.getElementById('replyContextBanner');
+        if(!banner) {
+            banner = document.createElement('div');
+            banner.id = 'replyContextBanner';
+            banner.style.padding = '8px';
+            banner.style.background = 'rgba(255,255,255,0.1)';
+            banner.style.borderLeft = '3px solid var(--primary)';
+            banner.style.fontSize = '0.8rem';
+            banner.style.marginBottom = '8px';
+            container.insertBefore(banner, wrapper);
+        }
+        
+        banner.innerHTML = `
+            <div style="display:flex; justify-content:space-between;">
+                <span>Replying to <span style="font-weight:bold;">Example User</span></span>
+                <button onclick="cancelReply()" style="background:none; border:None; color:inherit;">✕</button>
+            </div>
+            <div style="opacity:0.7;">${ctxContent.substring(0,50)}...</div>
+        `;
+        
+        // Store ID on banner dataset
+        banner.dataset.mid = ctxMessageId;
+        document.getElementById('messageInput').focus();
+    }
+
+    // --- Restored Logic (Typing, Updates, Files) ---
+
+    // 3. Typing Indicator
+    let typingTimer;
+    document.getElementById('messageInput').addEventListener('input', () => {
+        socket.emit('typing', { channel_id: String(currentChannelId) });
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(() => {
+             socket.emit('stop_typing', { channel_id: String(currentChannelId) });
+        }, 1000);
+    });
+
+    socket.on('typing', (data) => {
+        const header = document.getElementById('activeChatStatus');
+        header.dataset.original = header.dataset.original || header.innerText;
+        header.innerText = `${data.user} is typing...`;
+        header.style.color = '#4ade80';
+    });
+
+    socket.on('stop_typing', () => {
+        const header = document.getElementById('activeChatStatus');
+        if(header.dataset.original) {
+             header.innerText = header.dataset.original;
+             header.style.color = '';
+        }
+    });
+
+    socket.on('message_deleted', (data) => {
+        const el = document.querySelector(`.msg-bubble[data-mid="${data.message_id}"]`);
+        if(el) {
+            el.innerHTML = '<div style="opacity:0.6; font-style:italic; color:#9ca3af;">🚫 This message was deleted</div>';
+        }
+    });
+
+    socket.on('message_updated', (data) => {
+        const el = document.querySelector(`.msg-bubble[data-mid="${data.message_id}"]`);
+        if(el) {
+             const contentDiv = el.querySelector('.msg-content');
+             // If not found (legacy messages), try children approx
+             const target = contentDiv || el.children[1]; 
+             if(target) {
+                 target.innerText = data.new_content + ' (edited)';
+                 // Highlight change
+                 target.style.transition = 'color 0.5s';
+                 const oldColor = target.style.color;
+                 target.style.color = '#facc15'; // yellow highlight
+                 setTimeout(() => target.style.color = oldColor, 1000);
+             }
+        }
+    });
+
+    // 4. File Upload
+    let currentAttachment = null; 
+
+    async function handleFileUpload(input) {
+        if(!input.files || input.files.length === 0) return;
+        const file = input.files[0];
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        try {
+            const res = await fetch('/chat/upload', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            
+            if(data.success) {
+                currentAttachment = {
+                    url: data.file_path,
+                    type: data.type,
+                    name: data.filename
+                };
+                
+                // Show Banner instead of appending text
+                let banner = document.getElementById('attachmentPreviewBanner');
+                if(!banner) {
+                    banner = document.createElement('div');
+                    banner.id = 'attachmentPreviewBanner';
+                    banner.style.padding = '8px';
+                    banner.style.background = 'rgba(255,255,255,0.1)';
+                    banner.style.borderLeft = '3px solid var(--success)';
+                    banner.style.fontSize = '0.8rem';
+                    banner.style.marginBottom = '8px';
+                    
+                    // Insert before input wrapper
+                    const area = document.querySelector('.input-area');
+                    area.insertBefore(banner, area.firstChild);
+                }
+                
+                banner.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="display:flex; align-items:center; gap:6px;">
+                            <i class="fas fa-paperclip"></i> 
+                            ${data.filename}
+                        </span>
+                        <button onclick="cancelAttachment()" style="background:none; border:None; color:inherit;">✕</button>
+                    </div>
+                `;
+                
+                document.getElementById('messageInput').focus();
+            } else {
+                console.error("Upload failed:", data);
+                alert("Upload failed: " + (data.error || "Unknown server error"));
+            }
+        } catch (err) {
+            console.error("Upload Exception:", err);
+            alert("Upload error: " + err.message);
+        }
+    }
+
+    function switchGroupModalTab(tab) {
+        // Toggle Tabs
+        document.querySelectorAll('.tab-pill').forEach(el => el.classList.remove('active'));
+        document.getElementById(`tab-pill-${tab}`).classList.add('active');
+        
+        // Toggle Views
+        if(tab === 'create') {
+            document.getElementById('view-create').style.display = 'block';
+            document.getElementById('view-join').style.display = 'none';
+        } else {
+            document.getElementById('view-create').style.display = 'none';
+            document.getElementById('view-join').style.display = 'block';
+        }
+    }
+    function switchConnectionsTab(tab) {
+        // Toggle Tabs
+        document.querySelectorAll('#newChatModal .tab-pill').forEach(el => el.classList.remove('active'));
+        document.getElementById(`tab-pill-${tab}`).classList.add('active');
+
+        // Toggle Views
+        if(tab === 'find') {
+            document.getElementById('view-find').style.display = 'block';
+            document.getElementById('view-requests').style.display = 'none';
+        } else {
+            document.getElementById('view-find').style.display = 'none';
+            document.getElementById('view-requests').style.display = 'block';
+            // Refresh invites when switching to tab
+            fetchPendingInvites();
+        }
+    }
+</script>
+{% endblock %}

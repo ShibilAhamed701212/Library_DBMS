@@ -63,7 +63,9 @@ def authenticate_user(email: str, password: str):
             email,                 -- Email address
             password_hash,         -- Hashed password (bcrypt)
             role,                  -- User role (admin / member)
-            must_change_password   -- Flag for first-login password change
+            must_change_password,   -- Flag for first-login password change
+            profile_pic,
+            bio
         FROM users
         WHERE email = %s
         """,
@@ -92,3 +94,10 @@ def authenticate_user(email: str, password: str):
 
     # Return user data for session creation
     return user
+
+def get_user_by_id(user_id):
+    """Fetch user details by ID."""
+    return fetch_one(
+        "SELECT user_id, name, email, role, profile_pic, bio FROM users WHERE user_id = %s",
+        (user_id,)
+    )

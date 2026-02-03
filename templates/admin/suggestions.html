@@ -1,0 +1,246 @@
+{% extends "layout.html" %}
+
+{% block title %}Book Suggestions{% endblock %}
+{% block header_title %}Member Book Suggestions{% endblock %}
+{% block header_subtitle %}Review and manage book suggestions from library members.{% endblock %}
+
+{% block head %}
+<style>
+    .suggestion-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        border-left: 4px solid #2563eb;
+        transition: all 0.25s ease;
+    }
+
+    .suggestion-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transform: translateY(-2px);
+    }
+
+    .suggestion-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 1rem;
+    }
+
+    .suggestion-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0 0 0.25rem 0;
+    }
+
+    .suggestion-author {
+        color: var(--text-sub);
+        font-size: 0.875rem;
+        margin: 0;
+    }
+
+    .suggestion-meta {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+        font-size: 0.875rem;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .meta-label {
+        color: var(--text-sub);
+        font-weight: 600;
+    }
+
+    .meta-value {
+        color: var(--text-main);
+    }
+
+    .suggestion-reason {
+        background: rgba(37, 99, 235, 0.05);
+        border-left: 3px solid #2563eb;
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        margin-bottom: 1rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        color: var(--text-main);
+    }
+
+    .suggestion-actions {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .status-pending {
+        background: #fef08a;
+        color: #854d0e;
+    }
+
+    .status-approved {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-rejected {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .filter-section {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        padding: 1rem;
+        background: var(--card-bg);
+        border-radius: 12px;
+        flex-wrap: wrap;
+    }
+
+    .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .filter-group label {
+        font-weight: 600;
+        color: var(--text-main);
+        font-size: 0.875rem;
+    }
+
+    .filter-group select {
+        padding: 0.5rem 1rem;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: white;
+        color: var(--text-main);
+        font-size: 0.875rem;
+        cursor: pointer;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--text-sub);
+    }
+
+    .empty-state-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Filter Section -->
+<div class="filter-section">
+    <form method="GET" action="/admin/suggestions" style="display: flex; gap: 1rem; width: 100%;">
+        <div class="filter-group">
+            <label for="statusFilter">Filter by Status:</label>
+            <select id="statusFilter" name="status" onchange="this.form.submit()">
+                <option value="">All Suggestions</option>
+                <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="approved" {% if request.args.get('status') == 'approved' %}selected{% endif %}>Approved</option>
+                <option value="rejected" {% if request.args.get('status') == 'rejected' %}selected{% endif %}>Rejected</option>
+            </select>
+        </div>
+    </form>
+</div>
+
+<!-- Suggestions List -->
+{% if suggestions %}
+    {% for s in suggestions %}
+    <div class="suggestion-card">
+        <div class="suggestion-header">
+            <div>
+                <h3 class="suggestion-title">{{ s.title }}</h3>
+                <p class="suggestion-author">by {{ s.author }}</p>
+            </div>
+            <span class="status-badge status-{{ s.status }}">
+                {{ s.status }}
+            </span>
+        </div>
+
+        <div class="suggestion-meta">
+            <div class="meta-item">
+                <span class="meta-label">👤 Suggested by:</span>
+                <span class="meta-value">{{ s.user_name }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">📧 Email:</span>
+                <span class="meta-value">{{ s.email }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">📁 Category:</span>
+                <span class="meta-value">{{ s.category if s.category else 'Not specified' }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">📅 Date:</span>
+                <span class="meta-value">{{ s.suggestion_date }}</span>
+            </div>
+        </div>
+
+        {% if s.reason %}
+        <div class="suggestion-reason">
+            <strong>Why they recommend it:</strong><br>
+            {{ s.reason }}
+        </div>
+        {% endif %}
+
+        <!-- Action Buttons -->
+        <div class="suggestion-actions">
+            {% if s.status == 'pending' %}
+                <form method="POST" action="/admin/suggestion/approve/{{ s.suggestion_id }}" style="display: inline;">
+                    <button type="submit" class="btn btn-primary btn-sm">✓ Approve</button>
+                </form>
+                <form method="POST" action="/admin/suggestion/reject/{{ s.suggestion_id }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger btn-sm">✗ Reject</button>
+                </form>
+            {% else %}
+                <span style="color: var(--text-sub); font-size: 0.875rem;">
+                    {% if s.status == 'approved' %}
+                        ✅ This suggestion has been approved
+                    {% else %}
+                        ❌ This suggestion was rejected
+                    {% endif %}
+                </span>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">💭</div>
+        <h3>No Suggestions</h3>
+        <p>There are no book suggestions at this time. Members can submit suggestions from their dashboard.</p>
+    </div>
+{% endif %}
+
+<script>
+    // Prevent form submission on status filter change - it's already submitted via onchange
+    document.getElementById('statusFilter')?.addEventListener('change', function(e) {
+        e.preventDefault();
+    });
+</script>
+
+{% endblock %}

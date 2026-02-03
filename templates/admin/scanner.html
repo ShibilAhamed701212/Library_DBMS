@@ -1,0 +1,136 @@
+
+{% extends "layout.html" %}
+
+{% block title %}Scanner{% endblock %}
+{% block header_title %}QR & Barcode Scanner{% endblock %}
+{% block header_subtitle %}Quickly process books and members.{% endblock %}
+
+{% block head %}
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<style>
+    .scanner-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    #reader {
+        width: 100%;
+        border-radius: 12px;
+        overflow: hidden;
+        background: black;
+    }
+    .result-card {
+        margin-top: 1.5rem;
+        padding: 1.5rem;
+        text-align: center;
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="scanner-container">
+    <div class="glass-card">
+        <div id="reader"></div>
+        
+        <div style="margin-top: 1rem; text-align: center;">
+            <p style="color: var(--text-sub);">Point camera at a Book Barcode or QR Code.</p>
+            <button id="stopBtn" class="btn btn-danger btn-sm" style="display: none;">Stop Camera</button>
+            <button id="startBtn" class="btn btn-primary btn-sm">Start Camera</button>
+        </div>
+    </div>
+    
+    <div id="resultCard" class="glass-card result-card">
+        <h3>🎉 Scanned Code!</h3>
+        <p style="font-size: 1.25rem; font-weight: bold; color: var(--primary);" id="scanResult">---</p>
+        
+        <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
+            <a id="searchLink" href="#" class="btn btn-primary">Search Book</a>
+            <a id="issueLink" href="#" class="btn btn-success">Issue Book</a>
+        </div>
+        
+        <button onclick="restartScanner()" class="btn btn-secondary btn-sm" style="margin-top: 1rem;">Scan Another</button>
+    </div>
+</div>
+
+<div id="insecureWarning" class="glass-card" style="display: none; border-left: 4px solid var(--danger); padding: 1.5rem; margin-bottom: 2rem;">
+    <h3 style="color: var(--danger); margin-bottom: 0.5rem;">⚠️ Security Context Required</h3>
+    <p>Camera access is blocked because you are using an insecure connection (HTTP over a network IP).</p>
+    <div style="background: rgba(0,0,0,0.05); padding: 1rem; border-radius: 8px; margin-top: 1rem; font-size: 0.9rem; text-align: left;">
+        <strong>How to fix:</strong><br>
+        1. Access via <code>http://localhost:5000</code> if on the same machine.<br>
+        2. <strong>Chrome/Brave/Edge:</strong> Go to <code>chrome://flags/#unsafely-treat-insecure-origin-as-secure</code><br>
+        - Add <code>http://172.20.10.4:5000</code> to the list.<br>
+        - Set to "Enabled" and Relaunch.
+    </div>
+</div>
+
+<script>
+    const isSecure = window.isSecureContext || window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+    if (!isSecure) {
+        document.getElementById('insecureWarning').style.display = 'block';
+    }
+
+    const html5QrCode = new Html5Qrcode("reader");
+    let isScanning = false;
+
+    function onScanSuccess(decodedText, decodedResult) {
+        // Handle the scanned code
+        console.log(`Code matched = ${decodedText}`, decodedResult);
+        
+        // Stop scanning
+        html5QrCode.stop().then(() => {
+            isScanning = false;
+            document.getElementById('stopBtn').style.display = 'none';
+            document.getElementById('startBtn').style.display = 'inline-block';
+            
+            // Show result
+            document.getElementById('scanResult').innerText = decodedText;
+            document.getElementById('resultCard').style.display = 'block';
+            
+            // Update links
+            document.getElementById('searchLink').href = "/admin/books?q=" + encodeURIComponent(decodedText);
+            document.getElementById('issueLink').href = "/admin/issues?book_id=" + encodeURIComponent(decodedText);
+            
+        }).catch(err => {
+            console.error("Failed to stop scanner", err);
+        });
+    }
+
+    function onScanFailure(error) {
+        // handle scan failure, usually better to ignore and keep scanning.
+    }
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+        if (!isSecure) {
+             alert("❌ Browser blocked camera access. Please use 'localhost' or follow the instructions in the orange box above to whitelist this IP.");
+             return;
+        }
+
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        
+        html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
+        .then(() => {
+            isScanning = true;
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'inline-block';
+            document.getElementById('resultCard').style.display = 'none';
+        })
+        .catch(err => {
+            alert("Error starting camera: " + err + "\n\nTip: Ensure you are on HTTPS or localhost.");
+        });
+    });
+
+    document.getElementById('stopBtn').addEventListener('click', () => {
+        html5QrCode.stop().then(() => {
+            isScanning = false;
+            document.getElementById('stopBtn').style.display = 'none';
+            document.getElementById('startBtn').style.display = 'inline-block';
+        });
+    });
+    
+    function restartScanner() {
+        document.getElementById('resultCard').style.display = 'none';
+        document.getElementById('startBtn').click();
+    }
+</script>
+{% endblock %}

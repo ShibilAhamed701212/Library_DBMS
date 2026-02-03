@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+
+{% block title %}Series: {{ series.title }}{% endblock %}
+{% block header_title %}{{ series.title }}{% endblock %}
+{% block header_subtitle %}Complete Collection Progress{% endblock %}
+
+{% block content %}
+<section class="dashboard-section">
+    <div class="glass-card" style="padding: 1.5rem; margin-bottom: 2rem; border-left: 4px solid var(--primary);">
+        <p style="font-size: 1.1rem; line-height: 1.6; margin: 0;">{{ series.description or "No description available for this series." }}</p>
+    </div>
+
+    <div class="section-header">
+        <h2>📚 Books in this Series</h2>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem;">
+        {% for b in books %}
+        <div class="glass-card" style="padding: 1.5rem; display: flex; align-items: center; gap: 1rem;">
+            <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--stat-icon-bg); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--primary);">
+                #{{ b.series_order or loop.index }}
+            </div>
+            <div style="flex: 1;">
+                <div style="font-weight: 700;">{{ b.title }}</div>
+                <a href="/member/catalog?q={{ b.title|urlencode }}" style="font-size: 0.8rem; color: var(--primary);">View in Catalog</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

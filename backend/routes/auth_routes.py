@@ -56,23 +56,14 @@ def login():
     POST → validates credentials and creates session
     """
 
-    # Debug: log request method
-    print("🔥 LOGIN ROUTE HIT, METHOD =", request.method)
-
     # -----------------------------
     # HANDLE LOGIN SUBMISSION
     # -----------------------------
     if request.method == "POST":
 
-        # Debug: print submitted form data
-        print("🔥 POST DATA:", request.form)
-
         # Read email & password from login form
         email = request.form.get("email")
         password = request.form.get("password")
-
-        # Debug: log email being processed
-        print("🔥 EMAIL =", email)
 
         # Authenticate user credentials
         user = authenticate_user(email, password)
@@ -93,6 +84,7 @@ def login():
         session["user_id"] = user["user_id"]
         session["role"] = user["role"]
         session["name"] = user["name"]  # Store name for Dashboard Header
+        session["profile_pic"] = user.get("profile_pic")
 
         # -----------------------------
         # FORCE PASSWORD CHANGE

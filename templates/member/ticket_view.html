@@ -1,0 +1,42 @@
+
+{% extends "layout.html" %}
+
+{% block title %}Ticket #{{ ticket.ticket_id }}{% endblock %}
+{% block header_title %}Ticket #{{ ticket.ticket_id }}{% endblock %}
+{% block header_subtitle %}{{ ticket.subject }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+        <span class="badge {{ 'badge-success' if ticket.status == 'closed' else 'badge-primary' }}" style="font-size: 1rem;">
+            Status: {{ ticket.status|upper }}
+        </span>
+        <a href="/member/support" class="btn btn-primary btn-sm">⬅ Back to List</a>
+    </div>
+    
+    <div class="glass-card" style="margin-bottom: 2rem; max-height: 500px; overflow-y: auto;">
+        {% for reply in replies %}
+        <div style="margin-bottom: 1.5rem; display: flex; flex-direction: column; align-items: {{ 'flex-end' if reply.sender_id == session['user_id'] else 'flex-start' }};">
+            <div style="max-width: 80%; padding: 1rem; border-radius: 12px; background: {{ 'var(--primary)' if reply.sender_id == session['user_id'] else 'var(--card-bg)' }}; color: {{ 'white' if reply.sender_id == session['user_id'] else 'var(--text-main)' }}; border: {{ 'none' if reply.sender_id == session['user_id'] else '1px solid var(--border)' }};">
+                <p style="margin: 0; white-space: pre-wrap;">{{ reply.message }}</p>
+            </div>
+            <span style="font-size: 0.75rem; color: var(--text-sub); margin-top: 0.25rem;">
+                {{ reply.sender_name }} • {{ reply.created_at }}
+            </span>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% if ticket.status == 'open' %}
+    <form action="" method="POST" class="glass-card">
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Reply</label>
+        <textarea name="message" rows="3" required class="form-control" style="width: 100%; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text-main); font-family: inherit; margin-bottom: 1rem;"></textarea>
+        <button type="submit" class="btn btn-primary">Send Reply 🚀</button>
+    </form>
+    {% else %}
+    <div class="glass-card" style="text-align: center; color: var(--text-sub);">
+        🔒 This ticket is closed.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

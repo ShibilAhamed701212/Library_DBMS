@@ -1,209 +1,116 @@
-"""
-report_service.py
------------------
-Handles reporting and export functionality using Pandas.
-
-Purpose:
-- Generate analytical reports from database data
-- Convert SQL results into Pandas DataFrames
-- Export reports into CSV and Excel formats
-
-This module is:
-- READ-ONLY with respect to database
-- Used by admin dashboards, reports pages, and CLI
-"""
-
-# ===============================
-# IMPORTS
-# ===============================
 
 import os
-# os → used for directory creation and file path handling
+from fpdf import FPDF
+from datetime import datetime
+from backend.repository.db_access import fetch_one, fetch_all
+from backend.services.email_service import send_email
 
-import pandas as pd
-# pandas → used for DataFrame-based analytics and exports
+def generate_weekly_report():
+    """Generates a PDF report of library performance and emails it to admins."""
+    print("Generating report...")
+    
+    # 1. Gather Data
+    book_count = fetch_one("SELECT COUNT(*) as cnt FROM books")['cnt']
+    user_count = fetch_one("SELECT COUNT(*) as cnt FROM users WHERE role='member'")['cnt']
+    active_issues = fetch_one("SELECT COUNT(*) as cnt FROM issues WHERE return_date IS NULL")['cnt']
+    
+    top_books = most_issued_books()
 
-from backend.repository.db_access import fetch_all
-# fetch_all → executes SELECT queries and returns list of dicts
+    # 2. Create PDF
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("helvetica", 'B', 16)
+    pdf.cell(0, 10, 'Weekly Library Performance Report', ln=True, align='C')
+    pdf.set_font("helvetica", size=12)
+    pdf.cell(0, 10, f'Generated on: {datetime.now().strftime("%Y-%m-%d %H:%M")}', ln=True, align='C')
+    pdf.ln(10)
 
+    # Stats Summary
+    pdf.set_font("helvetica", 'B', 14)
+    pdf.cell(0, 10, 'General Statistics:', ln=True)
+    pdf.set_font("helvetica", size=12)
+    pdf.cell(0, 10, f'- Total Books in Catalog: {book_count}', ln=True)
+    pdf.cell(0, 10, f'- Total Registered Members: {user_count}', ln=True)
+    pdf.cell(0, 10, f'- Current Active Borrowings: {active_issues}', ln=True)
+    pdf.ln(10)
 
-# ===============================
-# EXPORT CONFIGURATION
-# ===============================
+    # Most Popular Books
+    pdf.set_font("helvetica", 'B', 14)
+    pdf.cell(0, 10, 'Most Popular Books this Week:', ln=True)
+    pdf.set_font("helvetica", size=12)
+    for i, book in enumerate(top_books[:5], 1):
+        pdf.cell(0, 10, f'{i}. {book["title"]} ({book["count"]} borrows)', ln=True)
 
-# Base directory where exported reports will be stored
-EXPORT_PATH = "backend/data_exports"
+    # 3. Save PDF
+    report_dir = "reports"
+    if not os.path.exists(report_dir):
+        os.makedirs(report_dir)
+        
+    filename = f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    filepath = os.path.join(report_dir, filename)
+    pdf.output(filepath)
+    print(f"✅ Report saved: {filepath}")
 
+    # 4. Email to Admins
+    admins = fetch_all("SELECT email FROM users WHERE role='admin'")
+    for admin in admins:
+        send_email(
+            admin['email'], 
+            f"📊 Weekly Library Report - {datetime.now().strftime('%Y-%m-%d')}",
+            "Please find the attached weekly library performance report.",
+            filepath
+        )
+    
+    return filepath
 
-# ==============================
-# CORE REPORTS
-# ==============================
+# --- RESTORED ANALYTICS FUNCTIONS ---
 
 def most_issued_books():
-    """
-    Returns books ordered by issue count.
-
-    Report purpose:
-    - Identify most popular books
-    - Used for analytics and admin insights
-
-    Returns:
-        pandas.DataFrame with:
-        - title
-        - issue_count
-    """
-
-    # Execute SQL query to count issues per book
-    data = fetch_all(
-        """
-        SELECT
-            b.title,                   -- Book title
-            COUNT(i.issue_id) AS issue_count  -- Number of times issued
-        FROM issues i
-        JOIN books b ON i.book_id = b.book_id
-        GROUP BY b.book_id
-        ORDER BY issue_count DESC
-        """
-    )
-
-    # If no results found, return empty DataFrame with columns
-    if not data:
-        return pd.DataFrame(columns=["title", "issue_count"])
-
-    # Convert raw DB result into DataFrame
-    return pd.DataFrame(data)
-
+    """Returns top 10 most borrowed books."""
+    return fetch_all("""
+        SELECT b.title, COUNT(*) as issue_count 
+        FROM issues i 
+        JOIN books b ON i.book_id = b.book_id 
+        GROUP BY b.book_id 
+        ORDER BY issue_count DESC LIMIT 10
+    """)
 
 def most_active_users():
-    """
-    Returns users ordered by number of issues.
-
-    Report purpose:
-    - Identify most active library members
-    - Useful for engagement analysis
-
-    Returns:
-        pandas.DataFrame with:
-        - name
-        - total_issues
-    """
-
-    # Execute SQL query to count issues per user
-    data = fetch_all(
-        """
-        SELECT
-            u.name,                    -- User name
-            COUNT(i.issue_id) AS total_issues  -- Total books issued
-        FROM issues i
-        JOIN users u ON i.user_id = u.user_id
-        GROUP BY u.user_id
-        ORDER BY total_issues DESC
-        """
-    )
-
-    # If no results found
-    if not data:
-        return pd.DataFrame(columns=["name", "total_issues"])
-
-    # Convert query result to DataFrame
-    return pd.DataFrame(data)
-
+    """Returns top 10 members with most borrowings."""
+    return fetch_all("""
+        SELECT u.name, COUNT(*) as total_issues 
+        FROM issues i 
+        JOIN users u ON i.user_id = u.user_id 
+        WHERE u.role = 'member'
+        GROUP BY u.user_id 
+        ORDER BY total_issues DESC LIMIT 10
+    """)
 
 def monthly_issue_count():
-    """
-    Returns monthly issue statistics.
-
-    Report purpose:
-    - Track library usage trends over time
-    - Useful for charts and reports
-
-    Returns:
-        pandas.DataFrame with:
-        - month (YYYY-MM)
-        - total_issues
-    """
-
-    # Execute SQL query to aggregate issues by month
-    data = fetch_all(
-        """
-        SELECT
-            DATE_FORMAT(issue_date, '%Y-%m') AS month,  -- Year-Month format
-            COUNT(*) AS total_issues                    -- Total issues in that month
-        FROM issues
-        GROUP BY month
-        ORDER BY month
-        """
-    )
-
-    # If no data exists
-    if not data:
-        return pd.DataFrame(columns=["month", "total_issues"])
-
-    # Convert result into DataFrame
-    return pd.DataFrame(data)
-
+    """Returns issue count per month for the last 12 months."""
+    return fetch_all("""
+        SELECT DATE_FORMAT(issue_date, '%Y-%m') as month, COUNT(*) as total_issues 
+        FROM issues 
+        GROUP BY month 
+        ORDER BY month DESC LIMIT 12
+    """)
 
 def book_category_distribution():
-    """
-    Returns count of books per category.
+    """Returns book count per category."""
+    return fetch_all("SELECT category, COUNT(*) as book_count FROM books GROUP BY category")
+
+def export_report(data, filename):
+    """Exports data to CSV and returns success message."""
+    import csv
+    if not os.path.exists("exports"):
+        os.makedirs("exports")
     
-    Returns:
-        pd.DataFrame with:
-        - category
-        - book_count
-    """
-    data = fetch_all(
-        """
-        SELECT category, COUNT(*) AS book_count
-        FROM books
-        GROUP BY category
-        """
-    )
-    # If no data
-    if not data:
-        return pd.DataFrame(columns=["category", "book_count"])
-
-    return pd.DataFrame(data)
-
-
-# ==============================
-# EXPORT UTILITIES
-# ==============================
-
-def export_report(df: pd.DataFrame, filename: str):
-    """
-    Exports a DataFrame to CSV and Excel formats.
-
-    Responsibilities:
-    - Create export directories if missing
-    - Save report in two formats
-    - Keep filenames consistent
-
-    Args:
-        df (pd.DataFrame): Report data
-        filename (str): Base filename without extension
-
-    Returns:
-        str: Success message
-    """
-
-    # Ensure CSV export directory exists
-    os.makedirs(f"{EXPORT_PATH}/csv", exist_ok=True)
-
-    # Ensure Excel export directory exists
-    os.makedirs(f"{EXPORT_PATH}/excel", exist_ok=True)
-
-    # Export DataFrame as CSV (no index column)
-    df.to_csv(
-        f"{EXPORT_PATH}/csv/{filename}.csv",
-        index=False
-    )
-
-    # Export DataFrame as Excel (no index column)
-    df.to_excel(
-        f"{EXPORT_PATH}/excel/{filename}.xlsx",
-        index=False
-    )
-
-    # Return confirmation message
-    return f"✅ Report exported: {filename}"
+    filepath = f"exports/{filename}_{datetime.now().strftime('%Y%m%d')}.csv"
+    if data:
+        keys = data[0].keys()
+        with open(filepath, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=keys)
+            writer.writeheader()
+            writer.writerows(data)
+        return f"✅ Report exported successfully to {filepath}"
+    return "⚠️ No data found to export."

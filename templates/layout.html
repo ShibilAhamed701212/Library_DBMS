@@ -3,30 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{% endblock %} | LibManage</title>
+    <title>{% block title %}{% endblock %} | {{ system_settings.library_name }}</title>
     
+    <!-- Dynamic Settings Integration -->
+    <style>
+        :root {
+            --primary: {{ system_settings.accent_color or '#4e73df' }};
+            --primary-hover: {{ system_settings.accent_color or '#4e73df' }}dd;
+        }
+    </style>
+
     <!-- Theme Detection Script -->
     <script>
         (function() {
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-theme', savedTheme);
+            const savedTheme = localStorage.getItem('theme');
+            const configTheme = "{{ system_settings.default_theme or 'auto' }}";
+            
+            let themeToApply = 'light';
+            
+            if (savedTheme) {
+                themeToApply = savedTheme;
+            } else if (configTheme !== 'auto') {
+                themeToApply = configTheme;
+            } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                themeToApply = 'dark';
+            }
+            
+            document.documentElement.setAttribute('data-theme', themeToApply);
         })();
     </script>
     
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ range(1, 1000) | random }}">
     {% block head %}{% endblock %}
 </head>
 <body>
     <!-- Mobile View: Premium Top Bar -->
+    {% if not fullscreen %}
     <div class="mobile-top-bar">
         <div class="mobile-left">
             <button class="menu-toggle" id="menuToggle">☰</button>
-            <div class="mobile-logo"><span>📚</span> LibManage</div>
+            <div class="mobile-logo"><span>{{ system_settings.branding_emoji }}</span> {{ system_settings.library_name }}</div>
         </div>
         <div class="mobile-user">
             <span class="mobile-user-name">{{ session.get('name', 'User') }}</span>
         </div>
     </div>
+    {% endif %}
 
     <!-- Flash Messages -->
     <div class="flash-container">
@@ -43,17 +68,19 @@
 
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <div class="app-container">
+    <div class="app-container" {% if fullscreen %}style="display: block;"{% endif %}>
         <!-- Sidebar -->
+        {% if not fullscreen %}
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-logo">
-                <span>📚</span> LibManage
+                <span style="font-size: 1.5rem; color: var(--primary);"><i class="fas fa-book-open"></i></span> {{ system_settings.library_name }}
+                <div style="font-size: 0.75rem; color: var(--text-sub); font-weight: 400; margin-top: 0.25rem;">{{ system_settings.library_tagline }}</div>
             </div>
             
             <!-- Theme Toggle -->
             <div class="theme-toggle-wrapper">
                 <button id="themeToggle" class="theme-btn">
-                    <span id="themeIcon">🌙</span>
+                    <span id="themeIcon"><i class="fas fa-moon"></i></span>
                     <span id="themeText">Dark Mode</span>
                 </button>
             </div>
@@ -61,39 +88,76 @@
             <nav class="nav-links">
                 {% if session.get('role') == 'admin' %}
                     <a href="/admin/dashboard" class="nav-link {% if active_page == 'admin_overview' %}active{% endif %}">
-                        <span>📊</span> Overview
+                        <i class="fas fa-chart-line"></i> Overview
                     </a>
                     <a href="/admin/books" class="nav-link {% if active_page == 'admin_books' %}active{% endif %}">
-                        <span>📖</span> Books
+                        <i class="fas fa-book"></i> Books
                     </a>
                     <a href="/admin/users" class="nav-link {% if active_page == 'admin_users' %}active{% endif %}">
-                        <span>👥</span> Users
+                        <i class="fas fa-users"></i> Users
                     </a>
                     <a href="/admin/issues" class="nav-link {% if active_page == 'admin_issues' %}active{% endif %}">
-                        <span>📤</span> Issue/Return
+                        <i class="fas fa-exchange-alt"></i> Issue/Return
                     </a>
                     <a href="/admin/requests" class="nav-link {% if active_page == 'admin_requests' %}active{% endif %}">
-                        <span>⏳</span> Requests
+                        <i class="fas fa-hourglass-half"></i> Requests
                     </a>
-                    <a href="/reports" class="nav-link {% if active_page == 'admin_reports' %}active{% endif %}">
-                        <span>📈</span> Reports
+                    <a href="/admin/suggestions" class="nav-link {% if active_page == 'admin_suggestions' %}active{% endif %}">
+                        <i class="fas fa-lightbulb"></i> Suggestions
+                    </a>
+                    <a href="/admin/purchase-list" class="nav-link {% if active_page == 'admin_purchase_list' %}active{% endif %}">
+                        <i class="fas fa-shopping-cart"></i> Purchase List
+                    </a>
+                    <a href="/reports" class="nav-link {% if active_page == 'admin_reports' or active_page == 'admin_analytics' %}active{% endif %}">
+                        <i class="fas fa-chart-pie"></i> Insights
+                    </a>
+                    <a href="/admin/scanner" class="nav-link {% if active_page == 'admin_scanner' %}active{% endif %}">
+                        <i class="fas fa-qrcode"></i> Scanner
+                    </a>
+                    <a href="/admin/support" class="nav-link {% if active_page == 'admin_support' %}active{% endif %}">
+                        <i class="fas fa-headset"></i> Support
+                    </a>
+                    <a href="/admin/settings" class="nav-link {% if active_page == 'admin_settings' %}active{% endif %}">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                    <a href="/admin/system/health" class="nav-link {% if active_page == 'admin_health' %}active{% endif %}">
+                        <i class="fas fa-heartbeat"></i> System Health
                     </a>
                 {% else %}
                     <a href="/member/dashboard" class="nav-link {% if active_page == 'member_overview' %}active{% endif %}">
-                        <span>📊</span> Overview
+                        <i class="fas fa-tachometer-alt"></i> Overview
                     </a>
                     <a href="/member/catalog" class="nav-link {% if active_page == 'member_catalog' %}active{% endif %}">
-                        <span>📖</span> Catalog
+                        <i class="fas fa-book"></i> Catalog
+                    </a>
+                    <a href="{{ url_for('member.member_ai_chat') }}" class="nav-link {% if active_page == 'ai_chat' %}active{% endif %}">
+                        <i class="fas fa-brain"></i> AI Assistant
+                    </a>
+                    <a href="/member/wishlist" class="nav-link {% if active_page == 'member_wishlist' %}active{% endif %}">
+                        <i class="fas fa-heart"></i> Wishlist
+                    </a>
+                    <a href="/member/community" class="nav-link {% if active_page == 'member_community' %}active{% endif %}">
+                        <i class="fas fa-comments"></i> Community
+                    </a>
+                     <a href="/member/support" class="nav-link {% if active_page == 'member_support' %}active{% endif %}">
+                        <i class="fas fa-ticket-alt"></i> Support
+                    </a>
+                    <a href="/member/api-keys" class="nav-link {% if active_page == 'member_api_keys' %}active{% endif %}">
+                        <i class="fas fa-key"></i> Developer API
+                    </a>
+                    <a href="/member/profile" class="nav-link {% if active_page == 'member_profile' %}active{% endif %}">
+                        <i class="fas fa-user-circle"></i> My Profile
                     </a>
                 {% endif %}
             </nav>
 
             <div style="margin-top: auto; border-top: 1px solid rgba(255, 255, 255, 0.2); padding-top: 1.5rem;">
                 <a href="/logout" class="nav-link" style="color: #ef4444;">
-                    <span>🚪</span> Logout
+                    <i class="fas fa-sign-out-alt"></i> Logout
                 </a>
             </div>
         </aside>
+        {% endif %}
 
         <!-- Main Content -->
         <main class="main-content">
@@ -102,14 +166,71 @@
                     <h1>{% block header_title %}{% endblock %}</h1>
                     <p>{% block header_subtitle %}{% endblock %}</p>
                 </div>
-                <div class="user-profile">
+                <div class="user-profile" style="display: flex; gap: 1rem; align-items: center;">
+                    <!-- Notifications -->
+                    <div class="notification-wrapper" style="position: relative;">
+                        <button class="icon-btn" id="notifBtn" style="background: none; border: none; font-size: 1.25rem; cursor: pointer; position: relative; padding: 5px; border-radius: 5px; transition: background 0.2s;">
+                            🔔
+                            {% if unread_count > 0 %}
+                            <span class="badge" style="position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.7rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">{{ unread_count }}</span>
+                            {% endif %}
+                        </button>
+                        
+                        <!-- Dropdown -->
+                        <div class="notif-dropdown glass-card shadow-lg" id="notifDropdown" style="display: none; position: absolute; top: 120%; right: 0; width: 320px; padding: 0.5rem; z-index: 1000; border: 1px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+                            <div style="display: flex; justify-content: space-between; padding: 0.5rem; border-bottom: 1px solid var(--border);">
+                                <strong>Notifications</strong>
+                                {% if unread_count > 0 %}
+                                <a href="/notifications/read/all" style="font-size: 0.8rem;">Mark all read</a>
+                                {% endif %}
+                            </div>
+                            {% if unread_notifications %}
+                                <div style="max-height: 300px; overflow-y: auto;">
+                                {% for n in unread_notifications %}
+                                    <div style="padding: 0.75rem; border-bottom: 1px solid var(--border);">
+                                        <p style="margin: 0; font-size: 0.9rem;">{{ n.message }}</p>
+                                        <div style="display: flex; justify-content: space-between; margin-top: 0.5rem;">
+                                            <small style="color: var(--text-sub);">{{ n.created_at }}</small>
+                                            <a href="/notifications/read/{{ n.notification_id }}" style="font-size: 0.8rem;">Dismiss</a>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                                </div>
+                            {% else %}
+                                <div style="padding: 1rem; text-align: center; color: var(--text-sub);">No new notifications</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <style>
+                        .icon-btn:hover { background: rgba(0,0,0,0.05); }
+                        [data-theme="dark"] .icon-btn:hover { background: rgba(255,255,255,0.1); }
+                        .notif-dropdown { animation: slideIn 0.2s ease-out; }
+                        @keyframes slideIn {
+                            from { opacity: 0; transform: translateY(-10px); }
+                            to { opacity: 1; transform: translateY(0); }
+                        }
+                    </style>
+
                     <div style="text-align: right;">
                         <span style="display: block; font-weight: 600;">{{ session.get('name', 'User') }}</span>
                         <span style="font-size: 0.75rem; color: var(--text-sub);">{{ session.get('role')|capitalize }}</span>
                     </div>
-                    <div style="width: 40px; height: 40px; background: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;">
-                        {{ session.get('name', 'U')[0] }}
+                    {% if session.get('role') == 'member' %}
+                    <a href="/member/profile" style="text-decoration: none;">
+                        <div style="width: 40px; height: 40px; background: #2563eb; color: white; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+                            {% if session.get('profile_pic') %}
+                            <img src="{{ url_for('static', filename=session.get('profile_pic')) }}" style="width: 100%; height: 100%; object-fit: cover;">
+                            {% else %}
+                            {{ session.get('name', 'U')[0] }}
+                            {% endif %}
+                        </div>
+                    </a>
+                    {% else %}
+                    <div style="width: 40px; height: 40px; background: #6b7280; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+                        {{ session.get('name', 'A')[0] }}
                     </div>
+                    {% endif %}
                 </div>
             </header>
 
@@ -154,10 +275,10 @@
 
         function updateToggleUI(theme) {
             if (theme === 'dark') {
-                themeIcon.innerText = '☀️';
+                themeIcon.innerHTML = '<i class="fas fa-sun"></i>';
                 themeText.innerText = 'Light Mode';
             } else {
-                themeIcon.innerText = '🌙';
+                themeIcon.innerHTML = '<i class="fas fa-moon"></i>';
                 themeText.innerText = 'Dark Mode';
             }
         }
@@ -172,8 +293,28 @@
             localStorage.setItem('theme', newTheme);
             updateToggleUI(newTheme);
         });
+
+        // Notification Toggle
+        const notifBtn = document.getElementById('notifBtn');
+        const notifDropdown = document.getElementById('notifDropdown');
+
+        if(notifBtn && notifDropdown) {
+            notifBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isVisible = notifDropdown.style.display === 'block';
+                notifDropdown.style.display = isVisible ? 'none' : 'block';
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!notifDropdown.contains(e.target) && !notifBtn.contains(e.target)) {
+                    notifDropdown.style.display = 'none';
+                }
+            });
+        }
     </script>
 
+
     {% block scripts %}{% endblock %}
+
 </body>
 </html>

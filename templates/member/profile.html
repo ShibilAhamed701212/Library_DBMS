@@ -1,0 +1,69 @@
+
+{% extends "layout.html" %}
+
+{% block title %}My Profile{% endblock %}
+{% block header_title %}My Profile{% endblock %}
+{% block header_subtitle %}Manage your account settings{% endblock %}
+
+{% block content %}
+<div class="glass-card" style="max-width: 600px; margin: 2rem auto; padding: 2.5rem; text-align: center;">
+    {# Robustness Fix: specific variable (new code) OR generic variable (old code) #}
+    {% set display_user = profile_user if profile_user is defined else user %}
+    
+    <div style="margin-bottom: 2rem; position: relative; display: inline-block;">
+        <div style="width: 150px; height: 150px; border-radius: 50%; overflow: hidden; border: 4px solid var(--primary); margin: 0 auto; background: var(--card-bg);">
+            {# Try DB user first, then Session (since header works with session) #}
+            {% set pic_url = display_user.profile_pic or session.get('profile_pic') %}
+            
+            {% if pic_url %}
+            <img src="{{ url_for('static', filename=pic_url) }}?v={{ range(1, 1000) | random }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+            {% else %}
+            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 4rem; background: var(--primary); color: white;">
+                {{ display_user.name[0]|upper }}
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Upload Button Icon -->
+        <label for="avatarInput" style="position: absolute; bottom: 0; right: 0; background: var(--accent); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+            📷
+        </label>
+    </div>
+    
+    <!-- Upload Form -->
+    <form action="/member/profile/upload" method="POST" enctype="multipart/form-data" id="uploadForm" style="display: none;">
+        <input type="file" name="avatar" id="avatarInput" accept="image/*" onchange="document.getElementById('uploadForm').submit()">
+    </form>
+    
+    <!-- User Details -->
+    <h2 style="margin-bottom: 0.5rem; color: var(--text-main);">{{ display_user.name }}</h2>
+    <p style="color: var(--text-sub); margin-bottom: 2rem;">{{ display_user.email }}</p>
+    
+    <div style="text-align: left; background: rgba(0,0,0,0.05); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem;">
+        <p><strong>Member ID:</strong> {{ display_user.user_id }}</p>
+        <p><strong>Role:</strong> {{ display_user.role|capitalize }}</p>
+        <p><strong>Joined:</strong> {{ display_user.created_at or 'N/A' }}</p>
+    </div>
+
+    <!-- Badges -->
+    <h3 style="text-align: left; margin-bottom: 1rem;">My Badges</h3>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem;">
+        {% if badges %}
+            {% for badge in badges %}
+            <div style="background: var(--card-bg); border: 1px solid var(--border); padding: 1rem; border-radius: 12px; text-align: center; width: 100px;">
+                <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">{{ badge.icon }}</div>
+                <div style="font-size: 0.8rem; font-weight: bold;">{{ badge.name }}</div>
+                <div style="font-size: 0.7rem; color: var(--text-sub);">{{ badge.description }}</div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: var(--text-sub);">No badges yet. Borrow books to earn them!</p>
+        {% endif %}
+    </div>
+    
+    <!-- Actions -->
+    <form action="/member/delete-account" method="POST" onsubmit="return confirm('Are you sure you want to delete your account? This cannot be undone.');">
+        <button type="submit" class="btn btn-outline-danger">Delete Account</button>
+    </form>
+</div>
+{% endblock %}

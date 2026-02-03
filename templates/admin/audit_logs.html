@@ -1,0 +1,37 @@
+
+{% extends "layout.html" %}
+
+{% block title %}Audit Logs{% endblock %}
+{% block header_title %}System Audit Logs{% endblock %}
+{% block header_subtitle %}Track administrative actions and security events.{% endblock %}
+
+{% block content %}
+<div class="glass-card" style="padding: 0; overflow: hidden;">
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead style="background: rgba(0,0,0,0.03); border-bottom: 1px solid var(--border);">
+            <tr>
+                <th style="padding: 1rem; text-align: left;">Timestamp</th>
+                <th style="padding: 1rem; text-align: left;">Admin</th>
+                <th style="padding: 1rem; text-align: left;">Action</th>
+                <th style="padding: 1rem; text-align: left;">Details</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if not logs %}
+            <tr><td colspan="4" style="padding: 2rem; text-align: center; color: var(--text-sub);">No logs found.</td></tr>
+            {% else %}
+            {% for log in logs %}
+            <tr style="border-bottom: 1px solid var(--border);">
+                <td style="padding: 1rem; font-family: monospace; font-size: 0.9em; color: var(--text-sub);">{{ log.timestamp }}</td>
+                <td style="padding: 1rem; font-weight: 500;">{{ log.admin_name }}</td>
+                <td style="padding: 1rem;">
+                    <span class="badge" style="background: var(--bg); border: 1px solid var(--border);">{{ log.action }}</span>
+                </td>
+                <td style="padding: 1rem; color: var(--text-sub);">{{ log.details }}</td>
+            </tr>
+            {% endfor %}
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

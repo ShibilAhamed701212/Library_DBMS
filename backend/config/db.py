@@ -1,66 +1,107 @@
 """
 db.py
 ------
-This file is responsible ONLY for creating database connections.
+Database connection management with connection pooling and environment validation.
 
-Important design rules for this file:
-- ❌ No SQL queries
-- ❌ No business logic
-- ❌ No application logic
-- ✅ Only database connection creation
-
-This keeps the project clean and modular.
+Features:
+- Connection pooling for better performance
+- Environment variable validation
+- Secure defaults
+- Comprehensive error handling
 """
 
-# ===============================
-# IMPORTS
-# ===============================
+import os
+import logging
+from pathlib import Path
+from typing import Optional, Dict, Any
+import mysql.connector
+from mysql.connector import Error, pooling
+from dotenv import load_dotenv
 
-import os                    # Used to read environment variables
-import mysql.connector       # MySQL database connector library
-from dotenv import load_dotenv  # Loads variables from .env file
+# Initialize logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# ===============================
-# LOAD ENVIRONMENT VARIABLES
-# ===============================
+# Load environment variables from .env file
+env_path = Path(__file__).parent.parent.parent / '.env'
+load_dotenv(dotenv_path=env_path)
 
-# This reads the .env file and loads all key-value pairs
-# into the system environment so os.getenv() can access them
-load_dotenv()
+# Environment variables we expect (used for warnings only)
+REQUIRED_ENV_VARS = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME', 'DB_PORT']
 
-# ===============================
-# DATABASE CONNECTION FACTORY
-# ===============================
+# Database connection pool
+_connection_pool: Optional[pooling.MySQLConnectionPool] = None
+
+def validate_environment() -> None:
+    """Warn if some environment variables are missing; do not raise."""
+    missing_vars = [var for var in REQUIRED_ENV_VARS if not os.getenv(var)]
+    if missing_vars:
+        logger.warning("Missing DB env vars: %s. Falling back to defaults where possible.", ", ".join(missing_vars))
+
+def get_connection_config() -> Dict[str, Any]:
+    """Get database configuration from environment variables."""
+    return {
+        "host": os.getenv("DB_HOST", "127.0.0.1"),
+        "user": os.getenv("DB_USER", "app_user"),
+        # WARNING: Default password is for development only. 
+        # Always set DB_PASSWORD in production via environment variables.
+        "password": os.getenv("DB_PASSWORD", "App@123"),
+        "database": os.getenv("DB_NAME", "library_db"),
+        "port": int(os.getenv("DB_PORT", 3306)),
+        "charset": "utf8mb4",
+        "use_unicode": True,
+        "connect_timeout": 10,
+        "auth_plugin": os.getenv("DB_AUTH_PLUGIN", "mysql_native_password"),
+        # Pool configuration (extracted below)
+        "pool_name": "library_pool",
+        "pool_size": int(os.getenv("DB_POOL_SIZE", 5)),
+        "pool_reset_session": True,
+    }
+
+def init_connection_pool() -> None:
+    """Initialize the database connection pool."""
+    global _connection_pool
+    if _connection_pool is None:
+        try:
+            validate_environment()
+            config = get_connection_config()
+            
+            # Extract pool-specific config
+            pool_config = {
+                'pool_name': config.pop('pool_name'),
+                'pool_size': config.pop('pool_size'),
+                'pool_reset_session': config.pop('pool_reset_session'),
+            }
+            
+            _connection_pool = pooling.MySQLConnectionPool(
+                **pool_config,
+                **config
+            )
+            logger.info("Database connection pool initialized successfully")
+            
+        except Error as e:
+            logger.error(f"Error initializing database connection pool: {e}")
+            raise
 
 def get_connection():
     """
-    Creates and returns a MySQL database connection object.
-
-    Purpose:
-    - Central place to configure DB connection
-    - Used by repository layer (db_access.py)
-    - Ensures consistent DB access across the application
-
-    Returns:
-        mysql.connector.connection.MySQLConnection
-    """
-
-    # Base configuration
-    config = {
-        "host": os.getenv("DB_HOST", "127.0.0.1"),
-        "port": int(os.getenv("DB_PORT", 3306)),
-        "user": os.getenv("DB_USER", "app_user"),
-        "password": os.getenv("DB_PASSWORD", "App@123"),
-        "database": os.getenv("DB_NAME", "library_db"),
-        "autocommit": False,
-        "charset": "utf8mb4",
-        "auth_plugin": "mysql_native_password"
-    }
-
-    # REQUIRED FOR CLOUD (AIVEN):
-    # Only enable SSL parameters if we are NOT on localhost
-    if config["host"] != "127.0.0.1":
-        config["ssl_disabled"] = False
+    Get a database connection from the connection pool.
     
-    # Create and return a MySQL connection
-    return mysql.connector.connect(**config)
+    Returns:
+        MySQLConnection: A database connection object.
+        
+    Raises:
+        RuntimeError: If connection pool is not initialized or connection fails.
+    """
+    global _connection_pool
+    
+    if _connection_pool is None:
+        init_connection_pool()
+    
+    try:
+        return _connection_pool.get_connection()
+    except Error as e:
+        logger.error(f"Error getting database connection: {e}")
+        raise RuntimeError("Failed to get database connection") from e
+
+# Do not initialize at import time; initialize lazily on first use
