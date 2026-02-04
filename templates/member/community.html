@@ -1559,6 +1559,14 @@ input:checked + .slider:before {
     }
     
     function showAddMemberModal() {
+        // Set mode to Group Invite
+        window.inviteMode = 'group';
+        window.inviteTargetChannelId = currentChannelId;
+        
+        // Update Modal Title (Optional but nice)
+        const title = document.querySelector('#newChatModal .modal-title');
+        if(title) title.innerText = "Invite to Group";
+
         // Use existing newChatModal for user search
         newChatModal.show();
         // Switch to find tab
@@ -1587,35 +1595,26 @@ input:checked + .slider:before {
         const typeSelect = document.getElementById('chatTypeSelect');
         const themeOptions = document.querySelectorAll('.theme-option');
         
-        // --- RESTRICTION LOGIC ---
-        let readOnly = false;
-        
-        if (isGlobal && userRole !== 'admin') {
-            readOnly = true;
-        }
-        
-        // Apply Restriction
-        if(readOnly) {
-            if(saveBtn) saveBtn.style.display = 'none';
-            if(deleteBtn) deleteBtn.style.display = 'none';
-            if(renameBtn) renameBtn.disabled = true;
-            if(photoBtn) { photoBtn.disabled = true; photoBtn.innerText = "Locked"; }
-            if(typeSelect) typeSelect.disabled = true;
-            themeOptions.forEach(opt => opt.style.pointerEvents = 'none');
-        } else {
-            if(saveBtn) saveBtn.style.display = 'block';
-            if(deleteBtn) deleteBtn.style.display = 'block';
-            if(renameBtn) renameBtn.disabled = false;
-            if(photoBtn) { photoBtn.disabled = false; photoBtn.innerText = "Change Photo"; }
-            if(typeSelect) typeSelect.disabled = false;
-            themeOptions.forEach(opt => opt.style.pointerEvents = 'auto');
+        // Helper to Lock/Unlock UI
+        function setSettingsReadOnly(locked) {
+            if(saveBtn) saveBtn.style.display = locked ? 'none' : 'block';
+            if(deleteBtn) deleteBtn.style.display = locked ? 'none' : 'block';
+            if(renameBtn) renameBtn.disabled = locked;
+            if(photoBtn) { photoBtn.disabled = locked; photoBtn.innerText = locked ? "Locked" : "Change Photo"; }
+            if(typeSelect) typeSelect.disabled = locked;
+            themeOptions.forEach(opt => opt.style.pointerEvents = locked ? 'none' : 'auto');
         }
 
-        // Skip fetch for global (it has static settings usually, or fetch if needed)
+        // 1. Initial State (Locked by default to prevent flicker)
+        setSettingsReadOnly(true);
+
+        // 2. Global Channel Logic
         if(isGlobal) {
+            // Unlocked only for Global Admins
+            if (userRole === 'admin') setSettingsReadOnly(false);
+            
             // Global defaults
             if(typeSelect) typeSelect.value = 'public';
-             // Try to fetch icon for global if possible
              try {
                 const res = await fetch(`/chat/channels/1/settings`);
                 const data = await res.json();
@@ -1626,11 +1625,16 @@ input:checked + .slider:before {
             return;
         }
         
+        // 3. Private Group Logic
         try {
             const res = await fetch(`/chat/channels/${currentChannelId}/settings`);
             const data = await res.json();
             
             if(data.success) {
+                // Determine Access
+                const isGroupAdmin = (data.user_role === 'admin') || (data.owner_name === '{{ session.get("name") }}'); // Fallback
+                setSettingsReadOnly(!isGroupAdmin);
+
                 // Set chat type dropdown
                 if(typeSelect) {
                     if(data.is_private) typeSelect.value = 'private';
@@ -1803,7 +1807,11 @@ input:checked + .slider:before {
                 if(u.user_id == myId) {
                     actionBtn = `<span class="badge bg-secondary">You</span>`;
                 } else {
-                    actionBtn = `<button class="btn btn-sm btn-primary" style="height:fit-content; border-radius:10px; font-size:0.7rem;" onclick="sendInvite(${u.user_id}, 'DM')">Connect</button>`;
+                    if (window.inviteMode === 'group') {
+                         actionBtn = `<button class="btn btn-sm btn-primary" style="height:fit-content; border-radius:10px; font-size:0.7rem;" onclick="sendInvite(${u.user_id}, 'GROUP', ${window.inviteTargetChannelId})">Invite</button>`;
+                    } else {
+                         actionBtn = `<button class="btn btn-sm btn-primary" style="height:fit-content; border-radius:10px; font-size:0.7rem;" onclick="sendInvite(${u.user_id}, 'DM')">Connect</button>`;
+                    }
                 }
 
                 div.innerHTML = `
@@ -1979,6 +1987,12 @@ input:checked + .slider:before {
     }
 
     function showNewChatModal() {
+        // Reset to DM Mode
+        window.inviteMode = 'dm';
+        window.inviteTargetChannelId = null;
+        const title = document.querySelector('#newChatModal .modal-title');
+        if(title) title.innerText = "Connections Hub";
+
         fetchPendingInvites();
         newChatModal.show();
     }

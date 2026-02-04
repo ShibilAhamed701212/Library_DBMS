@@ -55,7 +55,7 @@ def get_conversations_route():
     # We define 'public' as channels with guild_id IS NULL and is_private = FALSE
     public_channels = fetch_all("""
         SELECT channel_id, name, topic, icon FROM channels 
-        WHERE guild_id IS NULL AND is_private = FALSE
+        WHERE guild_id IS NULL AND is_private = FALSE AND name != 'DM'
     """)
     formatted_public = []
     for p in public_channels:
@@ -399,6 +399,7 @@ def route_get_channel_settings(channel_id):
     """Get channel settings."""
     from backend.repository.db_access import fetch_one
     
+    # 1. Fetch Channel
     channel = fetch_one("""
         SELECT c.*, u.name as owner_name 
         FROM channels c
@@ -408,7 +409,17 @@ def route_get_channel_settings(channel_id):
     
     if not channel:
         return jsonify({'error': 'Channel not found'}), 404
-    
+
+    # 2. Get caller's role
+    current_user_id = session.get('user_id')
+    user_role = 'member'
+    try:
+        participant = fetch_one("SELECT role FROM dm_participants WHERE channel_id = %s AND user_id = %s", (channel_id, current_user_id))
+        if participant:
+            user_role = participant['role']
+    except:
+        pass
+
     return jsonify({
         'success': True,
         'name': channel.get('name'),
@@ -416,7 +427,8 @@ def route_get_channel_settings(channel_id):
         'is_private': bool(channel.get('is_private')),
         'type': channel.get('type'),
         'topic': channel.get('topic'),
-        'icon': channel.get('icon')  # If exists in schema
+        'icon': channel.get('icon'),  # If exists in schema
+        'user_role': user_role # Return role
     })
 
 @chat_bp.route('/channels/<int:channel_id>/settings', methods=['POST'])
@@ -432,11 +444,22 @@ def route_update_channel_settings(channel_id):
     if not channel:
         return jsonify({'error': 'Channel not found'}), 404
         
-    # --- RESTRICTION: Global Community (ID 1) is Admin-Only for settings ---
+    # --- RESTRICTION: Admin Only ---
+    current_user_id = session.get('user_id')
+    
+    # 1. Global Community Check
     if channel_id == 1:
-        user_role = session.get('role', 'member')
-        if user_role != 'admin':
-            return jsonify({'success': False, 'error': 'Only admins can change Global Community settings'}), 403
+        if session.get('role') != 'admin':
+             return jsonify({'success': False, 'error': 'Only admins can change Global Community settings'}), 403
+             
+    # 2. Private Group Check
+    else:
+        # Check if user is admin in this group
+        participant = fetch_one("SELECT role FROM dm_participants WHERE channel_id = %s AND user_id = %s", (channel_id, current_user_id))
+        if not participant or participant['role'] != 'admin':
+             # Also allow if strictly 'created_by' (owner) even if role isn't 'admin' (failsafe)
+             if channel.get('created_by') != current_user_id:
+                return jsonify({'success': False, 'error': 'Only group admins can change settings'}), 403
     
     # Handle form data
     is_private = request.form.get('is_private') == 'true'
@@ -575,8 +598,13 @@ def handle_invite():
         
         elif invite['type'] == 'GROUP':
             chan = fetch_one("SELECT guild_id FROM channels WHERE channel_id = %s", (invite['target_channel_id'],))
-            if chan and chan['guild_id']:
-                execute("INSERT IGNORE INTO guild_members (guild_id, user_id) VALUES (%s, %s)", (chan['guild_id'], invite['sender_id']))
+            if chan:
+                if chan['guild_id']:
+                    execute("INSERT IGNORE INTO guild_members (guild_id, user_id) VALUES (%s, %s)", (chan['guild_id'], invite['target_user_id']))
+                else:
+                    # Non-guild private group
+                    execute("INSERT IGNORE INTO dm_participants (channel_id, user_id, role) VALUES (%s, %s, 'member')", (invite['target_channel_id'], invite['target_user_id']))
+                
                 return jsonify({'success': True})
             
     return jsonify({'success': True})
