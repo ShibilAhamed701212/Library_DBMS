@@ -795,12 +795,41 @@ def search_users_json():
     if len(query) < 2:
         return jsonify({"users": []})
         
-    users = fetch_all("""
-        SELECT user_id, name, profile_pic, role 
-        FROM users 
-        WHERE name LIKE %s OR role LIKE %s
-        LIMIT 10
-    """, (f"%{query}%", f"%{query}%"))
+    search_id = None
+    # Robust ID Parsing: Extract digits and check if valid Public ID
+    import re
+    digits = re.sub(r'\D', '', query) # Remove non-digits
+    
+    # Logic: If raw digits match a potential Public ID (>= 1000000000)
+    if digits and len(digits) >= 9:
+        try:
+            val = int(digits)
+            if val >= 1000000000:
+                search_id = val - 1000000000
+        except:
+            pass
+
+    # Fallback: If user typed raw ID (e.g. "5") - unlikely but possible
+    if search_id is None and query.isdigit():
+        try:
+            search_id = int(query)
+        except:
+            pass
+            
+    if search_id:
+        users = fetch_all("""
+            SELECT user_id, name, profile_pic, role 
+            FROM users 
+            WHERE user_id = %s OR name LIKE %s OR role LIKE %s
+            LIMIT 10
+        """, (search_id, f"%{query}%", f"%{query}%"))
+    else:
+        users = fetch_all("""
+            SELECT user_id, name, profile_pic, role 
+            FROM users 
+            WHERE name LIKE %s OR role LIKE %s
+            LIMIT 10
+        """, (f"%{query}%", f"%{query}%"))
     
     return jsonify({"users": users})
 

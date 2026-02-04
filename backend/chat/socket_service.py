@@ -110,6 +110,16 @@ def handle_message(data):
     
     if not channel_id: return
 
+    # --- RESTRICTION: Global Community (ID 1) is Admin-Only for posting ---
+    try:
+        if int(channel_id) == 1:
+            role = session.get('role', 'member')
+            if role != 'admin':
+                emit('error', {'message': 'Only admins can post in the Global Community.'})
+                return
+    except ValueError:
+        pass # Ignore invalid ID format
+
     # Anonymous Check
     # Prioritize payload flag (more reliable for real-time toggling)
     # But check session as fallback

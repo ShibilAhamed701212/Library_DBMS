@@ -1,53 +1,20 @@
 from backend.repository.db_access import execute, fetch_one, fetch_all, get_connection
 from backend.services.chat_service import get_or_create_anon_id
 
-def create_channel(guild_id, category_id, name, type='text', topic=None):
-    """Creates a new channel in a guild."""
-    return execute("""
-        INSERT INTO channels (guild_id, category_id, name, type, topic)
-        VALUES (%s, %s, %s, %s, %s)
-    """, (guild_id, category_id, name, type, topic))
-
-# ... (get_channel_messages is fine) ...
-
-# ... (save_message is fine) ...
-
-def get_my_dms(user_id):
-    """Fetches private DM channels for a user."""
-    # Assuming dm_participants table is used.
-    # If not populated, this returns empty, which is fine for now.
-    return fetch_all("""
-        SELECT c.*
-        FROM channels c
-        JOIN dm_participants dp ON c.channel_id = dp.channel_id
-        WHERE dp.user_id = %s AND c.guild_id IS NULL
-        ORDER BY c.created_at DESC
-    """, (user_id,))
-
-def create_dm(user_id, target_user_id):
-    """Creates or Retrieves a DM channel."""
-    # Check if exists
-    # (Complex SQL to find intersection of channel_ids for both users)
-    existing = fetch_one("""
-        SELECT c.channel_id 
-        FROM channels c
-        JOIN dm_participants dp1 ON c.channel_id = dp1.channel_id
-        JOIN dm_participants dp2 ON c.channel_id = dp2.channel_id
-        WHERE c.guild_id IS NULL 
-        AND dp1.user_id = %s 
-        AND dp2.user_id = %s
-    """, (user_id, target_user_id))
+def create_channel(guild_id, category_id, name, type='text', topic=None, is_private=False, creator_id=None):
+    """Creates a new channel in a guild or global."""
+    cid = execute("""
+        INSERT INTO channels (guild_id, category_id, name, type, topic, is_private)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """, (guild_id, category_id, name, type, topic, is_private))
     
-    if existing: return existing['channel_id']
-    
-    # Create
-    cid = execute("INSERT INTO channels (name, type, is_private) VALUES ('DM', 'text', TRUE)")
-    
-    # Add Participants
-    execute("INSERT INTO dm_participants (channel_id, user_id) VALUES (%s, %s)", (cid, user_id))
-    execute("INSERT INTO dm_participants (channel_id, user_id) VALUES (%s, %s)", (cid, target_user_id))
-    
+    # Always add creator as admin participant (so they persist if switched private/public)
+    if creator_id:
+        execute("INSERT INTO dm_participants (channel_id, user_id, role) VALUES (%s, %s, 'admin')", (cid, creator_id))
+        
     return cid
+
+def get_channel_messages(channel_id, limit=50):
     """Fetches messages for a channel with user profile data."""
     messages = fetch_all("""
         SELECT 
@@ -119,12 +86,16 @@ def get_my_dms(user_id):
     # Assuming dm_participants table is used.
     # If not populated, this returns empty, which is fine for now.
     return fetch_all("""
-        SELECT c.*
+        SELECT c.channel_id, c.created_at, u.name as partner_name, u.profile_pic as partner_pic
         FROM channels c
-        JOIN dm_participants dp ON c.channel_id = dp.channel_id
-        WHERE dp.user_id = %s AND c.guild_id IS NULL
+        JOIN dm_participants dp1 ON c.channel_id = dp1.channel_id
+        JOIN dm_participants dp2 ON c.channel_id = dp2.channel_id
+        JOIN users u ON dp2.user_id = u.user_id
+        WHERE dp1.user_id = %s 
+        AND dp2.user_id != %s
+        AND c.guild_id IS NULL AND c.name = 'DM'
         ORDER BY c.created_at DESC
-    """, (user_id,))
+    """, (user_id, user_id))
 
 def create_dm(user_id, target_user_id):
     """Creates or Retrieves a DM channel."""
@@ -136,15 +107,14 @@ def create_dm(user_id, target_user_id):
         JOIN dm_participants dp1 ON c.channel_id = dp1.channel_id
         JOIN dm_participants dp2 ON c.channel_id = dp2.channel_id
         WHERE c.guild_id IS NULL 
-          AND dp1.user_id = %s 
-          AND dp2.user_id = %s
+        AND dp1.user_id = %s 
+        AND dp2.user_id = %s
     """, (user_id, target_user_id))
     
     if existing: return existing['channel_id']
     
     # Create
-    execute("INSERT INTO channels (name, type, is_private) VALUES ('DM', 'text', TRUE)")
-    cid = fetch_one("SELECT LAST_INSERT_ID() as id")['id']
+    cid = execute("INSERT INTO channels (name, type, is_private) VALUES ('DM', 'text', TRUE)")
     
     # Add Participants
     execute("INSERT INTO dm_participants (channel_id, user_id) VALUES (%s, %s)", (cid, user_id))

@@ -27,6 +27,26 @@ body {
     margin: 0;
 }
 
+/* Custom Scrollbar Globally */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+*::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+}
+*::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+}
+
 .main-content {
     padding: 20px var(--space-lg) !important;
 }
@@ -449,6 +469,102 @@ input:checked + .slider:before {
     color: #c084fc; /* Accent */
     border-bottom: 2px solid #c084fc;
 }
+
+/* Chat Settings Panel */
+.chat-settings-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 320px;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.98);
+    backdrop-filter: blur(40px);
+    border-left: 1px solid var(--glass-border);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    animation: slideIn 0.3s ease;
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--glass-border);
+    margin-bottom: 20px;
+}
+
+.settings-section {
+    margin-bottom: 24px;
+}
+
+.settings-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+}
+
+.theme-options {
+    display: flex;
+    gap: 10px;
+}
+
+.theme-option {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.theme-option:hover {
+    transform: scale(1.1);
+}
+
+.theme-option.active {
+    border-color: white;
+    box-shadow: 0 0 15px rgba(255,255,255,0.3);
+}
+
+.members-list {
+    max-height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.member-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    font-size: 0.9rem;
+}
+
+.member-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    object-fit: cover;
+}
+
+.member-role {
+    margin-left: auto;
+    font-size: 0.7rem;
+    padding: 4px 8px;
+    background: var(--primary-gradient);
+    border-radius: 6px;
+}
 </style>
 {% endblock %}
 
@@ -513,8 +629,95 @@ input:checked + .slider:before {
                 </div>
             </div>
             <div style="display:flex; gap:16px;">
-                <button class="btn btn-sm btn-outline-light" style="border-radius:10px;">📋 Logs</button>
-                <button class="btn btn-sm btn-outline-light" style="border-radius:10px;">🛡️ Rules</button>
+                <button class="btn btn-sm btn-outline-light" style="border-radius:10px;" onclick="showLogsModal()">📋 Logs</button>
+                <button class="btn btn-sm btn-outline-light" style="border-radius:10px;" onclick="showRulesModal()">🛡️ Rules</button>
+                <button class="btn btn-sm btn-outline-light" style="border-radius:10px;" onclick="toggleSettingsPanel()" id="chatSettingsBtn">⚙️ Settings</button>
+            </div>
+        </div>
+
+        <!-- Settings Panel (Slides from right) -->
+        <div id="chatSettingsPanel" class="chat-settings-panel" style="display:none;">
+            <div class="settings-header">
+                <h4 style="margin:0; font-weight:700;">Chat Settings</h4>
+                <button onclick="toggleSettingsPanel()" style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;">✕</button>
+            </div>
+            
+            <!-- Scrollable Content Wrapper -->
+            <div class="settings-scroll-area" style="flex:1; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; -ms-overflow-style:none;">
+            
+            <div class="settings-section">
+                <h4 class="mt-3 fw-bold" id="settingsName">Group Name</h4>
+                <p class="text-muted mb-1" id="settingsTopic">Group Topic</p>
+                <div style="font-size: 0.8rem; opacity: 0.7; color: var(--text-muted);">
+                    Admin: <span id="settingsOwnerName" class="text-white">Unknown</span>
+                </div>
+            </div>
+            
+            <!-- Group Photo -->
+            <div class="settings-section">
+                <label class="settings-label">Group Photo</label>
+                <div style="display:flex; align-items:center; gap:16px;">
+                    <img id="groupPhotoPreview" src="/static/default.jpg" style="width:64px; height:64px; border-radius:16px; object-fit:cover; border:2px solid var(--glass-border);">
+                    <div>
+                        <input type="file" id="groupPhotoInput" style="display:none;" accept="image/*" onchange="previewGroupPhoto(this)">
+                        <button class="btn btn-sm btn-primary" style="border-radius:10px;" onclick="document.getElementById('groupPhotoInput').click()">Change Photo</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Theme -->
+            <div class="settings-section">
+                <label class="settings-label">Theme</label>
+                <div class="theme-options">
+                    <div class="theme-option" onclick="setTheme('dark')" data-theme="dark" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);"></div>
+                    <div class="theme-option" onclick="setTheme('purple')" data-theme="purple" style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);"></div>
+                    <div class="theme-option" onclick="setTheme('blue')" data-theme="blue" style="background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);"></div>
+                    <div class="theme-option" onclick="setTheme('green')" data-theme="green" style="background: linear-gradient(135deg, #047857 0%, #10b981 100%);"></div>
+                    <div class="theme-option" onclick="setTheme('red')" data-theme="red" style="background: linear-gradient(135deg, #b91c1c 0%, #ef4444 100%);"></div>
+                </div>
+            </div>
+            
+            <!-- Chat Type -->
+            <div class="settings-section">
+                <label class="settings-label">Chat Type</label>
+                <select id="chatTypeSelect" class="form-select" style="background:#0f172a; border:1px solid var(--glass-border); color:white; border-radius:10px; padding:10px;" onchange="updateChatType(this.value)">
+                    <option value="public" style="background:#0f172a; color:white;">🌐 Public</option>
+                    <option value="private" style="background:#0f172a; color:white;">🔒 Private</option>
+                    <option value="p2p" style="background:#0f172a; color:white;">👤 Peer-to-Peer</option>
+                </select>
+            </div>
+            
+            <!-- Members Section -->
+            <div class="settings-section">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <label class="settings-label" style="margin:0;">Members</label>
+                    <button class="btn btn-sm btn-primary" style="border-radius:10px; font-size:0.75rem;" onclick="showAddMemberModal()">+ Add</button>
+                </div>
+                <div id="membersList" class="members-list" style="max-height:150px; overflow-y:auto; scrollbar-width:thin;">
+                    <!-- Dynamically populated -->
+                    <div class="member-item">
+                        <img src="/static/default.jpg" class="member-avatar">
+                        <span>Loading...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Danger Zone -->
+            <div class="settings-section" style="border-top:1px solid rgba(239,68,68,0.3); padding-top:16px;">
+                <label class="settings-label" style="color:#ef4444;">Danger Zone</label>
+                <button class="btn w-100" style="background:rgba(239,68,68,0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.3); border-radius:10px; padding:10px; margin-bottom:8px;" onclick="leaveChannel()">
+                    🚪 Leave Channel
+                </button>
+                <button class="btn w-100" style="background:rgba(239,68,68,0.2); color:#ef4444; border:1px solid rgba(239,68,68,0.5); border-radius:10px; padding:10px;" onclick="deleteChannel()">
+                    🗑️ Delete Channel
+                </button>
+            </div>
+            
+            </div><!-- End Scrollable Content Wrapper -->
+            
+            <!-- Save Button (Fixed at bottom) -->
+            <div class="settings-section" style="padding-top:12px; border-top:1px solid var(--glass-border);">
+                <button class="btn btn-primary w-100" style="border-radius:12px; padding:12px; font-weight:600;" onclick="saveChannelSettings()">💾 Save Changes</button>
             </div>
         </div>
 
@@ -674,6 +877,42 @@ input:checked + .slider:before {
 
 
 
+
+<!-- Logs Modal -->
+<div class="modal" id="logsModal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content glass-modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Audit Logs</h5>
+                <button type="button" class="btn-close-custom" onclick="logsModal.hide()">&times;</button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="logsList" style="max-height: 400px; overflow-y: auto; display:flex; flex-direction:column; gap:8px;">
+                    <!-- Logs go here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rules Modal -->
+<div class="modal" id="rulesModal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Community Rules</h5>
+                <button type="button" class="btn-close-custom" onclick="rulesModal.hide()">&times;</button>
+            </div>
+            <div class="modal-body p-4">
+                <textarea id="rulesText" class="form-control" rows="10" placeholder="Loading rules..." style="background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1); border-radius:12px; resize:none;"></textarea>
+                <div class="mt-3 text-end" id="rulesSaveBtnContainer" style="display:none;">
+                    <button class="btn btn-primary" onclick="saveRules()" style="border-radius:10px;">💾 Save Rules</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
 .context-item:hover {
     background: rgba(255,255,255,0.1);
@@ -687,7 +926,7 @@ input:checked + .slider:before {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 <script>
     // Global modal instances to prevent multiple backdrops
-    let createGroupModal, settingsModal, newChatModal;
+    let createGroupModal, settingsModal, newChatModal, logsModal, rulesModal;
 
     const socket = io();
     const myId = parseInt("{{ session.get('user_id') | default('-1') }}");
@@ -700,6 +939,8 @@ input:checked + .slider:before {
     
     let currentChannelId = 1; // Default to Global
     let isAnonymousMode = {{ 'true' if session.get('is_anon') else 'false' }}; // Initialize from template
+    const userRole = '{{ session.get("role", "member") }}'; // Admin or member
+    const currentUserId = {{ session.get('user_id', 0) }};
     
     async function toggleAnonymous() {
         console.log("🎭 toggleAnonymous called");
@@ -737,6 +978,11 @@ input:checked + .slider:before {
         if(cgEl) { document.body.appendChild(cgEl); createGroupModal = new bootstrap.Modal(cgEl, { backdrop: true, keyboard: true }); }
         if(stEl) { document.body.appendChild(stEl); settingsModal = new bootstrap.Modal(stEl, { backdrop: true, keyboard: true }); }
         if(ncEl) { document.body.appendChild(ncEl); newChatModal = new bootstrap.Modal(ncEl, { backdrop: true, keyboard: true }); }
+        
+        const lmEl = document.getElementById('logsModal');
+        const rmEl = document.getElementById('rulesModal');
+        if(lmEl) { document.body.appendChild(lmEl); logsModal = new bootstrap.Modal(lmEl, { backdrop: true }); }
+        if(rmEl) { document.body.appendChild(rmEl); rulesModal = new bootstrap.Modal(rmEl, { backdrop: true }); }
 
         // Cleanup any lingering backdrops on load
         document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
@@ -786,12 +1032,20 @@ input:checked + .slider:before {
             const div = document.createElement('div');
             div.className = `chat-item ${currentChannelId == item.channel_id ? 'active' : ''}`;
             div.id = `chat-${item.channel_id}`;
-            div.onclick = () => loadConversation(item.channel_id, item.name, item.type);
+            div.onclick = () => loadConversation(item.channel_id, item.name, item.type, item.icon);
             
-            const icon = (item.type === 'personal') ? '👤' : (item.type === 'group' ? '👥' : '🌐');
+            const defaultIcon = (item.type === 'personal') ? '👤' : (item.type === 'group' ? '👥' : '🌐');
+            
+            // Use custom icon if available
+            let iconHtml = '';
+            if (item.icon) {
+                iconHtml = `<img src="/static/${item.icon}" style="width:100%; height:100%; object-fit:cover; border-radius:14px;">`;
+            } else {
+                iconHtml = defaultIcon;
+            }
             
             div.innerHTML = `
-                <div style="background: var(--primary-gradient); width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">${icon}</div>
+                <div style="background: var(--primary-gradient); width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; overflow:hidden;">${iconHtml}</div>
                 <div class="chat-info">
                     <div class="chat-name">${item.name} <span style="font-size: 0.65rem; opacity: 0.5; font-weight: 400;">#${item.public_id}</span></div>
                     <div class="chat-preview">${item.guild_name || 'Active hub'}</div>
@@ -804,7 +1058,7 @@ input:checked + .slider:before {
     // Call on load
     fetchConversations();
 
-    async function loadConversation(id, name, type) {
+    async function loadConversation(id, name, type, icon) {
         currentChannelId = (id === 'global') ? 1 : id;
         
         // UI Updates
@@ -829,8 +1083,15 @@ input:checked + .slider:before {
             statusText = 'Global Community';
         }
         
+        // If custom icon exists, display image instead of emoji
+        const iconEl = document.getElementById('activeChatIcon');
+        if (icon) {
+            iconEl.innerHTML = `<img src="/static/${icon}" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">`;
+        } else {
+            iconEl.innerHTML = iconMarkup;
+        }
+        
         document.getElementById('activeChatName').innerHTML = `${displayName} <span style="font-size: 0.8rem; opacity: 0.5; font-weight: 400; margin-left: 8px;">${displayId}</span>`;
-        document.getElementById('activeChatIcon').innerHTML = iconMarkup;
         document.getElementById('activeChatStatus').innerText = statusText;
 
         // Join Socket Room - Ensure string ID
@@ -845,6 +1106,70 @@ input:checked + .slider:before {
         if(data.success) {
             data.messages.reverse().forEach(renderMessage);
             scrollToBottom();
+        }
+        
+        // Load channel-specific theme
+        loadChannelTheme();
+        
+        // Setup Input Access (Global Chat Restriction)
+        const msgInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const uploadBtn = document.querySelector('button[title="Attach File"]'); // Button that triggers upload
+        
+        if (id === 1 || id === 'global') {
+            if (userRole !== 'admin') {
+                msgInput.disabled = true;
+                msgInput.placeholder = "Read-only channel (Admin only)";
+                msgInput.style.opacity = "0.5";
+                msgInput.style.cursor = "not-allowed";
+                
+                if(sendBtn) {
+                     sendBtn.disabled = true;
+                     sendBtn.style.opacity = "0.5";
+                     sendBtn.style.cursor = "not-allowed";
+                }
+                
+                if(uploadBtn) {
+                    uploadBtn.disabled = true;
+                    uploadBtn.style.opacity = "0.5";
+                    uploadBtn.style.cursor = "not-allowed";
+                    uploadBtn.onclick = null; // Remove click handler
+                }
+            } else {
+                // Admin in Global - Enable
+                msgInput.disabled = false;
+                msgInput.placeholder = "Type a message...";
+                msgInput.style.opacity = "1";
+                msgInput.style.cursor = "text";
+                if(sendBtn) {
+                    sendBtn.disabled = false;
+                    sendBtn.style.opacity = "1";
+                    sendBtn.style.cursor = "pointer";
+                }
+                if(uploadBtn) {
+                    uploadBtn.disabled = false;
+                    uploadBtn.style.opacity = "1";
+                    uploadBtn.style.cursor = "pointer";
+                    uploadBtn.onclick = function() { document.getElementById('chatUploadInput').click(); };
+                }
+            }
+        } else {
+            // Normal Chat - Enable
+            msgInput.disabled = false;
+            msgInput.placeholder = "Type a message...";
+            msgInput.style.opacity = "1";
+            msgInput.style.cursor = "text";
+            if(sendBtn) {
+                sendBtn.disabled = false;
+                sendBtn.style.opacity = "1";
+                sendBtn.style.cursor = "pointer";
+            }
+            if(uploadBtn) {
+                uploadBtn.disabled = false;
+                uploadBtn.style.opacity = "1";
+                uploadBtn.style.cursor = "pointer";
+                uploadBtn.onclick = function() { document.getElementById('chatUploadInput').click(); };
+            }
         }
     }
 
@@ -989,6 +1314,451 @@ input:checked + .slider:before {
         fetchPendingInvites();
     }
 
+    // ===== CHAT SETTINGS PANEL =====
+    let currentTheme = localStorage.getItem('chatTheme') || 'dark';
+    let settingsPanelOpen = false;
+    
+    function toggleSettingsPanel() {
+        const panel = document.getElementById('chatSettingsPanel');
+        settingsPanelOpen = !settingsPanelOpen;
+        
+        if(settingsPanelOpen) {
+            panel.style.display = 'flex';
+            fetchChannelMembers();
+            loadChannelSettings();
+        } else {
+            panel.style.display = 'none';
+        }
+    }
+    
+    function setTheme(theme, save = true) {
+        currentTheme = theme;
+        
+        // Save per-channel if save is true
+        if(save && currentChannelId) {
+            localStorage.setItem(`chatTheme_${currentChannelId}`, theme);
+        }
+        
+        // Update theme option UI
+        document.querySelectorAll('.theme-option').forEach(el => el.classList.remove('active'));
+        const themeEl = document.querySelector(`.theme-option[data-theme="${theme}"]`);
+        if(themeEl) themeEl.classList.add('active');
+        
+        // Theme background colors
+        const themes = {
+            'dark': { bg: 'rgba(15, 23, 42, 0.95)', accent: '#1e293b' },
+            'purple': { bg: 'rgba(88, 28, 135, 0.3)', accent: '#581c87' },
+            'blue': { bg: 'rgba(30, 58, 138, 0.3)', accent: '#1e3a8a' },
+            'green': { bg: 'rgba(6, 78, 59, 0.3)', accent: '#064e3b' },
+            'red': { bg: 'rgba(127, 29, 29, 0.3)', accent: '#7f1d1d' }
+        };
+        
+        const t = themes[theme];
+        
+        // Only change the chat/messages area background
+        const msgArea = document.getElementById('messageArea');
+        if(msgArea) {
+            msgArea.style.background = t.bg;
+        }
+        
+        // Also update the chat window background slightly
+        const chatWindow = document.querySelector('.chat-window');
+        if(chatWindow) {
+            chatWindow.style.background = `linear-gradient(180deg, ${t.accent}22 0%, transparent 100%)`;
+        }
+    }
+    
+    // Load channel-specific theme when switching chats
+    function loadChannelTheme() {
+        const savedTheme = localStorage.getItem(`chatTheme_${currentChannelId}`) || 'dark';
+        setTheme(savedTheme, false); // Don't re-save
+    }
+    
+    function updateChatType(type) {
+        console.log('📢 Updating chat type to:', type);
+        // Will be saved when user clicks Save
+    }
+    
+    async function fetchChannelMembers() {
+        // Handle global channel same as others to get count/list
+        const targetId = (!currentChannelId || currentChannelId === 'global') ? 1 : currentChannelId;
+        
+        try {
+            const res = await fetch(`/chat/channels/${targetId}/members`);
+            const data = await res.json();
+            
+            if(data.success && data.members) {
+                const list = document.getElementById('membersList');
+                list.innerHTML = '';
+                
+                // Show Total Count
+                const countDiv = document.createElement('div');
+                countDiv.style.padding = '8px 12px';
+                countDiv.style.marginBottom = '8px';
+                countDiv.style.borderBottom = '1px solid rgba(255,255,255,0.1)';
+                countDiv.style.color = 'var(--text-muted)';
+                countDiv.style.fontSize = '0.85rem';
+                countDiv.style.fontWeight = '500';
+                countDiv.innerHTML = `Total Members: <span style="color:var(--text-primary);">${data.members.length}</span>`;
+                list.appendChild(countDiv);
+                
+                // Sort members: Admins first
+                const admins = data.members.filter(m => m.role === 'admin' || m.is_owner);
+                const members = data.members.filter(m => m.role !== 'admin' && !m.is_owner);
+                
+                const amOwner = data.is_owner || false;
+                
+                // --- ADMINS SECTION ---
+                if (admins.length > 0) {
+                    const adminHeader = document.createElement('div');
+                    adminHeader.style.padding = '8px 12px';
+                    adminHeader.style.color = '#a855f7'; // Purple accent
+                    adminHeader.style.fontSize = '0.75rem';
+                    adminHeader.style.fontWeight = '700';
+                    adminHeader.style.textTransform = 'uppercase';
+                    adminHeader.innerText = `Admins (${admins.length})`;
+                    list.appendChild(adminHeader);
+                    
+                    admins.forEach(m => {
+                        try { renderMemberItem(m, list, amOwner); } 
+                        catch(e) { console.error('Render error:', e); }
+                    });
+                }
+                
+                // --- MEMBERS SECTION ---
+                if (members.length > 0) {
+                     // Check if we should hide normal member list (Global Chat restriction)
+                     // If Global Chat (ID 1) AND User is NOT Admin -> Hide "Members" section
+                     const isGlobal = (targetId == 1);
+                     if (isGlobal && userRole !== 'admin') {
+                         const restrictedDiv = document.createElement('div');
+                         restrictedDiv.style.padding = '20px';
+                         restrictedDiv.style.textAlign = 'center';
+                         restrictedDiv.style.color = 'var(--text-muted)';
+                         restrictedDiv.style.fontSize = '0.8rem';
+                         restrictedDiv.innerHTML = '<i>Member list hidden for Global Community.</i>';
+                         list.appendChild(restrictedDiv);
+                     } else {
+                        const memberHeader = document.createElement('div');
+                        memberHeader.style.padding = '8px 12px';
+                        memberHeader.style.color = 'var(--text-muted)';
+                        memberHeader.style.fontSize = '0.75rem';
+                        memberHeader.style.fontWeight = '700';
+                        memberHeader.style.textTransform = 'uppercase';
+                        memberHeader.style.marginTop = '12px';
+                        memberHeader.innerText = `Members (${members.length})`;
+                        list.appendChild(memberHeader);
+                        
+                        members.forEach(m => {
+                            try { renderMemberItem(m, list, amOwner); } 
+                            catch(e) { console.error('Render error:', e); }
+                        });
+                     }
+                }
+            }
+        } catch(e) {
+            console.error('Error fetching members:', e);
+            document.getElementById('membersList').innerHTML = '<div style="padding:20px; text-align:center; color:red;">Failed to load members</div>';
+        }
+    }
+    
+    function renderMemberItem(m, list, isOwnerOfChannel) {
+        const div = document.createElement('div');
+        div.className = 'member-item';
+        
+        // --- Permissions ---
+        const isSelf = (String(m.user_id) === String(currentUserId));
+        // Can manage: System Admin OR Channel Owner
+        const canManage = (userRole === 'admin' || isOwnerOfChannel) && !isSelf;
+        
+        let actions = '';
+        if(canManage) {
+            // Kick Button (Hammer)
+            const kickBtn = `<button class="action-btn btn-kick" title="Kick Member" onclick="kickMember(${m.user_id}, '${m.name ? m.name.replace("'", "\\'") : "Unknown"}')">
+                <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Hammer.png" alt="Kick" width="24" height="24">
+            </button>`;
+            
+            // Promote/Demote Button
+            // m.role is now potentially the channel role (or global)
+            const isAdmin = (m.role === 'admin' || m.is_owner);
+            if (!m.is_owner) { // Cannot demote owner
+                const promoteTitle = isAdmin ? "Remove Admin" : "Make Admin";
+                const promoteIcon = isAdmin 
+                    ? `<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Shield.png" alt="Remove Admin" width="24" height="24">` 
+                    : `<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Crown.png" alt="Make Admin" width="24" height="24">`;
+                
+                const promoteColor = isAdmin ? "#f59e0b" : "#10b981"; // Yellow to remove, Green to add
+                
+                actions += `<button class="action-btn" title="${promoteTitle}" onclick="updateMemberRole(${m.user_id}, '${isAdmin ? 'member' : 'admin'}')" style="color:${promoteColor}; border-color:${promoteColor}30; background:${promoteColor}10;">
+                    ${promoteIcon}
+                </button>`;
+            }
+            
+            actions += kickBtn;
+        }
+        
+        // Add badges
+        let badges = '';
+        if(m.is_owner) badges += '<span style="background:#eab308; color:black; font-size:0.6rem; padding:2px 6px; border-radius:4px; margin-left:6px; font-weight:700;">OWNER</span>';
+        else if(m.role === 'admin') badges += '<span style="background:#a855f7; color:white; font-size:0.6rem; padding:2px 6px; border-radius:4px; margin-left:6px; font-weight:700;">ADMIN</span>';
+        
+        div.innerHTML = `
+            <div style="display:flex; align-items:center; gap:10px;">
+                <img src="/static/${m.profile_pic || 'default.jpg'}" class="member-avatar">
+                <div style="display:flex; flex-direction:column;">
+                    <span style="font-weight:600; font-size:0.9rem;">${m.name || 'Unknown'}${badges}</span>
+                    <span style="font-size:0.7rem; color:var(--text-muted);">#${1000000000 + (m.user_id || 0)}</span>
+                </div>
+            </div>
+            <div style="display:flex; gap:8px;">${actions}</div>
+        `;
+        list.appendChild(div);
+    }
+    
+    async function updateMemberRole(userId, newRole) {
+        if(!confirm(`Are you sure you want to change this user's role to ${newRole.toUpperCase()}?`)) return;
+        
+        try {
+            const res = await fetch(`/chat/channels/${currentChannelId}/members/${userId}/role`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ role: newRole })
+            });
+            const data = await res.json();
+            if(data.success) {
+                // Refresh list
+                fetchChannelMembers();
+            } else {
+                alert('Error: ' + (data.error || 'Failed to update role'));
+            }
+        } catch(e) {
+            console.error(e);
+            alert('Failed to update role');
+        }
+    }
+    
+    async function kickMember(userId, userName) {
+        if(!confirm(`Are you sure you want to kick ${userName} from this channel?`)) return;
+        
+        try {
+            const res = await fetch(`/chat/channels/${currentChannelId}/kick/${userId}`, {
+                method: 'POST'
+            });
+            const data = await res.json();
+            
+            if(data.success) {
+                alert('✅ ' + (data.message || 'Member kicked'));
+                fetchChannelMembers(); // Refresh list
+            } else {
+                alert('❌ ' + (data.error || 'Failed to kick member'));
+            }
+        } catch(e) {
+            console.error('Error kicking member:', e);
+            alert('❌ Error kicking member');
+        }
+    }
+    
+    function showAddMemberModal() {
+        // Use existing newChatModal for user search
+        newChatModal.show();
+        // Switch to find tab
+        switchConnectionsTab('find');
+    }
+    
+    function previewGroupPhoto(input) {
+        if(input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('groupPhotoPreview').src = e.target.result;
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    
+    async function loadChannelSettings() {
+        const isGlobal = (currentChannelId === 'global' || currentChannelId == 1);
+        
+        // --- UI ELEMENTS ---
+        const saveBtn = document.querySelector('button[onclick="saveChannelSettings()"]');
+        const deleteBtn = document.querySelector('button[onclick="deleteChannel()"]');
+        const leaveBtn = document.querySelector('button[onclick="leaveChannel()"]');
+        const renameBtn = document.querySelector('button[onclick="editChannelName()"]');
+        const photoBtn = document.querySelector('button[onclick="document.getElementById(\'groupPhotoInput\').click()"]');
+        const typeSelect = document.getElementById('chatTypeSelect');
+        const themeOptions = document.querySelectorAll('.theme-option');
+        
+        // --- RESTRICTION LOGIC ---
+        let readOnly = false;
+        
+        if (isGlobal && userRole !== 'admin') {
+            readOnly = true;
+        }
+        
+        // Apply Restriction
+        if(readOnly) {
+            if(saveBtn) saveBtn.style.display = 'none';
+            if(deleteBtn) deleteBtn.style.display = 'none';
+            if(renameBtn) renameBtn.disabled = true;
+            if(photoBtn) { photoBtn.disabled = true; photoBtn.innerText = "Locked"; }
+            if(typeSelect) typeSelect.disabled = true;
+            themeOptions.forEach(opt => opt.style.pointerEvents = 'none');
+        } else {
+            if(saveBtn) saveBtn.style.display = 'block';
+            if(deleteBtn) deleteBtn.style.display = 'block';
+            if(renameBtn) renameBtn.disabled = false;
+            if(photoBtn) { photoBtn.disabled = false; photoBtn.innerText = "Change Photo"; }
+            if(typeSelect) typeSelect.disabled = false;
+            themeOptions.forEach(opt => opt.style.pointerEvents = 'auto');
+        }
+
+        // Skip fetch for global (it has static settings usually, or fetch if needed)
+        if(isGlobal) {
+            // Global defaults
+            if(typeSelect) typeSelect.value = 'public';
+             // Try to fetch icon for global if possible
+             try {
+                const res = await fetch(`/chat/channels/1/settings`);
+                const data = await res.json();
+                if(data.success && data.icon) {
+                     document.getElementById('groupPhotoPreview').src = `/static/${data.icon}`;
+                }
+             } catch(e) {}
+            return;
+        }
+        
+        try {
+            const res = await fetch(`/chat/channels/${currentChannelId}/settings`);
+            const data = await res.json();
+            
+            if(data.success) {
+                // Set chat type dropdown
+                if(typeSelect) {
+                    if(data.is_private) typeSelect.value = 'private';
+                    else typeSelect.value = 'public';
+                }
+                
+                // Set Owner Name
+                const ownerEl = document.getElementById('settingsOwnerName');
+                if(ownerEl) ownerEl.innerText = data.owner_name || 'System';
+                
+                // Set group photo if exists
+                if(data.icon) {
+                    document.getElementById('groupPhotoPreview').src = `/static/${data.icon}`;
+                }
+            }
+        } catch(e) {
+            console.log('Could not load channel settings');
+        }
+    }
+    
+    async function saveChannelSettings() {
+        if(!currentChannelId || currentChannelId === 'global') {
+            alert('Cannot modify global channel');
+            return;
+        }
+        
+        const chatType = document.getElementById('chatTypeSelect').value;
+        const photoInput = document.getElementById('groupPhotoInput');
+        
+        // Create FormData for potential file upload
+        const formData = new FormData();
+        formData.append('is_private', chatType === 'private');
+        formData.append('type', chatType);
+        
+        if(photoInput.files[0]) {
+            formData.append('icon', photoInput.files[0]);
+        }
+        
+        try {
+            const res = await fetch(`/chat/channels/${currentChannelId}/settings`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await res.json();
+            if(data.success) {
+                alert('✅ Settings saved!');
+                
+                // If a new icon was uploaded, update header icon immediately
+                if(data.icon) {
+                    const iconEl = document.getElementById('activeChatIcon');
+                    iconEl.innerHTML = `<img src="/static/${data.icon}" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">`;
+                }
+                
+                toggleSettingsPanel();
+                fetchConversations(); // Refresh sidebar to show new icon
+            } else {
+                alert('❌ Error: ' + (data.error || 'Unknown error'));
+            }
+        } catch(e) {
+            alert('❌ Failed to save settings');
+            console.error(e);
+        }
+    }
+    
+    // Apply saved theme on load
+    document.addEventListener('DOMContentLoaded', () => {
+        setTheme(currentTheme);
+    });
+    
+    async function leaveChannel() {
+        if(!currentChannelId || currentChannelId === 'global' || currentChannelId === 1) {
+            alert('Cannot leave this channel');
+            return;
+        }
+        
+        if(!confirm('Are you sure you want to leave this channel?')) return;
+        
+        try {
+            const res = await fetch(`/chat/channels/${currentChannelId}/leave`, {
+                method: 'POST'
+            });
+            const data = await res.json();
+            
+            if(data.success) {
+                alert('✅ Left channel successfully');
+                toggleSettingsPanel();
+                fetchConversations();
+                // Switch to global
+                loadConversation(1, 'Global Community');
+            } else {
+                alert('❌ ' + (data.error || 'Failed to leave'));
+            }
+        } catch(e) {
+            alert('❌ Error leaving channel');
+            console.error(e);
+        }
+    }
+    
+    async function deleteChannel() {
+        if(!currentChannelId || currentChannelId === 'global' || currentChannelId === 1) {
+            alert('Cannot delete this channel');
+            return;
+        }
+        
+        if(!confirm('⚠️ Are you sure you want to DELETE this channel? This action cannot be undone!')) return;
+        if(!confirm('This will delete ALL messages. Type "DELETE" to confirm.')) return;
+        
+        try {
+            const res = await fetch(`/chat/channels/${currentChannelId}`, {
+                method: 'DELETE'
+            });
+            const data = await res.json();
+            
+            if(data.success) {
+                alert('✅ Channel deleted');
+                toggleSettingsPanel();
+                fetchConversations();
+                loadConversation(1, 'Global Community');
+            } else {
+                alert('❌ ' + (data.error || 'Failed to delete'));
+            }
+        } catch(e) {
+            alert('❌ Error deleting channel');
+            console.error(e);
+        }
+    }
+    
     async function submitCreateChannel() {
         const name = document.getElementById('newGroupName').value.trim();
         const privacy = document.getElementById('groupPrivacy').value;
@@ -1016,24 +1786,33 @@ input:checked + .slider:before {
         const query = document.getElementById('userSearchInput').value.trim();
         if(query.length < 2) return;
 
-        const res = await fetch(`/member/search_users_json?q=${query}`);
+        // FIXED: Encode query to handle '#' character correctly
+        const res = await fetch(`/member/search_users_json?q=${encodeURIComponent(query)}`);
         const data = await res.json();
         const results = document.getElementById('userSearchResults');
         results.innerHTML = '';
 
         if(data.users) {
             data.users.forEach(u => {
-                if(u.user_id == myId) return;
+                // if(u.user_id == myId) return; // Allow showing self for verification
                 const div = document.createElement('div');
                 div.className = 'chat-item';
                 div.style.background = 'rgba(255,255,255,0.05)';
+                
+                let actionBtn = '';
+                if(u.user_id == myId) {
+                    actionBtn = `<span class="badge bg-secondary">You</span>`;
+                } else {
+                    actionBtn = `<button class="btn btn-sm btn-primary" style="height:fit-content; border-radius:10px; font-size:0.7rem;" onclick="sendInvite(${u.user_id}, 'DM')">Connect</button>`;
+                }
+
                 div.innerHTML = `
                     <img src="/static/${u.profile_pic || 'default.jpg'}" class="chat-avatar">
                     <div class="chat-info">
                         <div class="chat-name">${u.name} <span style="font-size: 0.65rem; opacity: 0.5; font-weight: 400;">${formatPublicId(u.user_id)}</span></div>
                         <div class="chat-preview">${u.role}</div>
                     </div>
-                    <button class="btn btn-sm btn-primary" style="height:fit-content; border-radius:10px; font-size:0.7rem;" onclick="sendInvite(${u.user_id}, 'DM')">Connect</button>
+                    ${actionBtn}
                 `;
                 results.appendChild(div);
             });
@@ -1476,6 +2255,94 @@ input:checked + .slider:before {
             document.getElementById('view-requests').style.display = 'block';
             // Refresh invites when switching to tab
             fetchPendingInvites();
+        }
+    }
+    
+    // --- Logs & Rules Logic ---
+    async function showLogsModal() {
+        logsModal.show();
+        const list = document.getElementById('logsList');
+        list.innerHTML = '<div class="text-center text-muted">Loading logs...</div>';
+        
+        try {
+            const res = await fetch(`/chat/channels/${currentChannelId}/logs`);
+            const data = await res.json();
+            
+            if(data.success) {
+                if(!data.logs || data.logs.length === 0) {
+                    list.innerHTML = '<div class="text-center text-muted">No logs found.</div>';
+                    return;
+                }
+                
+                list.innerHTML = '';
+                data.logs.forEach(log => {
+                    const div = document.createElement('div');
+                    div.style.padding = '10px';
+                    div.style.background = 'rgba(255,255,255,0.05)';
+                    div.style.borderRadius = '8px';
+                    div.style.fontSize = '0.85rem';
+                    div.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                            <span style="font-weight:bold; color:#a855f7;">${log.action_type}</span>
+                            <span style="color:var(--text-muted); font-size:0.75rem;">${new Date(log.created_at).toLocaleString()}</span>
+                        </div>
+                        <div style="margin-bottom:4px;">${log.details || 'No details'}</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">By: ${log.user_name} (${log.user_role})</div>
+                    `;
+                    list.appendChild(div);
+                });
+            } else {
+                list.innerHTML = `<div class="text-center text-danger">${data.error || 'Access Denied'}</div>`;
+            }
+        } catch(e) {
+            list.innerHTML = '<div class="text-center text-danger">Failed to fetch logs.</div>';
+        }
+    }
+
+    async function showRulesModal() {
+        rulesModal.show();
+        const textarea = document.getElementById('rulesText');
+        const saveBtn = document.getElementById('rulesSaveBtnContainer');
+        textarea.value = 'Loading...';
+        textarea.readOnly = true; // Default to read-only
+        saveBtn.style.display = 'none';
+        
+        try {
+            const res = await fetch(`/chat/channels/${currentChannelId}/rules`);
+            const data = await res.json();
+            
+            if(data.success) {
+                textarea.value = data.rules;
+                
+                if(data.can_edit) {
+                    textarea.readOnly = false;
+                    saveBtn.style.display = 'block';
+                }
+            } else {
+                textarea.value = 'Error loading rules.';
+            }
+        } catch(e) {
+            textarea.value = 'Failed to fetch rules.';
+        }
+    }
+    
+    async function saveRules() {
+        const rules = document.getElementById('rulesText').value;
+        try {
+            const res = await fetch(`/chat/channels/${currentChannelId}/rules`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({rules: rules})
+            });
+            const data = await res.json();
+            if(data.success) {
+                alert('✅ Rules saved!');
+                rulesModal.hide();
+            } else {
+                alert('❌ ' + (data.error || 'Failed to save rules'));
+            }
+        } catch(e) {
+            alert('Error saving rules');
         }
     }
 </script>
