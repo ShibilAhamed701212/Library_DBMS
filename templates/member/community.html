@@ -602,7 +602,7 @@ input:checked + .slider:before {
         <!-- Identity Area -->
         <div class="identity-bar">
             <div class="identity-user">
-                <img src="{{ url_for('static', filename=session.get('profile_pic', 'default.jpg')) }}" id="myAvatar">
+                <img src="{{ url_for('static', filename=session.get('profile_pic') or 'default.jpg') }}" id="myAvatar">
                 <div>
                     <div style="font-weight: 600; font-size: 0.9rem;">{{ session.get('name') }} <span style="font-size: 0.65rem; opacity: 0.5; font-weight: 400; margin-left: 2px;">#{{ 1000000000 + (session.get('user_id')|int) }}</span></div>
                     <div class="anon-switch">
@@ -646,10 +646,20 @@ input:checked + .slider:before {
             <div class="settings-scroll-area" style="flex:1; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; -ms-overflow-style:none;">
             
             <div class="settings-section">
-                <h4 class="mt-3 fw-bold" id="settingsName">Group Name</h4>
-                <p class="text-muted mb-1" id="settingsTopic">Group Topic</p>
-                <div style="font-size: 0.8rem; opacity: 0.7; color: var(--text-muted);">
-                    Admin: <span id="settingsOwnerName" class="text-white">Unknown</span>
+                <h4 style="margin-top:12px; font-weight:700; margin-bottom:4px;" id="settingsName">Group Name</h4>
+                
+                <!-- Topic (Editable for Admins) -->
+                <div style="margin-bottom:8px;">
+                    <input type="text" id="settingsTopicInput" placeholder="Set a topic..." 
+                           style="width:100%; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); 
+                                  border-radius:8px; padding:8px 12px; color:white; font-size:0.85rem; display:none;"
+                           maxlength="100">
+                    <p style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom:0; cursor:pointer;" 
+                       id="settingsTopic" onclick="editTopic()">Group Topic</p>
+                </div>
+                
+                <div style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">
+                    Admin: <span id="settingsOwnerName" style="color:white;">Unknown</span>
                 </div>
             </div>
             
@@ -727,11 +737,16 @@ input:checked + .slider:before {
 
         <div class="input-area">
             <div class="glass-input-wrapper">
-                <!-- Add Chat/Group Button -->
-                <button title="New Chat" style="background:none; border:none; font-size:1.1rem; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; margin-left:8px; margin-right:8px; transition:color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-muted)'" onclick="showNewChatModal()">
-                    <i class="fas fa-user-plus"></i>
+                <!-- Emoji Button -->
+                <button id="emojiBtn" title="Add Emoji" style="background:none; border:none; font-size:1.1rem; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; margin-right:8px; transition:color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-muted)'" onclick="toggleEmojiPicker()">
+                    <i class="far fa-smile"></i>
                 </button>
                 
+                <!-- Emoji Picker Container (Hidden by default) -->
+                <div id="emojiPicker" style="display:none; position:absolute; bottom:60px; left:20px; background:rgba(20,20,30,0.95); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px; width:280px; box-shadow:0 4px 15px rgba(0,0,0,0.5); backdrop-filter:blur(10px); z-index:100; max-height:300px; overflow-y:auto; grid-template-columns: repeat(8, 1fr); gap: 5px;">
+                    <!-- Populated by JS -->
+                </div>
+
                 <!-- File Upload Button -->
                 <button title="Attach File" style="background:none; border:none; font-size:1.1rem; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; margin-right:8px; transition:color 0.2s; position:relative; z-index:10;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-muted)'" onclick="console.log('📎 Clicked'); document.getElementById('chatUploadInput').click()">
                     <i class="fas fa-paperclip"></i>
@@ -815,6 +830,58 @@ input:checked + .slider:before {
                     <h6 class="text-accent mb-3 fw-bold">Your Account</h6>
                     <a href="/logout" class="btn btn-outline-danger w-100" style="border-radius:12px;">Logout</a>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Profile Modal -->
+<div class="modal" id="userProfileModal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">My Profile</h5>
+                <button type="button" class="btn-close-custom" onclick="forceCloseModals()">&times;</button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                
+                <!-- Avatar Section -->
+                <div class="position-relative d-inline-block mb-4" style="cursor:pointer;" onclick="document.getElementById('profileAvatarInput').click()">
+                    <img src="" id="profileModalAvatar" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:2px solid rgba(255,255,255,0.2);">
+                    <div class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:32px; height:32px; border:2px solid #1e293b;">
+                        <i class="fas fa-camera" style="font-size:0.8rem;"></i>
+                    </div>
+                </div>
+                <form id="avatarUploadForm" action="/member/profile/upload" method="POST" enctype="multipart/form-data" style="display:none;">
+                    <input type="file" name="avatar" id="profileAvatarInput" accept="image/*" onchange="document.getElementById('avatarUploadForm').submit()">
+                </form>
+
+                <!-- Basic Info -->
+                <div class="mb-3 text-start">
+                    <label class="form-label text-uppercase fw-bold text-muted" style="font-size:0.75rem;">Display Name</label>
+                    <input type="text" id="profileNameInput" class="form-control" placeholder="Your Name">
+                </div>
+
+                <div class="mb-3 text-start">
+                    <label class="form-label text-uppercase fw-bold text-muted" style="font-size:0.75rem;">About Me</label>
+                    <textarea id="profileBioInput" class="form-control" rows="3" placeholder="Tell us about yourself..."></textarea>
+                </div>
+
+                <div class="mb-4 text-start">
+                     <label class="form-label text-uppercase fw-bold text-muted" style="font-size:0.75rem;">My Public ID</label>
+                     <div class="input-group">
+                        <span class="input-group-text glass-input" style="border-right:0;">#</span>
+                        <input type="text" id="profilePublicId" class="form-control glass-input" style="border-left:0;" readonly>
+                        <button class="btn btn-outline-light" onclick="navigator.clipboard.writeText(document.getElementById('profilePublicId').value); alert('Copied ID!')">📋</button>
+                     </div>
+                </div>
+
+                <!-- Account Actions -->
+                <div class="d-grid gap-2">
+                    <button class="btn btn-primary" onclick="saveUserProfile()" style="border-radius:10px; font-weight:600;">Save Changes</button>
+                    <a href="/logout" class="btn btn-outline-danger" style="border-radius:10px;">Logout</a>
+                </div>
+
             </div>
         </div>
     </div>
@@ -917,6 +984,14 @@ input:checked + .slider:before {
 .context-item:hover {
     background: rgba(255,255,255,0.1);
 }
+/* Hide scrollbar globally for a cleaner UI */
+::-webkit-scrollbar {
+    display: none;
+}
+* {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
 </style>
 
 {% endblock %}
@@ -925,10 +1000,83 @@ input:checked + .slider:before {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 <script>
-    // Global modal instances to prevent multiple backdrops
-    let createGroupModal, settingsModal, newChatModal, logsModal, rulesModal;
+    let createGroupModal, settingsModal, newChatModal, logsModal, rulesModal, userProfileModal;
 
     const socket = io();
+    
+    // ... (rest of vars) ...
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initialize Modals properly
+        const cgEl = document.getElementById('createGroupModal');
+        const stEl = document.getElementById('settingsModal');
+        const ncEl = document.getElementById('newChatModal');
+        const upEl = document.getElementById('userProfileModal'); // New Profile Modal
+
+        // FORCE MOVE TO BODY: This fixes all stacking context issues
+        if(cgEl) { document.body.appendChild(cgEl); createGroupModal = new bootstrap.Modal(cgEl, { backdrop: true, keyboard: true }); }
+        if(stEl) { document.body.appendChild(stEl); settingsModal = new bootstrap.Modal(stEl, { backdrop: true, keyboard: true }); }
+        if(ncEl) { document.body.appendChild(ncEl); newChatModal = new bootstrap.Modal(ncEl, { backdrop: true, keyboard: true }); }
+        if(upEl) { document.body.appendChild(upEl); userProfileModal = new bootstrap.Modal(upEl, { backdrop: true, keyboard: true }); } // Init
+        
+        // ... (rest of initializers) ...
+    });
+
+    // ... (rest of functions) ...
+
+    function showSettingsModal() {
+       // OLD: settingsModal.show();
+       // NEW: Redirect to Profile Modal as requested by user
+       showUserProfileModal();
+    }
+    
+    function showUserProfileModal() {
+        if(!userProfileModal) return;
+        
+        // Populate Data
+        document.getElementById('profileModalAvatar').src = document.getElementById('myAvatar').src;
+        document.getElementById('profileNameInput').value = "{{ session.get('name') }}";
+        // Bio isn't in session unless we add it, for now fetch or leave empty if not critical
+        // document.getElementById('profileBioInput').value = ...; 
+        
+        // Public ID
+        const uid = {{ session.get('user_id', 0) }};
+        document.getElementById('profilePublicId').value = formatPublicId(uid);
+        
+        userProfileModal.show();
+    }
+    
+    async function saveUserProfile() {
+        const name = document.getElementById('profileNameInput').value;
+        const bio = document.getElementById('profileBioInput').value;
+        
+        try {
+            constres = await fetch('/member/profile/update', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ name, bio })
+            });
+            const data = awaitres.json();
+            
+            if(data.success) {
+                alert('✅ Profile updated!');
+                location.reload(); // Reload to refresh sidebar/session
+            } else {
+                alert('❌ Error: ' + (data.error || 'Update failed'));
+            }
+        } catch(e) {
+            alert('Failed to update profile');
+        }
+    }
+    
+    function forceCloseModals() {
+        if(createGroupModal) createGroupModal.hide();
+        if(settingsModal) settingsModal.hide();
+        if(newChatModal) newChatModal.hide();
+        if(userProfileModal) userProfileModal.hide();
+        
+        // ... (rest of cleanup) ...
+    }
     const myId = parseInt("{{ session.get('user_id') | default('-1') }}");
     const PUBLIC_ID_OFFSET = 1000000000;
     
@@ -1060,6 +1208,7 @@ input:checked + .slider:before {
 
     async function loadConversation(id, name, type, icon) {
         currentChannelId = (id === 'global') ? 1 : id;
+        window.currentChatType = type; // Store globally for checks
         
         // UI Updates
         document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
@@ -1292,13 +1441,14 @@ input:checked + .slider:before {
     }
 
     function showSettingsModal() {
-        settingsModal.show();
+        showUserProfileModal();
     }
 
     function forceCloseModals() {
         if(createGroupModal) createGroupModal.hide();
         if(settingsModal) settingsModal.hide();
         if(newChatModal) newChatModal.hide();
+        if(userProfileModal) userProfileModal.hide();
         
         // Safety cleanup for UI persistence
         setTimeout(() => {
@@ -1407,6 +1557,7 @@ input:checked + .slider:before {
                 const members = data.members.filter(m => m.role !== 'admin' && !m.is_owner);
                 
                 const amOwner = data.is_owner || false;
+                const amAdmin = data.is_admin || false;
                 
                 // --- ADMINS SECTION ---
                 if (admins.length > 0) {
@@ -1420,7 +1571,7 @@ input:checked + .slider:before {
                     list.appendChild(adminHeader);
                     
                     admins.forEach(m => {
-                        try { renderMemberItem(m, list, amOwner); } 
+                        try { renderMemberItem(m, list, amOwner, amAdmin); } 
                         catch(e) { console.error('Render error:', e); }
                     });
                 }
@@ -1450,7 +1601,7 @@ input:checked + .slider:before {
                         list.appendChild(memberHeader);
                         
                         members.forEach(m => {
-                            try { renderMemberItem(m, list, amOwner); } 
+                            try { renderMemberItem(m, list, amOwner, amAdmin); } 
                             catch(e) { console.error('Render error:', e); }
                         });
                      }
@@ -1462,14 +1613,16 @@ input:checked + .slider:before {
         }
     }
     
-    function renderMemberItem(m, list, isOwnerOfChannel) {
+    function renderMemberItem(m, list, isOwnerOfChannel, isChannelAdmin) {
         const div = document.createElement('div');
         div.className = 'member-item';
         
         // --- Permissions ---
         const isSelf = (String(m.user_id) === String(currentUserId));
-        // Can manage: System Admin OR Channel Owner
-        const canManage = (userRole === 'admin' || isOwnerOfChannel) && !isSelf;
+        // Can manage: System Admin OR Channel Owner OR Channel Admin
+        // AND NOT in Personal Chat (P2P)
+        const isP2P = (window.currentChatType === 'personal');
+        const canManage = (userRole === 'admin' || isOwnerOfChannel || isChannelAdmin) && !isSelf && !isP2P;
         
         let actions = '';
         if(canManage) {
@@ -1482,9 +1635,9 @@ input:checked + .slider:before {
             // m.role is now potentially the channel role (or global)
             const isAdmin = (m.role === 'admin' || m.is_owner);
             if (!m.is_owner) { // Cannot demote owner
-                const promoteTitle = isAdmin ? "Remove Admin" : "Make Admin";
+                const promoteTitle = isAdmin ? "Demote to Member" : "Make Admin";
                 const promoteIcon = isAdmin 
-                    ? `<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Shield.png" alt="Remove Admin" width="24" height="24">` 
+                    ? `<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Symbols/Down%20Arrow.png" alt="Demote" width="24" height="24">` 
                     : `<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Crown.png" alt="Make Admin" width="24" height="24">`;
                 
                 const promoteColor = isAdmin ? "#f59e0b" : "#10b981"; // Yellow to remove, Green to add
@@ -1583,6 +1736,24 @@ input:checked + .slider:before {
         }
     }
     
+    // --- TOPIC EDITING ---
+    let canEditTopic = false; // Set by loadChannelSettings based on admin status
+    
+    function editTopic() {
+        if(!canEditTopic) return; // Non-admins can't edit
+        
+        const display = document.getElementById('settingsTopic');
+        const input = document.getElementById('settingsTopicInput');
+        
+        if(display && input) {
+            // Switch to edit mode
+            input.value = display.innerText === 'No topic set' ? '' : display.innerText;
+            display.style.display = 'none';
+            input.style.display = 'block';
+            input.focus();
+        }
+    }
+    
     async function loadChannelSettings() {
         const isGlobal = (currentChannelId === 'global' || currentChannelId == 1);
         
@@ -1597,7 +1768,10 @@ input:checked + .slider:before {
         
         // Helper to Lock/Unlock UI
         function setSettingsReadOnly(locked) {
-            if(saveBtn) saveBtn.style.display = locked ? 'none' : 'block';
+            if(saveBtn) {
+                 saveBtn.style.display = locked ? 'none' : 'block';
+                 saveBtn.innerText = 'Save Changes'; // Reset text
+            }
             if(deleteBtn) deleteBtn.style.display = locked ? 'none' : 'block';
             if(renameBtn) renameBtn.disabled = locked;
             if(photoBtn) { photoBtn.disabled = locked; photoBtn.innerText = locked ? "Locked" : "Change Photo"; }
@@ -1607,6 +1781,90 @@ input:checked + .slider:before {
 
         // 1. Initial State (Locked by default to prevent flicker)
         setSettingsReadOnly(true);
+
+        // --- P2P PERSONAL CHAT RESTRICTION ---
+        if (window.currentChatType === 'personal') {
+            // Hide Add Member Button
+            const addBtn = document.querySelector('button[onclick="showAddMemberModal()"]');
+            if(addBtn) addBtn.style.display = 'none';
+
+            // Hide Owner Name/Topic Section
+            const nameEl = document.getElementById('settingsName');
+            if(nameEl) {
+                const section = nameEl.closest('.settings-section');
+                if(section) section.style.display = 'none';
+            }
+
+            // Hide Photo Section
+            const photoPreview = document.getElementById('groupPhotoPreview');
+            if(photoPreview) {
+                const section = photoPreview.closest('.settings-section');
+                if(section) section.style.display = 'none';
+            }
+            
+            // INJECT P2P PROFILE HEADER
+            let p2pHeader = document.getElementById('p2pSettingsHeader');
+            if(!p2pHeader) {
+                p2pHeader = document.createElement('div');
+                p2pHeader.id = 'p2pSettingsHeader';
+                p2pHeader.className = 'settings-section';
+                p2pHeader.style.textAlign = 'center';
+                p2pHeader.style.marginBottom = '20px';
+                
+                // Insert after the header
+                const panelHeader = document.querySelector('#chatSettingsPanel .settings-header');
+                if(panelHeader) panelHeader.insertAdjacentElement('afterend', p2pHeader);
+            }
+            
+            // Populate content from Active Chat Bar
+            const currentImg = document.getElementById('activeChatIcon').innerHTML; // Has the img tag or emoji
+            // Extract src from img tag if possible, or just use innerHTML
+            const currentName = document.getElementById('activeChatName').innerText.split('#')[0].trim();
+            const currentId = document.getElementById('activeChatName').innerText.split('#')[1] || '';
+            
+            p2pHeader.innerHTML = `
+                <div style="width:80px; height:80px; border-radius:24px; margin:0 auto 12px auto; overflow:hidden; display:flex; align-items:center; justify-content:center; background:var(--primary-gradient); font-size:2.5rem;">
+                    ${currentImg.replace('width:100%', 'width:100%').replace('height:100%', 'height:100%')} 
+                </div>
+                <h3 style="margin:0; font-weight:700;">${currentName}</h3>
+                <div style="font-size:0.8rem; opacity:0.6;">#${currentId}</div>
+                <div style="font-size:0.75rem; color:var(--accent); margin-top:4px;">Peer-to-Peer</div>
+            `;
+            p2pHeader.style.display = 'block';
+
+            // UNLOCK THEMES for P2P
+            themeOptions.forEach(opt => opt.style.pointerEvents = 'auto');
+            
+            // Set Owner Name (Partner Name) - technically hidden but keeps logic safe
+            const ownerEl = document.getElementById('settingsOwnerName');
+            // We need to fetch settings to get the name, but UI is locked.
+            // Let's scroll down to fetch...
+            // Allow photo change? Maybe not for P2P (usually shows user avatar). Let's lock it.
+            if(photoBtn) { photoBtn.style.display = 'none'; }
+            // SHOW SAVE BUTTON FOR THEME
+            if(saveBtn) { 
+                saveBtn.style.display = 'block'; 
+                saveBtn.innerText = 'Save Theme';
+                saveBtn.disabled = false;
+            }
+            if(deleteBtn) deleteBtn.style.display = 'none'; // Cannot delete P2P history usually, or maybe clear history?
+        } else {
+             // Reset visibility for groups
+             const addBtn = document.querySelector('button[onclick="showAddMemberModal()"]');
+             if(addBtn) addBtn.style.display = 'block';
+             if(typeSelect && typeSelect.parentElement) typeSelect.parentElement.style.display = 'block';
+             if(photoBtn) photoBtn.style.display = 'block';
+             
+             // Show default sections
+             const nameEl = document.getElementById('settingsName');
+             if(nameEl && nameEl.closest('.settings-section')) nameEl.closest('.settings-section').style.display = 'block';
+             const photoPreview = document.getElementById('groupPhotoPreview');
+             if(photoPreview && photoPreview.closest('.settings-section')) photoPreview.closest('.settings-section').style.display = 'block';
+             
+             // Hide P2P Header
+             const p2pHeader = document.getElementById('p2pSettingsHeader');
+             if(p2pHeader) p2pHeader.style.display = 'none';
+        }
 
         // 2. Global Channel Logic
         if(isGlobal) {
@@ -1618,8 +1876,19 @@ input:checked + .slider:before {
              try {
                 const res = await fetch(`/chat/channels/1/settings`);
                 const data = await res.json();
-                if(data.success && data.icon) {
-                     document.getElementById('groupPhotoPreview').src = `/static/${data.icon}`;
+                if(data.success) {
+                     if(data.icon) {
+                         document.getElementById('groupPhotoPreview').src = `/static/${data.icon}`;
+                     }
+                     // Populate Name and Topic for Global too
+                     const nameEl = document.getElementById('settingsName');
+                     if(nameEl) nameEl.innerText = data.name || 'Global Community';
+                     
+                     const topicEl = document.getElementById('settingsTopic');
+                     if(topicEl) topicEl.innerText = data.topic || 'Welcome to the community!';
+                     
+                     const ownerEl = document.getElementById('settingsOwnerName');
+                     if(ownerEl) ownerEl.innerText = data.owner_name || 'System';
                 }
              } catch(e) {}
             return;
@@ -1633,12 +1902,30 @@ input:checked + .slider:before {
             if(data.success) {
                 // Determine Access
                 const isGroupAdmin = (data.user_role === 'admin') || (data.owner_name === '{{ session.get("name") }}'); // Fallback
-                setSettingsReadOnly(!isGroupAdmin);
+                
+                // CRITICAL: Do NOT re-lock settings for P2P chats (they were already configured above)
+                if (window.currentChatType !== 'personal') {
+                    setSettingsReadOnly(!isGroupAdmin);
+                    
+                    // Enable topic editing for admins
+                    canEditTopic = isGroupAdmin;
+                    const topicDisplay = document.getElementById('settingsTopic');
+                    if(topicDisplay) topicDisplay.style.cursor = isGroupAdmin ? 'pointer' : 'default';
+                }
 
                 // Set chat type dropdown
                 if(typeSelect) {
                     if(data.is_private) typeSelect.value = 'private';
                     else typeSelect.value = 'public';
+                }
+                
+                // --- Populate Group Header (Name, Topic, Admin) for Public/Private ---
+                if (window.currentChatType !== 'personal') {
+                    const nameEl = document.getElementById('settingsName');
+                    if(nameEl) nameEl.innerText = data.name || 'Unnamed Group';
+                    
+                    const topicEl = document.getElementById('settingsTopic');
+                    if(topicEl) topicEl.innerText = data.topic || 'No topic set';
                 }
                 
                 // Set Owner Name
@@ -1666,8 +1953,23 @@ input:checked + .slider:before {
         
         // Create FormData for potential file upload
         const formData = new FormData();
-        formData.append('is_private', chatType === 'private');
-        formData.append('type', chatType);
+        
+        if (window.currentChatType === 'personal') {
+             // For P2P, we only care about Theme (and maybe photo if allowed later)
+             // We do NOT want to change type or public/private status
+             // We send current values just to be safe, or backend ignores.
+             formData.append('type', 'personal');
+             // Theme is appended later below
+        } else {
+             formData.append('is_private', chatType === 'private');
+             formData.append('type', chatType);
+             
+             // Add topic if input is visible (admin was editing)
+             const topicInput = document.getElementById('settingsTopicInput');
+             if(topicInput && topicInput.style.display !== 'none') {
+                 formData.append('topic', topicInput.value);
+             }
+        }
         
         if(photoInput.files[0]) {
             formData.append('icon', photoInput.files[0]);
@@ -2359,5 +2661,98 @@ input:checked + .slider:before {
             alert('Error saving rules');
         }
     }
+
+    // --- EMOJI PICKER LOGIC ---
+    const emojiList = [
+        // Smileys & People
+        "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "🥲", "😊", "😇", "🙂", "🙃", "😉", "😌",
+        "😍", "🥰", "😘", "😗", "😙", "😚", "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎",
+        "🥸", "🤩", "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", "😣", "😖", "😫", "😩",
+        "🥺", "😢", "😭", "😤", "😠", "😡", "🤬", "🤯", "😳", "🥵", "🥶", "😱", "😨", "😰", "😥",
+        "😓", "🤗", "🤔", "🤭", "🤫", "🤥", "😶", "😐", "😑", "😬", "🙄", "😯", "😦", "😧", "😮",
+        "😲", "🥱", "😴", "🤤", "😪", "😵", "🤐", "🥴", "🤢", "🤮", "🤧", "😷", "🤒", "🤕", "🤑",
+        "🤠", "😈", "👿", "👹", "👺", "🤡", "💩", "👻", "💀", "☠️", "👽", "👾", "🤖", "🎃",
+        
+        // Hands & Body
+        "👋", "🤚", "🖐️", "✋", "🖖", "👌", "🤌", "🤏", "✌️", "🤞", "🤟", "🤘", "🤙", "👈", "👉",
+        "👆", "🖕", "👇", "☝️", "👍", "👎", "✊", "👊", "🤛", "🤜", "👏", "🙌", "👐", "🤲", "🤝",
+        "🙏", "✍️", "💅", "🤳", "💪", "🦾", "🦵", "🦿", "🦶", "👣", "👀", "👁️", "🧠", "💋", "👄",
+        
+        // Hearts & Symbols
+        "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔", "❣️", "💕", "💞", "💓", "💗",
+        "💖", "💘", "💝", "💟", "☮️", "✝️", "☪️", "🕉️", "☸️", "✡️", "🔯", "🕎", "☯️", "☦️", "🛐",
+        "✨", "🌟", "💫", "🔥", "💥", "💯", "💢", "💦", "💨", "🕳️", "💣", "💬", "👁️‍🗨️", "🗨️",
+        
+        // Animals & Nature
+        "🐵", "🐒", "🦍", "🦧", "🐶", "🐕", "🦮", "🐩", "🐺", "🦊", "🦝", "🐱", "🐈", "🦁", "🐯",
+        "🐅", "🐆", "🐴", "🐎", "🦄", "🦓", "🦌", "🐮", "ox", "🐃", "🐄", "🐷", "🐖", "🐗", "🐽",
+        "🐏", "🐑", "🐐", "🐪", "🐫", "🦙", "🦒", "🐘", "🦣", "🦏", "🦛", "🐭", "🐁", "🐀", "🐹",
+        "🐰", "🐇", "🐿️", "🦫", "🦔", "🦇", "🐻", "🐨", "🐼", "🦥", "🦦", "🦨", "🦘", "🦡", "🐾",
+        "🦃", "🐔", "🐓", "🐣", "🐤", "🐥", "🐦", "🐧", "🕊️", "🦅", "🦆", "🦢", "🦉", "🦤", "🪶",
+        "🦩", "🦚", "🦜", "🐸", "🐊", "🐢", "🦎", "🐍", "🐲", "🐉", "🦕", "🦖", "🐳", "🐋", "🐬",
+        "🦭", "🐟", "🐠", "🐡", "🦈", "🐙", "🐚", "🐌", "🦋", "🐛", "🐜", "🐝", "🪲", "🐞", "🦗",
+        "💐", "🌸", "💮", "🏵️", "🌹", "🥀", "🌺", "🌻", "🌼", "🌷", "🌱", "🪴", "🌲", "🌳", "🌴",
+        "🌵", "🌾", "🌿", "☘️", "🍀", "🍁", "🍂", "🍃",
+        
+        // Food & Drink
+        "🍇", "🍈", "🍉", "🍊", "🍋", "🍌", "🍍", "🥭", "🍎", "🍏", "🍐", "🍑", "🍒", "🍓", "🫐",
+        "🥝", "🍅", "🫒", "🥥", "🥑", "🍆", "🥔", "🥕", "🌽", "🌶️", "🫑", "🥒", "🥬", "🥦", "🧄",
+        "🧅", "🍄", "🥜", "🌰", "🍞", "🥐", "🥖", "🫓", "🥨", "🥯", "🥞", "🧇", "🧀", "🍖", "🍗",
+        "🥩", "🥓", "🍔", "🍟", "🍕", "🌭", "🥪", "🌮", "🌯", "🫔", "🥙", "🧆", "🥚", "🍳", "🥘",
+        "🍲", "🫕", "🥣", "🥗", "🍿", "🧈", "🧂", "🥫", "🍱", "🍘", "🍙", "🍚", "🍛", "🍜", "🍝",
+        "🍠", "🍢", "🍣", "🍤", "🍥", "🥮", "🍡", "🥟", "🥠", "🥡", "🦀", "🦞", "🦐", "🦑", "🦪",
+        "🍦", "🍧", "🍨", "🍩", "🍪", "🎂", "🍰", "🧁", "🥧", "🍫", "🍬", "🍭", "🍮", "🍯", "🍼",
+        "🥛", "☕", "🫖", "🍵", "🍶", "🍾", "🍷", "🍸", "🍹", "🍺", "🍻", "🥂", "🥃", "🥤", "🧋",
+        "🧃", "🧉", "🧊", "🥢", "🍽️", "🍴", "🥄", "🔪", "🏺"
+    ];
+
+    function toggleEmojiPicker() {
+        const picker = document.getElementById('emojiPicker');
+        if (!picker) return;
+        
+        if (picker.style.display === 'none') {
+            picker.style.display = 'grid';
+            if (picker.children.length === 0) {
+                // Populate if empty
+                picker.innerHTML = ''; // Clear comments
+                emojiList.forEach(emoji => {
+                    const span = document.createElement('span');
+                    span.innerText = emoji;
+                    span.style.cursor = 'pointer';
+                    span.style.fontSize = '1.3rem';
+                    span.style.padding = '8px';
+                    span.style.borderRadius = '5px';
+                    span.style.textAlign = 'center';
+                    span.style.transition = 'background 0.2s';
+                    span.onmouseover = () => span.style.background = 'rgba(255,255,255,0.1)';
+                    span.onmouseout = () => span.style.background = 'transparent';
+                    span.onclick = () => {
+                        insertEmoji(emoji);
+                        picker.style.display = 'none';
+                    };
+                    picker.appendChild(span);
+                });
+            }
+        } else {
+            picker.style.display = 'none';
+        }
+    }
+
+    function insertEmoji(emoji) {
+        const input = document.getElementById('messageInput');
+        if (input) {
+            input.value += emoji;
+            input.focus();
+        }
+    }
+
+    // Close picker when clicking outside
+    document.addEventListener('click', function(event) {
+        const picker = document.getElementById('emojiPicker');
+        const btn = document.getElementById('emojiBtn');
+        if (picker && picker.style.display !== 'none' && !picker.contains(event.target) && !btn.contains(event.target)) {
+            picker.style.display = 'none';
+        }
+    });
 </script>
 {% endblock %}

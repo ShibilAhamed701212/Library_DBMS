@@ -164,12 +164,37 @@ def route_get_messages(channel_id):
 @chat_bp.route('/join/<int:channel_id>', methods=['POST'])
 @member_required
 def route_join_channel(channel_id):
-    from backend.services.chat_service import join_room
+    """Join a channel (public or private group by ID)."""
+    from backend.repository.db_access import fetch_one, execute
+    
     try:
-        join_room(session['user_id'], channel_id)
-        return jsonify({'success': True})
+        # 1. Verify channel exists
+        channel = fetch_one("SELECT * FROM channels WHERE channel_id = %s", (channel_id,))
+        if not channel:
+            return jsonify({'success': False, 'message': 'Channel not found'}), 404
+        
+        # 2. Prevent joining DM channels directly (must be invited/created)
+        if channel.get('name') == 'DM':
+            return jsonify({'success': False, 'message': 'Cannot join DM channels directly'}), 400
+        
+        # 3. Check if already a member
+        user_id = session['user_id']
+        existing = fetch_one(
+            "SELECT * FROM dm_participants WHERE channel_id = %s AND user_id = %s",
+            (channel_id, user_id)
+        )
+        if existing:
+            return jsonify({'success': True, 'message': 'Already a member'})
+        
+        # 4. Add user as member
+        execute(
+            "INSERT INTO dm_participants (channel_id, user_id, role) VALUES (%s, %s, 'member')",
+            (channel_id, user_id)
+        )
+        
+        return jsonify({'success': True, 'message': 'Joined successfully'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'success': False, 'message': str(e)}), 400
 
 # --- Legacy/Helper Routes (Social, etc) ---
 @chat_bp.route('/social/friends', methods=['GET'])
@@ -217,15 +242,22 @@ def route_update_channel(channel_id):
 def route_delete_channel(channel_id):
     from backend.repository.db_access import execute, fetch_one
     user_id = session['user_id']
-    user_role = session.get('role', 'member')
+    system_role = session.get('role', 'member')  # System-level role (site admin)
     
-    # Check if user is admin OR channel creator
+    # Check if user is system admin OR channel creator OR channel admin
     channel = fetch_one("SELECT created_by FROM channels WHERE channel_id = %s", (channel_id,))
     
-    if user_role != 'admin':
-        # Check if user is channel creator
-        if not channel or channel.get('created_by') != user_id:
-            return jsonify({'success': False, 'error': 'Only admins or channel creators can delete channels'}), 403
+    # Check channel-level admin status
+    participant = fetch_one(
+        "SELECT role FROM dm_participants WHERE channel_id = %s AND user_id = %s",
+        (channel_id, user_id)
+    )
+    is_channel_admin = participant and participant.get('role') == 'admin'
+    is_channel_creator = channel and channel.get('created_by') == user_id
+    is_system_admin = system_role == 'admin'
+    
+    if not (is_system_admin or is_channel_creator or is_channel_admin):
+        return jsonify({'success': False, 'error': 'Only admins or channel creators can delete channels'}), 403
     
     execute("DELETE FROM chat_messages WHERE channel_id = %s", (channel_id,))
     execute("DELETE FROM dm_participants WHERE channel_id = %s", (channel_id,))
@@ -258,7 +290,15 @@ def route_kick_member(channel_id, target_user_id):
     channel = fetch_one("SELECT created_by FROM channels WHERE channel_id = %s", (channel_id,))
     
     if user_role != 'admin':
-        if not channel or channel.get('created_by') != user_id:
+        is_creator = channel and channel.get('created_by') == user_id
+        is_channel_admin = False
+        
+        if not is_creator:
+             participant = fetch_one("SELECT role FROM dm_participants WHERE channel_id = %s AND user_id = %s", (channel_id, user_id))
+             if participant and participant['role'] == 'admin':
+                 is_channel_admin = True
+
+        if not (is_creator or is_channel_admin):
             return jsonify({'success': False, 'error': 'Only admins or channel creators can kick members'}), 403
     
     # Cannot kick yourself
@@ -351,7 +391,16 @@ def route_get_channel_members(channel_id):
                 'is_owner': m.get('role') == 'owner'
             })
     
-    return jsonify({'success': True, 'members': members, 'is_owner': is_current_user_owner})
+    # Calculate if current user is admin of this channel
+    is_admin = is_current_user_owner # Start with owner logic
+    if not is_admin:
+        # Check specific channel role
+        for m in members:
+            if str(m['user_id']) == str(user_id) and m['role'] == 'admin':
+                is_admin = True
+                break
+
+    return jsonify({'success': True, 'members': members, 'is_owner': is_current_user_owner, 'is_admin': is_admin})
 
 # --- Member Management ---
 @chat_bp.route('/channels/<int:channel_id>/members/<int:target_user_id>/role', methods=['POST'])
@@ -373,7 +422,13 @@ def route_update_member_role(channel_id, target_user_id):
     is_owner = (channel.get('created_by') == user_id)
     is_sys_admin = (user_role == 'admin')
     
-    if not (is_owner or is_sys_admin):
+    # Check if channel admin
+    is_channel_admin = False
+    participant = fetch_one("SELECT role FROM dm_participants WHERE channel_id = %s AND user_id = %s", (channel_id, user_id))
+    if participant and participant['role'] == 'admin':
+        is_channel_admin = True
+
+    if not (is_owner or is_sys_admin or is_channel_admin):
         return jsonify({'error': 'Unauthorized'}), 403
         
     # Update role in dm_participants
@@ -456,7 +511,14 @@ def route_update_channel_settings(channel_id):
     else:
         # Check if user is admin in this group
         participant = fetch_one("SELECT role FROM dm_participants WHERE channel_id = %s AND user_id = %s", (channel_id, current_user_id))
-        if not participant or participant['role'] != 'admin':
+        
+        # EXCEPTION: Allow if it is a DM (P2P) and user is a participant
+        is_dm = (channel.get('name') == 'DM')
+        
+        if not participant: # Not even a member
+            return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+            
+        if participant['role'] != 'admin' and not is_dm:
              # Also allow if strictly 'created_by' (owner) even if role isn't 'admin' (failsafe)
              if channel.get('created_by') != current_user_id:
                 return jsonify({'success': False, 'error': 'Only group admins can change settings'}), 403
@@ -482,9 +544,16 @@ def route_update_channel_settings(channel_id):
             UPDATE channels SET is_private = %s, type = %s, icon = %s WHERE channel_id = %s
         """, (is_private, chat_type, icon_path, channel_id))
     else:
-        execute("""
-            UPDATE channels SET is_private = %s, type = %s WHERE channel_id = %s
-        """, (is_private, chat_type, channel_id))
+        # Check if topic was provided
+        topic = request.form.get('topic')
+        if topic is not None:
+            execute("""
+                UPDATE channels SET is_private = %s, type = %s, topic = %s WHERE channel_id = %s
+            """, (is_private, chat_type, topic, channel_id))
+        else:
+            execute("""
+                UPDATE channels SET is_private = %s, type = %s WHERE channel_id = %s
+            """, (is_private, chat_type, channel_id))
     
     # FIX: If switching to PRIVATE, ensure the owner is in participants list
     if is_private:
@@ -502,8 +571,6 @@ def route_update_channel_settings(channel_id):
         current_user_id = session['user_id']
         if owner_id != current_user_id:
              execute("""
-                INSERT IGNORE INTO dm_participants (channel_id, user_id, role) 
-                VALUES (%s, %s, 'admin')
                 INSERT IGNORE INTO dm_participants (channel_id, user_id, role) 
                 VALUES (%s, %s, 'admin')
             """, (channel_id, current_user_id))
@@ -680,7 +747,14 @@ def route_get_rules(channel_id):
     # Determine Edit Permissions
     user_id = session['user_id']
     user_role = session.get('role', 'member')
+    
     can_edit = (user_role == 'admin') or (channel.get('created_by') == user_id)
+    if not can_edit:
+         # Check channel admin
+         from backend.repository.db_access import fetch_one
+         p = fetch_one("SELECT role FROM dm_participants WHERE channel_id = %s AND user_id = %s", (channel_id, user_id))
+         if p and p['role'] == 'admin':
+             can_edit = True
         
     return jsonify({'success': True, 'rules': rules, 'can_edit': can_edit})
 
@@ -704,8 +778,13 @@ def route_update_rules(channel_id):
         return jsonify({'error': 'Channel not found'}), 404
         
     # Check permissions
+    # Check permissions
     if user_role != 'admin' and channel.get('created_by') != user_id:
-        return jsonify({'error': 'Unauthorized'}), 403
+        # Check channel admin
+        p = fetch_one("SELECT role FROM dm_participants WHERE channel_id = %s AND user_id = %s", (channel_id, user_id))
+        is_channel_admin = (p and p['role'] == 'admin')
+        if not is_channel_admin:
+            return jsonify({'error': 'Unauthorized'}), 403
         
     execute("UPDATE channels SET rules = %s WHERE channel_id = %s", (new_rules, channel_id))
     
@@ -729,8 +808,13 @@ def route_get_logs(channel_id):
     
     # Permission: Admins, Channel Owners, or maybe Channel Admins
     # For now: Global Admin or Channel Creator
+    # Permission: Admins, Channel Owners, or Channel Admins
     if user_role != 'admin' and channel.get('created_by') != user_id:
-        return jsonify({'error': 'Unauthorized access to verify logs'}), 403
+        # Check channel admin
+        p = fetch_one("SELECT role FROM dm_participants WHERE channel_id = %s AND user_id = %s", (channel_id, user_id))
+        is_channel_admin = (p and p['role'] == 'admin')
+        if not is_channel_admin:
+            return jsonify({'error': 'Unauthorized access to verify logs'}), 403
         
     logs = fetch_all("""
         SELECT a.log_id, a.action_type, a.details, a.created_at, u.name as user_name, u.role as user_role
