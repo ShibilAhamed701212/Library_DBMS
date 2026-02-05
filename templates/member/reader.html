@@ -52,6 +52,43 @@
         font-weight: 600;
         font-size: 0.875rem;
     }
+
+    /* Mobile Reader */
+    @media (max-width: 768px) {
+        .reader-container {
+            grid-template-columns: 1fr;
+            grid-template-rows: auto 1fr;
+            height: calc(100vh - 140px); /* Adjust for header */
+            gap: 1rem;
+        }
+        
+        .reader-sidebar {
+            padding: 1rem;
+            gap: 0.5rem;
+            /* Collapsed view implementation could go here, 
+               but strictly stacking is safer for now */
+            order: 2; /* Move controls to bottom */
+            max-height: 200px; /* Limit height */
+            overflow-y: auto;
+        }
+
+        .reader-controls {
+            flex-direction: row; /* Horizontal controls */
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .control-group {
+            flex: 1;
+            margin: 0 5px;
+        }
+
+        .reader-main {
+            order: 1;
+            height: 50vh; /* Give reading area priority */
+        }
+    }
 </style>
 {% endblock %}
 

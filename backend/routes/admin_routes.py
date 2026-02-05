@@ -792,18 +792,81 @@ def admin_reports():
     Renders the Library Insights page with 10 analytics widgets.
     """
     from collections import namedtuple
+    from backend.services.report_service import (
+        most_issued_books, most_active_users, 
+        monthly_issue_count, book_category_distribution
+    )
+    from backend.repository.db_access import fetch_one
+    
     ReportData = namedtuple('ReportData', ['most_issued', 'active_users', 'monthly', 'categories'])
     
     # Fetch data from services
-    today = []
+    most_issued = most_issued_books()
+    active_users = most_active_users()
+    monthly = monthly_issue_count()
+    categories = book_category_distribution()
     
-    return render_template(
-        "admin/reports.html",
-        active_page="admin_reports",
+    # Fetch quick stats
+    total_books = fetch_one("SELECT COUNT(*) as cnt FROM books")
+    total_members = fetch_one("SELECT COUNT(*) as cnt FROM users WHERE role = 'member'")
+    active_issues = fetch_one("SELECT COUNT(*) as cnt FROM issues WHERE return_date IS NULL")
+    
+    # Use fine > 0 as proxy for overdue since we don't have due_date column
+    overdue_books = fetch_one("""
+        SELECT COUNT(*) as cnt FROM issues 
+        WHERE return_date IS NULL AND fine > 0
+    """)
+    
+    # Check if created_at column exists in books, otherwise skip
+    try:
+        new_books_month = fetch_one("""
+            SELECT COUNT(*) as cnt FROM books 
+            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        """)
+    except:
+        new_books_month = {'cnt': 0}
+        
+    total_fines = fetch_one("SELECT COALESCE(SUM(fine), 0) as total FROM issues WHERE fine > 0")
+    pending_fines = fetch_one("""
+        SELECT COALESCE(SUM(fine), 0) as total FROM issues 
+        WHERE fine > 0 AND return_date IS NULL
+    """)
+    returned_issues = fetch_one("SELECT COUNT(*) as cnt FROM issues WHERE return_date IS NOT NULL")
+    
+    quick_stats = {
+        "total_books": total_books['cnt'] if total_books else 0,
+        "total_members": total_members['cnt'] if total_members else 0,
+        "active_issues": active_issues['cnt'] if active_issues else 0,
+        "overdue_books": overdue_books['cnt'] if overdue_books else 0,
+        "new_books_month": new_books_month['cnt'] if new_books_month else 0,
+        "total_fines": float(total_fines['total']) if total_fines else 0,
+        "pending_fines": float(pending_fines['total']) if pending_fines else 0,
+    }
+
+    # Prepare data for charts (frontend expects lists of values)
+    chart_data = {
+        "monthlyLabels": [r['month'] for r in monthly],
+        "monthlyValues": [r['total_issues'] for r in monthly],
+        "categoryLabels": [r['category'] for r in categories],
+        "categoryValues": [r['book_count'] for r in categories],
+        "activeIssues": quick_stats['active_issues'],
+        "returnedIssues": returned_issues['cnt'] if returned_issues else 0,
+        "statusValues": [quick_stats['active_issues'], returned_issues['cnt'] if returned_issues else 0]
+    }
+    
+    data = ReportData(
         most_issued=most_issued,
         active_users=active_users,
         monthly=monthly,
-        report_data=today # Or whatever logical container
+        categories=categories
+    )
+
+    return render_template(
+        "reports.html",
+        active_page="admin_reports",
+        data=data,
+        chart_data=chart_data,
+        quick_stats=quick_stats
     )
 
 
@@ -921,67 +984,7 @@ def admin_wipe_chats():
     except Exception as e:
         return {"success": False, "error": str(e)}, 500
 
-    categories = book_category_distribution()
-    
-    # Fetch quick stats
-    total_books = fetch_one("SELECT COUNT(*) as cnt FROM books")
-    total_members = fetch_one("SELECT COUNT(*) as cnt FROM users WHERE role = 'member'")
-    active_issues = fetch_one("SELECT COUNT(*) as cnt FROM issues WHERE return_date IS NULL")
-    # Use fine > 0 as proxy for overdue since we don't have due_date column
-    overdue_books = fetch_one("""
-        SELECT COUNT(*) as cnt FROM issues 
-        WHERE return_date IS NULL AND fine > 0
-    """)
-    # Check if created_at column exists in books, otherwise skip
-    try:
-        new_books_month = fetch_one("""
-            SELECT COUNT(*) as cnt FROM books 
-            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-        """)
-    except:
-        new_books_month = {'cnt': 0}
-    total_fines = fetch_one("SELECT COALESCE(SUM(fine), 0) as total FROM issues WHERE fine > 0")
-    pending_fines = fetch_one("""
-        SELECT COALESCE(SUM(fine), 0) as total FROM issues 
-        WHERE fine > 0 AND return_date IS NULL
-    """)
-    returned_issues = fetch_one("SELECT COUNT(*) as cnt FROM issues WHERE return_date IS NOT NULL")
-    
-    quick_stats = {
-        "total_books": total_books['cnt'] if total_books else 0,
-        "total_members": total_members['cnt'] if total_members else 0,
-        "active_issues": active_issues['cnt'] if active_issues else 0,
-        "overdue_books": overdue_books['cnt'] if overdue_books else 0,
-        "new_books_month": new_books_month['cnt'] if new_books_month else 0,
-        "total_fines": float(total_fines['total']) if total_fines else 0,
-        "pending_fines": float(pending_fines['total']) if pending_fines else 0,
-    }
 
-    # Prepare data for charts (frontend expects lists of values)
-    chart_data = {
-        "monthlyLabels": [r['month'] for r in monthly],
-        "monthlyValues": [r['total_issues'] for r in monthly],
-        "categoryLabels": [r['category'] for r in categories],
-        "categoryValues": [r['book_count'] for r in categories],
-        "activeIssues": quick_stats['active_issues'],
-        "returnedIssues": returned_issues['cnt'] if returned_issues else 0,
-        "statusValues": [quick_stats['active_issues'], returned_issues['cnt'] if returned_issues else 0]
-    }
-    
-    data = ReportData(
-        most_issued=most_issued,
-        active_users=active_users,
-        monthly=monthly,
-        categories=categories
-    )
-
-    return render_template(
-        "reports.html",
-        active_page="admin_reports",
-        data=data,
-        chart_data=chart_data,
-        quick_stats=quick_stats
-    )
 
 
 @admin_bp.route("/admin/system/health")
@@ -1022,6 +1025,11 @@ def admin_export_report(report_type):
     """
     Triggers CSV export for a specific report.
     """
+    from backend.services.report_service import (
+        most_issued_books, most_active_users, 
+        monthly_issue_count, export_report
+    )
+
     if report_type == "most_issued":
         df = most_issued_books()
         filename = "most_issued_books"

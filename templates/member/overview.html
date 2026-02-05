@@ -50,66 +50,7 @@
     {% endif %}
     
     <!-- Expanding Badge CSS -->
-    <style>
-        .expanding-pill {
-            display: inline-flex;
-            align-items: center;
-            border-radius: 50px;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            background: rgba(0,0,0,0.05);
-            cursor: default;
-            vertical-align: middle;
-            position: relative;
-            overflow: hidden;
-            border: 1px solid transparent;
-        }
 
-        .expanding-pill:hover {
-            background: rgba(255,255,255,1);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            border-color: rgba(99, 102, 241, 0.2);
-            transform: translateY(-1px);
-        }
-
-        .pill-badge {
-            padding: 5px 14px;
-            font-weight: 700;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            border-radius: 50px;
-            z-index: 2;
-            white-space: nowrap;
-            letter-spacing: 0.5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-
-        .pill-details {
-            max-width: 0;
-            opacity: 0;
-            transform: translateX(-10px);
-            white-space: nowrap;
-            padding-right: 0;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: var(--text-sub);
-            display: flex;
-            align-items: center;
-        }
-
-        .expanding-pill:hover .pill-details {
-            max-width: 250px; 
-            opacity: 1;
-            transform: translateX(0);
-            padding-right: 14px;
-            padding-left: 8px;
-        }
-
-        .separator {
-            margin: 0 6px;
-            opacity: 0.3;
-        }
-    </style>
 {% endblock %}
 {% block header_subtitle %}
     Track your active borrowings and membership privileges.
@@ -308,68 +249,7 @@
     </div>
 </section>
 
-<style>
-    /* Netflix-style Hover Effects */
-    /* Netflix-style Hover Effects */
-    .recommendation-card {
-        /* Optimize transitions for width/layout changes */
-        transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
-                    min-width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                    transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                    box-shadow 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                    background-color 0.4s ease;
-    }
 
-    .recommendation-card:hover {
-        /* "Pushing" Effect: Physically expand unit width */
-        min-width: 300px !important; /* Increased from 260px */
-        width: 300px !important;
-        
-        transform: scale(1.05) translateY(-5px); /* Slightly more pop */
-        z-index: 100 !important;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        background: #ffffff; /* White background for readability */
-        height: auto; /* Allow natural expansion for details */
-        border: 1px solid rgba(99, 102, 241, 0.2);
-    }
-    
-    /* Smart Transform Origins to prevent clipping at edges */
-    .recommendation-card:first-child:hover {
-        transform-origin: left center;
-    }
-    .recommendation-card:last-child:hover {
-        transform-origin: right center;
-    }
-    
-    .recommendation-card:hover .rec-details {
-        display: block !important;
-        opacity: 1 !important;
-    }
-    
-    .card-overlay {
-        position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-        opacity: 0;
-        transition: opacity 0.3s;
-    }
-    
-    .recommendation-card:hover .card-overlay {
-        opacity: 1;
-    }
-    
-    /* Hide scrollbar but keep functionality */
-    .recommendations-container::-webkit-scrollbar {
-        height: 6px;
-    }
-    .recommendations-container::-webkit-scrollbar-thumb {
-        background: rgba(255,255,255,0.1);
-        border-radius: 3px;
-    }
-    .recommendations-container::-webkit-scrollbar-track {
-        background: transparent;
-    }
-</style>
 
 <!-- Recent Activity -->
 <section class="dashboard-section mb-4">
@@ -403,107 +283,7 @@
 </section>
 
 <!-- Active Borrowings -->
-<style>
-    /* Enhanced table styles */
-    .table-container {
-        background: white;
-        border-radius: 0.5rem;
-        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
-        overflow: hidden;
-    }
-    
-    .table-container table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-    
-    .table-container th {
-        background-color: #f8f9fc;
-        color: #4e73df;
-        font-weight: 700;
-        text-transform: uppercase;
-        font-size: 0.7rem;
-        letter-spacing: 0.5px;
-        padding: 1rem;
-        text-align: left;
-    }
-    
-    .table-container td {
-        padding: 1rem;
-        border-top: 1px solid #e3e6f0;
-        vertical-align: middle;
-    }
-    
-    .table-container tr:hover {
-        background-color: rgba(78, 115, 223, 0.05);
-    }
-    
-    .badge {
-        font-weight: 500;
-        padding: 0.35em 0.65em;
-        font-size: 0.75em;
-        border-radius: 0.25rem;
-    }
-    
-    .badge-success {
-        background-color: #1cc88a;
-        color: white;
-    }
-    
-    .badge-warning {
-        background-color: #f6c23e;
-        color: #1f2d3d;
-    }
-    
-    .badge-danger {
-        background-color: #e74a3b;
-        color: white;
-    }
-    
-    .btn {
-        border-radius: 0.35rem;
-        font-weight: 500;
-        padding: 0.375rem 0.75rem;
-        font-size: 0.8rem;
-        transition: all 0.2s;
-    }
-    
-    .btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 0.15rem 0.5rem rgba(0, 0, 0, 0.1);
-    }
-    
-    .btn-primary {
-        background-color: #4e73df;
-        border-color: #4e73df;
-    }
-    
-    .btn-outline-secondary {
-        border-color: #d1d3e2;
-        color: #6e707e;
-    }
-    
-    .btn-outline-secondary:hover {
-        background-color: #f8f9fc;
-        border-color: #bac8f3;
-        color: #4e73df;
-    }
-    
-    .quick-actions {
-        display: flex;
-        gap: 0.5rem;
-        margin-bottom: 1.5rem;
-    }
-    
-    .stat-card {
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    
-    .stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.05) !important;
-    }
-</style>
+
 
 <section class="dashboard-section">
     <div class="section-header d-flex justify-content-between align-items-center">
@@ -604,4 +384,7 @@
         </div>
     </div>
 </section>
+</section>
+
+
 {% endblock %}

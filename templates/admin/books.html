@@ -69,6 +69,36 @@ add, or update the library's physical collection.{% endblock %}
     align-items: center;
     gap: 6px;
   }
+  
+  @media (max-width: 768px) {
+    .glass-card[style*="position: sticky"] {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 1rem !important;
+        top: 60px !important; /* Adjust for mobile header */
+        padding: 1rem !important;
+    }
+    .glass-card form {
+        width: 100% !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    .glass-card form > div {
+        max-width: none !important;
+        width: 100% !important;
+    }
+    .glass-card form button {
+        width: 100% !important;
+    }
+    /* Action buttons row */
+    .glass-card > div:last-child {
+        width: 100% !important;
+        justify-content: space-between !important;
+    }
+    .glass-card > div:last-child button {
+        flex: 1 !important;
+    }
+  }
 </style>
 {% endblock %} 
 

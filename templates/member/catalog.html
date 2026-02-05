@@ -141,6 +141,23 @@
         -webkit-box-shadow: 0 0 0px 1000px white inset !important;
         transition: background-color 5000s ease-in-out 0s;
     }
+
+    @media (max-width: 768px) {
+        .catalog-grid {
+            grid-template-columns: 1fr; /* Full width cards */
+            padding: 0 1rem;
+        }
+        /* Stack Form Elements */
+        form[action="/member/catalog"] {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 1rem !important;
+        }
+        form[action="/member/catalog"] > div {
+            min-width: 100% !important;
+            width: 100% !important;
+        }
+    }
 </style>
 {% endblock %}
 
