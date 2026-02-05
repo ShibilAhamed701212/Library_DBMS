@@ -25,7 +25,7 @@ def member_required(f):
             flash('Please log in to access this page.', 'warning')
             return redirect(url_for('auth.login'))
             
-        if session.get('role') != 'member':
+        if session.get('role') not in ['member', 'admin']:
             flash('You do not have permission to access this page.', 'danger')
             return redirect(url_for('member.member_dashboard'))
             

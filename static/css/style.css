@@ -188,6 +188,7 @@ body {
 .nav-link i.fa-ticket-alt { color: #6366f1; } /* Indigo */
 .nav-link i.fa-key { color: #f59e0b; } /* Amber */
 .nav-link i.fa-user-circle { color: #22c55e; } /* Green */
+.nav-link i.fa-trophy { color: #f59e0b; } /* Gold */
 
 /* .nav-link.active i removed to allow colored icons to persist */
 

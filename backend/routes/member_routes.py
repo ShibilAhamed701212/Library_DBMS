@@ -91,6 +91,78 @@ def member_update_goal_route():
 # MEMBER DASHBOARD (GET)
 # ===============================
 
+
+@member_bp.route("/goals", methods=["GET", "POST"])
+@member_required
+def member_goals():
+    """Renders the dedicated Reading Goals page with extended stats."""
+    from backend.services.goal_service import get_or_create_goal, update_goal_target
+    from backend.services.social_service import update_privacy_settings
+    
+    user_id = session["user_id"]
+    
+    # Handle POST (Settings Update)
+    if request.method == "POST":
+        # Check if it's a Goal Update or Privacy Update
+        if "target" in request.form:
+             target = request.form.get("target", type=int)
+             if target and target > 0:
+                 update_goal_target(user_id, target)
+                 flash("✅ Reading goal updated!", "success")
+             else:
+                 flash("❌ Invalid goal target", "error")
+        else:
+            # Privacy Update
+            is_public = request.form.get("is_public") == "on"
+            allow_requests = request.form.get("allow_requests") == "on"
+            show_activity = request.form.get("show_activity") == "on"
+            update_privacy_settings(user_id, is_public, allow_requests, show_activity)
+            flash("✅ Privacy settings updated!", "success")
+            
+        return redirect("/member/goals")
+
+    # GET: Fetch Data
+    reading_goal = get_or_create_goal(user_id)
+    
+    # Calculate Extended Stats
+    # Calculate Extended Stats
+    # 1. Monthly Breakdown (Books returned per month)
+    monthly_stats = fetch_all("""
+        SELECT MONTH(return_date) as month_num, COUNT(*) as count 
+        FROM issues 
+        WHERE user_id = %s AND return_date IS NOT NULL AND YEAR(return_date) = YEAR(CURDATE())
+        GROUP BY MONTH(return_date)
+        ORDER BY month_num
+    """, (user_id,))
+    
+    # Fill missing months for chart
+    months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    chart_data = {m: 0 for m in months}
+    
+    for row in monthly_stats:
+        # month_num is 1-12, map to index 0-11
+        m_index = row['month_num'] - 1
+        if 0 <= m_index < 12:
+            chart_data[months[m_index]] = row['count']
+        
+    # 2. Total Pages (Estimated) - Assuming avg 300 pages per book since we don't have page counts
+    pages_read = reading_goal['current_books'] * 320 
+    
+    # 3. Longest Streak (Consecutive months with at least 1 book)
+    # Simple logic: just count active months for now as a proxy
+    active_months = len(monthly_stats)
+    
+    return render_template(
+        "member/goals.html", 
+        active_page="member_goals",
+        reading_goal=reading_goal,
+        chart_labels=list(chart_data.keys()),
+        chart_values=list(chart_data.values()),
+        pages_read=pages_read,
+        streak=active_months
+    )
+
+
 @member_bp.route("/dashboard")
 @member_required
 def member_dashboard():
@@ -135,6 +207,27 @@ def member_dashboard():
         recommendations=recommendations,
         reading_goal=reading_goal,
         game_stats=game_stats
+    )
+
+
+@member_bp.route("/achievements")
+@member_required
+def member_achievements():
+    """
+    Renders the dedicated achievements/trophy room page.
+    Shows all unlocked and locked badges.
+    """
+    from backend.services.gamification_service import get_user_stats, get_all_achievements_status
+    
+    user_id = session["user_id"]
+    game_stats = get_user_stats(user_id)
+    all_achievements = get_all_achievements_status(user_id)
+    
+    return render_template(
+        "member/achievements.html",
+        active_page="member_achievements",
+        game_stats=game_stats,
+        achievements=all_achievements
     )
 
 
@@ -210,11 +303,15 @@ def member_community():
         session["profile_pic"] = user.get("profile_pic")
         session["name"] = user.get("name")
     
+    is_embedded = request.args.get('embed') == 'true'
+    
     return render_template(
         "member/community.html",
         active_page="member_community",
         user=user,
-        user_id=session["user_id"]
+        user_id=session["user_id"],
+        fullscreen=is_embedded, # Hides layout
+        embedded=is_embedded    # Custom styling flag
     )
 
 
@@ -224,9 +321,12 @@ def member_community():
 @member_required
 def member_toggle_privacy():
     """Toggles user profile visibility."""
-    from backend.services.social_service import toggle_profile_privacy
+    from backend.services.social_service import update_privacy_settings
     is_public = request.form.get("is_public") == "on"
-    result = toggle_profile_privacy(session["user_id"], is_public)
+    allow_requests = request.form.get("allow_requests") == "on"
+    show_activity = request.form.get("show_activity") == "on"
+    
+    result = update_privacy_settings(session["user_id"], is_public, allow_requests, show_activity)
     flash(result)
     return redirect("/member/dashboard")
 
@@ -537,6 +637,45 @@ def member_profile():
     print(f"👤 Profile Page: User Data = {user}", flush=True)
     
     return render_template("member/profile.html", active_page="member_profile", profile_user=user, badges=badges)
+
+
+@member_bp.route("/api/leaderboard")
+@member_required
+def member_api_leaderboard():
+    """Returns Top 50 Readers (JSON) for the Community Leaderboard."""
+    from backend.services.social_service import get_leaderboard
+    leaderboard = get_leaderboard(limit=50)
+    return jsonify(leaderboard)
+
+
+@member_bp.route("/profile/<int:user_id>")
+@member_required
+def member_public_profile(user_id):
+    """
+    Renders the public profile of another user.
+    Respects privacy settings.
+    """
+    from backend.services.social_service import get_public_profile
+    from backend.services.gamification_service import get_user_badges
+    
+    # Don't show public profile for self, redirect to private profile edit
+    if user_id == session["user_id"]:
+        return redirect("/member/profile")
+        
+    data, error = get_public_profile(user_id, session["user_id"])
+    
+    if error:
+        flash(f"🔒 {error}", "error")
+        return redirect("/member/community")
+        
+    badges = get_user_badges(user_id)
+    
+    return render_template(
+        "member/public_profile.html",
+        active_page="member_community", # Keep community active
+        profile=data,
+        badges=badges
+    )
 
 @member_bp.route("/profile/upload", methods=["POST"])
 @member_required

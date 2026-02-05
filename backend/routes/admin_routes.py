@@ -795,9 +795,132 @@ def admin_reports():
     ReportData = namedtuple('ReportData', ['most_issued', 'active_users', 'monthly', 'categories'])
     
     # Fetch data from services
-    most_issued = most_issued_books()
-    active_users = most_active_users()
-    monthly = monthly_issue_count()
+    today = []
+    
+    return render_template(
+        "admin/reports.html",
+        active_page="admin_reports",
+        most_issued=most_issued,
+        active_users=active_users,
+        monthly=monthly,
+        report_data=today # Or whatever logical container
+    )
+
+
+# =====================================================
+# COMMUNITY HUB (GET/POST)
+# =====================================================
+
+@admin_bp.route("/admin/community")
+@admin_required
+def admin_community_hub():
+    """Renders the Community Hub dashboard."""
+    return render_template(
+        "admin/community_hub.html",
+        active_page="admin_community"
+    )
+
+@admin_bp.route("/admin/api/logs")
+@admin_required
+def admin_get_logs_api():
+    """Returns system audit logs."""
+    from backend.repository.db_access import fetch_all
+    try:
+        # Get logs with user names
+        logs = fetch_all("""
+            SELECT l.*, u.name as user_name, u.profile_pic, c.name as channel_name 
+            FROM audit_logs l
+            LEFT JOIN users u ON l.user_id = u.user_id
+            LEFT JOIN channels c ON l.channel_id = c.channel_id
+            ORDER BY l.timestamp DESC LIMIT 100
+        """)
+        
+        # Format for JSON
+        formatted = []
+        for l in logs:
+            formatted.append({
+                'id': l['log_id'],
+                'user': l['user_name'] or 'Unknown',
+                'user_pic': l['profile_pic'],
+                'action': l['action_type'],
+                'details': l['details'],
+                'channel': l['channel_name'] or 'General',
+                'time': l['timestamp'].strftime('%Y-%m-%d %H:%M:%S') if l['timestamp'] else ''
+            })
+            
+        return {"success": True, "logs": formatted}
+    except Exception as e:
+        return {"success": False, "error": str(e)}, 500
+
+@admin_bp.route("/admin/api/chats")
+@admin_required
+def admin_get_chats_api():
+    """Returns active chat groups."""
+    from backend.repository.db_access import fetch_all
+    try:
+        # Get all channels except Global Chat (ID 1) typically
+        # But user asked for list showing chat database which implies everything or groups
+        chats = fetch_all("""
+            SELECT c.channel_id, c.name, c.type, c.created_at, u.name as owner_name,
+            (SELECT COUNT(*) FROM chat_messages WHERE channel_id = c.channel_id) as msg_count
+            FROM channels c
+            LEFT JOIN users u ON c.created_by = u.user_id
+            ORDER BY msg_count DESC
+        """)
+        
+        return {"success": True, "chats": chats}
+    except Exception as e:
+        return {"success": False, "error": str(e)}, 500
+
+@admin_bp.route("/admin/api/chat/delete/<int:channel_id>", methods=["POST"])
+@admin_required
+def admin_delete_chat(channel_id):
+    """Deletes a specific chat channel."""
+    from backend.repository.db_access import execute
+    
+    if channel_id == 1:
+        return {"success": False, "error": "Cannot delete Global Community"}, 403
+        
+    try:
+        execute("DELETE FROM chat_messages WHERE channel_id = %s", (channel_id,))
+        execute("DELETE FROM dm_participants WHERE channel_id = %s", (channel_id,))
+        execute("DELETE FROM chat_invitations WHERE target_channel_id = %s", (channel_id,))
+        execute("DELETE FROM channels WHERE channel_id = %s", (channel_id,))
+        return {"success": True}
+    except Exception as e:
+        return {"success": False, "error": str(e)}, 500
+
+@admin_bp.route("/admin/api/chat/wipe", methods=["POST"])
+@admin_required
+def admin_wipe_chats():
+    """
+    DANGER: Wipes all chat data except Global Community (ID 1).
+    """
+    from backend.repository.db_access import execute
+    try:
+        # 1. Delete messages from non-global channels
+        execute("DELETE FROM chat_messages WHERE channel_id != 1")
+        
+        # 2. Delete invitations
+        execute("DELETE FROM chat_invitations")
+        
+        # 3. Delete participants from non-global channels
+        execute("DELETE FROM dm_participants WHERE channel_id != 1")
+        
+        # 4. Delete channels (except ID 1)
+        execute("DELETE FROM channels WHERE channel_id != 1")
+        
+        # 5. Optionally clear logs if requested, but usually separate. 
+        # User said "clean wipe all chat dataset and only keep global community"
+        
+        # Log this administrative action
+        from backend.services.audit_service import log_action
+        log_action(session.get('user_id'), "WIPE_CHATS", "Administrator wiped all non-global chat data.")
+        
+        return {"success": True}
+    except Exception as e:
+        return {"success": False, "error": str(e)}, 500
+
     categories = book_category_distribution()
     
     # Fetch quick stats

@@ -1,0 +1,366 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<!-- Decorative Background Mesh -->
+<div class="mesh-background"></div>
+
+<div class="row align-items-center mb-5 position-relative" style="z-index: 2;">
+    <!-- Title Section -->
+    <div class="col-md-5 mb-4 mb-md-0">
+        <h1 class="display-4 fw-black mb-2 tracking-tight text-gradient">🏆 Trophy Room</h1>
+        <p class="text-muted lead mb-0 fw-medium">Your legendary journey through the library.</p>
+    </div>
+    
+    <!-- Hero Level Card -->
+    <div class="col-md-7 mb-4 mb-md-0">
+        <div class="glass-hero p-4 position-relative overflow-hidden shadow-lg h-100">
+            
+            <div class="row align-items-center position-relative h-100" style="z-index: 2;">
+                <!-- Left: Big Level Circle -->
+                <div class="col-12 col-md-auto text-center mb-3 mb-md-0">
+                    <div class="level-circle shadow-lg mx-auto">
+                        {{ game_stats.level }}
+                    </div>
+                </div>
+                
+                <!-- Right: Stats Details -->
+                <div class="col-12 col-md ps-md-4">
+                    <!-- Top Row: Title & Rank -->
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center align-items-md-start mb-2 text-center text-md-start">
+                        <div class="mb-2 mb-md-0">
+                            <h4 class="fw-black mb-1 text-dark">Current Level</h4>
+                            <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-2">
+                                <span class="badge bg-white text-primary border shadow-sm px-3 py-1 rounded-pill">
+                                    {{ game_stats.rank_title }}
+                                </span>
+                                <span class="badge bg-light text-muted border px-2 py-1 rounded-pill cursor-help" data-bs-toggle="tooltip" title="Upcoming Perk">
+                                    🎁 {{ game_stats.next_perk }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- XP Stats & Help Button -->
+                        <div class="text-center text-md-end">
+                            <h3 class="fw-black mb-0 text-primary">{{ game_stats.xp }} <span class="text-muted fs-6 fw-normal">XP</span></h3>
+                            <button id="howToEarnBtn" class="btn btn-sm btn-link text-decoration-none p-0 text-muted fw-bold small">
+                                <i class="fas fa-info-circle me-1"></i> How to earn?
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="progress mb-2" style="height: 14px; border-radius: 10px; background-color: rgba(255,255,255,0.5); box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);">
+                        {% set progress = (game_stats.xp / game_stats.xp_to_next) * 100 %}
+                        <div class="progress-bar bg-gradient-primary-animated" role="progressbar" 
+                             style="width: {{ progress }}%; border-radius: 10px;"></div>
+                    </div>
+                    
+                    <!-- Bottom Helper Text -->
+                    <div class="d-flex justify-content-between text-xs fw-bold text-muted small">
+                         <span>Lvl {{ game_stats.level }}</span>
+                         <span>{{ game_stats.xp_to_next - game_stats.xp }} XP needed</span>
+                    </div>
+                    <!-- Spacer for mobile breathing room -->
+                    <div class="d-md-none mb-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Micro Tabs Navigation -->
+<div class="d-flex gap-2 mb-4 overflow-auto pb-2 position-relative" id="badgeFilters" style="z-index: 2;">
+    <button class="btn btn-dark rounded-pill px-4 py-2 fw-bold active shadow-sm" data-filter="all">All Badges</button>
+    <button class="btn btn-white border-0 rounded-pill px-4 py-2 fw-bold shadow-sm" data-filter="unlocked" style="background: white; color: #10b981;">
+        <i class="fas fa-check-circle me-1"></i> Unlocked
+    </button>
+    <button class="btn btn-white border-0 rounded-pill px-4 py-2 fw-bold shadow-sm" data-filter="locked" style="background: white; color: #64748b;">
+        <i class="fas fa-lock me-1"></i> Locked
+    </button>
+</div>
+
+<!-- Premium Achievements Grid -->
+<div class="achievements-grid position-relative" style="z-index: 2;">
+    {% for badge in achievements %}
+    <div class="achievement-card p-4 text-center position-relative {{ 'unlocked' if badge.is_unlocked else 'locked' }}" 
+         data-status="{{ 'unlocked' if badge.is_unlocked else 'locked' }}">
+        
+        <!-- Status Indicator -->
+        <div class="status-badge">
+            {% if badge.is_unlocked %}
+            <div class="check-circle shadow-sm">
+                <i class="fas fa-check text-white"></i>
+            </div>
+            {% else %}
+            <i class="fas fa-lock text-muted opacity-50 fs-5"></i>
+            {% endif %}
+        </div>
+        
+        <!-- Icon -->
+        <div class="badge-icon-wrapper mb-3">
+            <div class="badge-icon {{ 'grayscale' if not badge.is_unlocked else 'floating-anim' }}">
+                {{ badge.icon }}
+            </div>
+            {% if badge.is_unlocked %}
+            <div class="glow-effect"></div>
+            {% endif %}
+        </div>
+        
+        <!-- Content -->
+        <h5 class="fw-bold mb-1 title-text text-truncate">{{ badge.name }}</h5>
+        <p class="description-text mb-3">{{ badge.description }}</p>
+        
+        <!-- Footer -->
+        <div class="card-footer-lines d-flex justify-content-center">
+            {% if badge.is_unlocked %}
+            <span class="unlock-date-pill">
+                Unlocked {{ badge.earned_at.strftime('%b %d') if badge.earned_at else '' }}
+            </span>
+            {% else %}
+            <span class="locked-pill">
+                Locked
+            </span>
+            {% endif %}
+        </div>
+
+        {% if not badge.is_unlocked %}
+        <div class="lock-overlay-glass"></div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+    /* 1. MESH BACKGROUND */
+    .mesh-background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 0;
+        background-color: #f8fafc;
+        background-image: 
+            radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+            radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+            radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+        background-image: 
+            radial-gradient(at 10% 10%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
+            radial-gradient(at 90% 10%, rgba(236, 72, 153, 0.1) 0px, transparent 50%),
+            radial-gradient(at 50% 50%, rgba(255, 255, 255, 0.5) 0px, transparent 50%);
+        pointer-events: none;
+    }
+
+    /* 2. TYPOGRAPHY */
+    .fw-black { font-weight: 800; }
+    .tracking-tight { letter-spacing: -0.025em; }
+    .text-gradient {
+        background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    /* 3. HERO CARD */
+    .glass-hero {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        border-radius: 20px;
+        position: relative;
+        overflow: hidden; /* Ensure clipping */
+    }
+    /* Removed .gradient-blob to fix "spinning line" artifact */
+    
+    .level-circle {
+        width: 80px; height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-weight: 800; font-size: 2.2rem;
+        border: 4px solid rgba(255,255,255,0.8);
+        box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+    }
+    .bg-gradient-primary-animated {
+        background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
+        background-size: 200% 200%;
+        animation: gradientShift 3s ease infinite;
+    }
+    @keyframes gradientShift { 
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    /* 4. GRID & CARDS */
+    .achievements-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1.5rem;
+    }
+    .achievement-card {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        border-radius: 16px;
+        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        height: 100%;
+        display: flex; flex-direction: column; justify-content: center;
+    }
+    .achievement-card.unlocked {
+        background: linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(245,247,255,0.9) 100%);
+        border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+    .achievement-card.unlocked:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 20px 40px -5px rgba(99, 102, 241, 0.25);
+        border-color: rgba(99, 102, 241, 0.5);
+    }
+    .achievement-card.locked {
+        background: rgba(241, 245, 249, 0.6);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        opacity: 0.9;
+    }
+
+    /* 5. BADGE ICONS & GLOW */
+    .badge-icon-wrapper { position: relative; display: inline-block; }
+    .badge-icon { font-size: 3.5rem; transition: transform 0.3s ease; position: relative; z-index: 2; }
+    
+    .floating-anim { animation: float 6s ease-in-out infinite; }
+    .glow-effect {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 60px; height: 60px;
+        background: radial-gradient(circle, rgba(99,102,241,0.4) 0%, transparent 70%);
+        filter: blur(10px);
+        z-index: 1;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    .achievement-card.unlocked:hover .glow-effect { opacity: 1; }
+
+    .check-circle {
+        width: 24px; height: 24px;
+        background: #10b981;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.8rem;
+    }
+
+    /* 6. PILLS */
+    .unlock-date-pill {
+        font-size: 0.75rem; font-weight: 700;
+        color: #059669;
+        background: #d1fae5;
+        padding: 4px 12px; border-radius: 20px;
+    }
+    .locked-pill {
+        font-size: 0.75rem; font-weight: 700;
+        color: #64748b;
+        background: #e2e8f0;
+        padding: 4px 12px; border-radius: 20px;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Custom Modal Logic
+        const modal = document.getElementById('xpInfoModal');
+        const btn = document.getElementById('howToEarnBtn');
+        const closeBtn = document.querySelector('#xpInfoModal .btn-close');
+        
+        // Move to body to prevent z-index issues
+        if(modal) document.body.appendChild(modal);
+
+        // Open
+        if(btn && modal) {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault(); 
+                modal.style.display = 'flex';
+                setTimeout(() => modal.classList.add('active'), 10); // Trigger animation if any
+            });
+        }
+
+        // Close functions
+        function closeModal() {
+            if(modal) {
+                 modal.style.display = 'none';
+                 modal.classList.remove('active');
+            }
+        }
+
+        if(closeBtn) closeBtn.addEventListener('click', closeModal);
+        
+        // Close on click outside
+        if(modal) {
+            modal.addEventListener('click', (e) => {
+                if(e.target === modal) closeModal();
+            });
+        }
+        
+        const filters = document.querySelectorAll('#badgeFilters button');
+        const cards = document.querySelectorAll('.achievement-card');
+
+        filters.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Update Active State
+                filters.forEach(b => {
+                    b.classList.remove('active', 'btn-dark');
+                    // Reset to custom styles if needed, or just toggle classes
+                    if(b.dataset.filter === 'all') b.classList.remove('btn-dark');
+                });
+                // Simple active logic
+                filters.forEach(b => b.style.opacity = '0.7');
+                btn.style.opacity = '1';
+                
+                const filter = btn.getAttribute('data-filter');
+
+                // Filter Grid
+                cards.forEach(card => {
+                    if (filter === 'all') {
+                        card.style.display = 'flex';
+                        setTimeout(() => card.style.opacity = '1', 50);
+                    } else {
+                        if (card.getAttribute('data-status') === filter) {
+                            card.style.display = 'flex';
+                            setTimeout(() => card.style.opacity = '1', 50);
+                        } else {
+                            card.style.opacity = '0';
+                            setTimeout(() => card.style.display = 'none', 300);
+                        }
+                    }
+                });
+            });
+        });
+    });
+</script>
+
+<!-- XP Info Modal (Custom Style) -->
+<div class="modal-overlay" id="xpInfoModal" style="z-index: 9999;">
+    <div class="modal-content glass-card border-0 shadow-lg">
+        <div class="modal-header border-0 pb-0 d-flex justify-content-between align-items-center mb-3">
+            <h5 class="modal-title fw-bold fs-4">📈 Point System</h5>
+            <button type="button" class="btn-close" style="background: none; border: none; font-size: 1.5rem;">&times;</button>
+        </div>
+        <div class="modal-body">
+            <ul class="list-group list-group-flush bg-transparent p-0">
+                <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent border-bottom px-0 py-3">
+                    <span class="d-flex align-items-center"><i class="fas fa-book-reader text-primary me-3 fs-5"></i> Borrow a Book</span>
+                    <span class="badge bg-success rounded-pill fw-bold fs-6 px-3">+10 XP</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent border-bottom px-0 py-3">
+                    <span class="d-flex align-items-center"><i class="fas fa-star text-warning me-3 fs-5"></i> Write a Review</span>
+                    <span class="badge bg-success rounded-pill fw-bold fs-6 px-3">+20 XP</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 py-3">
+                    <span class="d-flex align-items-center"><i class="fas fa-undo text-info me-3 fs-5"></i> Return on Time</span>
+                    <span class="badge bg-success rounded-pill fw-bold fs-6 px-3">+5 XP</span>
+                </li>
+            </ul>
+             <div class="alert alert-light border mt-4 mb-0 small text-muted p-3 rounded">
+                <i class="fas fa-crown text-warning me-2"></i> <strong>Tip:</strong> Earn badges to unlock special profile borders!
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

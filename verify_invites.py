@@ -11,7 +11,7 @@ def verify_invites():
     try:
         res = s.post(f"{BASE_URL}/", data={'email': 'tester@automation.com', 'password': 'AutoTest@123'})
         if res.status_code != 200:
-            print("❌ Login failed (Check server or credentials).")
+            print(f"❌ Login failed. Status: {res.status_code}, Response: {res.text[:200]}")
             return
     except Exception as e:
         print(f"❌ Connection failed: {e}")
@@ -22,7 +22,11 @@ def verify_invites():
     res = s.get(f"{BASE_URL}/chat/invites/pending")
     
     if res.status_code == 200:
-        data = res.json()
+        try:
+            data = res.json()
+        except Exception:
+            print(f"❌ JSON Decode Error. Body: {res.text[:500]}")
+            return
         if data.get('success'):
             invites = data.get('invites', [])
             print(f"✅ API Success. Pending Invites Count: {len(invites)}")

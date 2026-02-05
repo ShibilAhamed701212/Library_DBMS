@@ -9,6 +9,7 @@ def enrich_book_metadata(book_id):
     - Fetches Bio/Nationality.
     - Identifies and Links Series.
     - Sets Series Order.
+    - NEW: Fetches Book Cover & Description.
     """
     book = fetch_one("SELECT * FROM books WHERE book_id = %s", (book_id,))
     if not book: return "Book not found."
@@ -24,7 +25,6 @@ def enrich_book_metadata(book_id):
         search_resp = requests.get(search_url, timeout=5).json()
         
         bio = None
-        nationality = None
         
         if search_resp.get('numFound', 0) > 0:
             author_key = search_resp['docs'][0]['key'] # e.g. "OL23919A"
@@ -40,7 +40,6 @@ def enrich_book_metadata(book_id):
                 bio = str(bio_raw)
                 
             # Limit bio length
-            # Limit bio length
             if bio:
                 # CLEANUP: Strip HTML tags (like <q>, <i>, <br>)
                 import re
@@ -48,7 +47,6 @@ def enrich_book_metadata(book_id):
                 bio = bio[:4000] + "..." if len(bio) > 4000 else bio
                 
         # 1.5. FALLBACK OR UPGRADE: WIKIPEDIA
-        # If bio is missing, short (< 200 chars), or seems low quality, try Wikipedia
         if not bio or len(bio) < 200:
             print(f"🌍 Upgrading bio via Wikipedia for: {author_name}")
             try:
@@ -62,9 +60,7 @@ def enrich_book_metadata(book_id):
                     print(f"🔍 Wikipedia found matching page: {wiki_title}")
                 
                 if wiki_title:
-                     # 2. Fetch Extract using Action API (Better for redirects/special chars)
-                    # exintro=1 gets just the intro (summary)
-                    # explaintext=1 gets plain text (no HTML)
+                     # 2. Fetch Extract using Action API
                     query_url = "https://en.wikipedia.org/w/api.php"
                     params = {
                         "action": "query",
@@ -87,38 +83,34 @@ def enrich_book_metadata(book_id):
                                 bio = wiki_bio
                                 print("✅ Upgraded to Wikipedia Bio via Action API!")
                             break
-
             except Exception as w_e:
                 print(f"⚠️ Wikipedia lookup failed: {w_e}")
         
         # 2. SAVE AUTHOR
         author = fetch_one("SELECT author_id, bio FROM authors WHERE name = %s", (author_name,))
         if not author:
-            # Create new author with bio
             execute("INSERT INTO authors (name, bio) VALUES (%s, %s)", (author_name, bio))
             author = fetch_one("SELECT author_id, bio FROM authors WHERE name = %s", (author_name,))
         else:
-            # Update existing bio if new one is longer or old one was empty
             current_bio = author.get('bio', '') or ''
-            
             should_update = False
             if bio and len(bio) > len(current_bio):
                 should_update = True
-            elif bio and '<' in current_bio: # Fix dirty HTML in old bio
+            elif bio and '<' in current_bio:
                 should_update = True
                 
             if should_update:
-                print(f"🔄 Updating bio for {author_name} (Length: {len(current_bio)} -> {len(bio)})")
+                print(f"🔄 Updating bio for {author_name}")
                 execute("UPDATE authors SET bio = %s WHERE author_id = %s", (bio, author['author_id']))
                 
         author_id = author['author_id']
         
-        # 3. IDENTIFY SERIES (Google Books)
-        # Google Books often has better series info in the "title" or "subtitle" or explicit volume info
-        # We use a loose search by title + author
+        # 3. IDENTIFY SERIES & FETCH METADATA (Google Books)
         series_id = None
         s_name = None
         s_order = None
+        cover_url = None
+        description = None
         
         print(f"🌍 Searching Google Books for series info: {title}")
         gb_url = f"https://www.googleapis.com/books/v1/volumes?q=intitle:{title}+inauthor:{author_name}&maxResults=1"
@@ -127,31 +119,39 @@ def enrich_book_metadata(book_id):
         if gb_resp.get('totalItems', 0) > 0:
             info = gb_resp['items'][0]['volumeInfo']
             
-            # Subtitle often contains "Book 1 of X" or "The X Series"
+            # --- 3.1 Fetch Description ---
+            description = info.get('description')
+            if description:
+                description = description[:2000] + "..." if len(description) > 2000 else description
+            
+            # --- 3.2 Fetch Cover URL ---
+            image_links = info.get('imageLinks', {})
+            cover_url = image_links.get('extraLarge') or \
+                        image_links.get('large') or \
+                        image_links.get('medium') or \
+                        image_links.get('thumbnail')
+            
+            if cover_url:
+                 cover_url = cover_url.replace("http://", "https://")
+            
+            print(f"🖼️ Found Cover: {cover_url is not None}")
+            
+            # --- 3.3 Identify Series ---
             subtitle = info.get('subtitle', '')
-            
-            # CHECK 1: Explicit Series Info (some records have it)
-            # This is harder to get reliably without key, but let's check subtitle patterns
-            # Pattern: "Book 1 of The Expanse"
-            # CHECK 1: Regex on Title/Subtitle/Description
             import re
-            
-            # Combine fields to search
             text_to_search = f"{info.get('title')} {info.get('subtitle', '')} {info.get('description', '')[:200]}"
             
-            # PATTERNS (Stricter: Enforce Title Case)
             patterns = [
-                r'\(([^)]+),?\s+[#]?(\d+)\)',         # (Series, #1)
-                r'Book (\d+) of (?:the )?([A-Z][a-zA-Z0-9\s\']+)',   # Book 1 of The Series (Must start with Cap)
-                r'Vol\.? (\d+) of (?:the )?([A-Z][a-zA-Z0-9\s\']+)', # Vol 1 of The Series
-                r'([A-Z][a-zA-Z0-9\s\']+) Series,? Book (\d+)', # The Expanse Series, Book 1
+                r'\(([^)]+),?\s+[#]?(\d+)\)',         
+                r'Book (\d+) of (?:the )?([A-Z][a-zA-Z0-9\s\']+)',   
+                r'Vol\.? (\d+) of (?:the )?([A-Z][a-zA-Z0-9\s\']+)', 
+                r'([A-Z][a-zA-Z0-9\s\']+) Series,? Book (\d+)', 
             ]
             
             found = False
             for pat in patterns:
-                match = re.search(pat, text_to_search) # Removed IGNORECASE to enforce capitalization
+                match = re.search(pat, text_to_search) 
                 if match:
-                    # Logic to handle different group layouts
                     g1, g2 = match.groups()
                     if g1.isdigit(): 
                         s_order = int(g1)
@@ -161,18 +161,15 @@ def enrich_book_metadata(book_id):
                         if g2.isdigit():
                             s_order = int(g2)
                         
-                    # VALIDATION: Name must be Title Case and reasonable length
-                    if len(s_name) < 50 and s_order and s_name[0].isupper() and " " in s_name:
-                        # Reject generic phrases
+                    if len(s_name) < 50 and s_name and s_name[0].isupper() and " " in s_name:
                         if "history of" in s_name.lower() or "struggle for" in s_name.lower():
                              continue
-                             
                         found = True
                         print(f"✅ Found Series via Regex: {s_name} (#{s_order})")
                         break
             
             if not found:
-                s_name = None # Reset if no match found
+                s_name = None 
                 
         # 3.5. FALLBACK: OpenLibrary Work Search
         if not s_name:
@@ -183,43 +180,43 @@ def enrich_book_metadata(book_id):
                 
                 if ol_s_data.get('numFound', 0) > 0:
                      doc = ol_s_data['docs'][0]
-                     work_key = doc.get('key') # /works/OLxxxxW
                      
+                     # 3.5.1 Try to get Cover from OL if Google failed
+                     if not cover_url and 'cover_i' in doc:
+                         cover_id = doc['cover_i']
+                         cover_url = f"https://covers.openlibrary.org/b/id/{cover_id}-L.jpg"
+                         print("🖼️ Found Cover via OpenLibrary")
+                         
+                     work_key = doc.get('key')
                      if work_key:
                          work_url = f"https://openlibrary.org{work_key}.json"
                          work_res = requests.get(work_url, timeout=5).json()
                          
-                         # Check strict 'series' field
-                         # OpenLibrary series structure varies, capturing simple string cases
                          if 'series' in work_res and isinstance(work_res['series'], list) and len(work_res['series']) > 0:
                              raw_series = work_res['series'][0]
                              if isinstance(raw_series, str):
                                  s_name = raw_series
-                                 s_order = 1 # Default, as OL doesn't always have order in this field
+                                 s_order = 1
                                  print(f"✅ Found OpenLibrary Series: {s_name}")
             except Exception as e:
                 print(f"⚠️ OpenLibrary Series lookup failed: {e}")
 
         # 4. SAVE SERIES
-
-        # 4. SAVE SERIES
         if s_name:
-            # Clean up series name
             s_name = s_name.replace("Series", "").strip()
-            
             series = fetch_one("SELECT series_id FROM series WHERE name = %s", (s_name,))
             if not series:
                 execute("INSERT INTO series (name) VALUES (%s)", (s_name,))
                 series = fetch_one("SELECT series_id FROM series WHERE name = %s", (s_name,))
-            
             series_id = series['series_id']
             
         # 5. UPDATE BOOK
+        print(f"📝 Saving Metadata for {title}: Cover={bool(cover_url)}, Desc={bool(description)}")
         execute("""
             UPDATE books 
-            SET author_id = %s, series_id = %s, series_order = %s 
+            SET author_id = %s, series_id = %s, series_order = %s, cover_url = %s, description = %s
             WHERE book_id = %s
-        """, (author_id, series_id, s_order, book_id))
+        """, (author_id, series_id, s_order, cover_url, description, book_id))
         
         return "Success (Open Source)"
         

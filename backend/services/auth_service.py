@@ -65,7 +65,8 @@ def authenticate_user(email: str, password: str):
             role,                  -- User role (admin / member)
             must_change_password,   -- Flag for first-login password change
             profile_pic,
-            bio
+            bio,
+            is_public
         FROM users
         WHERE email = %s
         """,
@@ -98,6 +99,6 @@ def authenticate_user(email: str, password: str):
 def get_user_by_id(user_id):
     """Fetch user details by ID."""
     return fetch_one(
-        "SELECT user_id, name, email, role, profile_pic, bio FROM users WHERE user_id = %s",
+        "SELECT user_id, name, email, role, profile_pic, bio, is_public FROM users WHERE user_id = %s",
         (user_id,)
     )

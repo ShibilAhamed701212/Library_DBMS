@@ -1,0 +1,249 @@
+{% extends "layout.html" %}
+
+{% block title %}My Reading Goals{% endblock %}
+{% block header_title %}My Reading Journey{% endblock %}
+{% block header_subtitle %}Track your progress, build streaks, and hit your 2026 targets.{% endblock %}
+
+{% block content %}
+<style>
+    .goal-hero {
+        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        border-radius: 1rem;
+        padding: 2rem;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 25px rgba(99, 102, 241, 0.2);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .goal-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -10%;
+        width: 300px;
+        height: 300px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+    }
+
+    .progress-circle-lg {
+        width: 150px;
+        height: 150px;
+        position: relative;
+    }
+
+    .stats-grid-goals {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .chart-container {
+        height: 200px;
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+        padding-top: 20px;
+    }
+
+    .chart-bar-wrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100%;
+        justify-content: flex-end;
+    }
+
+    .chart-bar {
+        width: 100%;
+        background: rgba(99, 102, 241, 0.2);
+        border-radius: 5px 5px 0 0;
+        transition: height 0.5s ease;
+        position: relative;
+    }
+    
+    .chart-bar:hover {
+        background: rgba(99, 102, 241, 0.5);
+    }
+    
+    .chart-bar:hover::after {
+        content: attr(data-value);
+        position: absolute;
+        top: -25px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #333;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+
+    .chart-label {
+        font-size: 0.75rem;
+        color: var(--text-sub);
+        margin-top: 5px;
+    }
+</style>
+
+<!-- HERO SECTION -->
+<div class="goal-hero">
+    <div style="z-index: 1;">
+        <h2 style="margin: 0; font-size: 2rem; font-weight: 800;">{{ reading_goal.year }} Goal</h2>
+        <p style="margin: 0.5rem 0 1.5rem; opacity: 0.9;">
+            You've read <strong style="font-size: 1.2rem;">{{ reading_goal.current_books }}</strong> of <strong>{{ reading_goal.goal_books }}</strong> books.
+        </p>
+        
+        <form action="/member/goals" method="POST" style="display: flex; gap: 10px; max-width: 300px;">
+            <input type="number" name="target" value="{{ reading_goal.goal_books }}" min="1" max="100" 
+                   style="padding: 10px; border-radius: 8px; border: none; width: 80px; text-align: center; font-weight: bold;">
+            <button type="submit" class="btn" style="background: white; color: #6366f1; font-weight: 700; border: none;">Update Target</button>
+        </form>
+    </div>
+    
+    <!-- Progress Circle -->
+    {% set progress = (reading_goal.current_books / reading_goal.goal_books * 100) if reading_goal.goal_books > 0 else 0 %}
+    {% set progress = progress if progress <= 100 else 100 %}
+    <div class="progress-circle-lg">
+        <svg width="150" height="150" viewBox="0 0 150 150">
+            <circle cx="75" cy="75" r="65" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="12" />
+            <circle cx="75" cy="75" r="65" fill="none" stroke="white" stroke-width="12"
+                    stroke-dasharray="408" stroke-dashoffset="{{ 408 - (408 * progress / 100) }}"
+                    transform="rotate(-90 75 75)" style="transition: stroke-dashoffset 1s ease-in-out;" />
+        </svg>
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2rem; font-weight: 800;">
+            {{ progress|int }}%
+        </div>
+    </div>
+</div>
+
+<!-- STATS GRID -->
+<div class="stats-grid-goals">
+    <!-- Streak -->
+    <div class="glass-card" style="padding: 1.5rem; text-align: center;">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔥</div>
+        <div style="font-size: 2rem; font-weight: 700; color: var(--text-main);">{{ streak }}</div>
+        <div style="color: var(--text-sub); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">Active Months</div>
+    </div>
+    
+    <!-- Pages -->
+    <div class="glass-card" style="padding: 1.5rem; text-align: center;">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📄</div>
+        <div style="font-size: 2rem; font-weight: 700; color: var(--text-main);">{{ pages_read }}</div>
+        <div style="color: var(--text-sub); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">Est. Pages Read</div>
+    </div>
+    
+    <!-- Tier -->
+    <div class="glass-card" style="padding: 1.5rem; text-align: center;">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">
+            {% if reading_goal.tier == 'Platinum' %}💎{% elif reading_goal.tier == 'Gold' %}🥇{% else %}🥈{% endif %}
+        </div>
+        <div style="font-size: 2rem; font-weight: 700; color: var(--text-main);">{{ reading_goal.tier or 'Silver' }}</div>
+        <div style="color: var(--text-sub); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">Current Tier</div>
+    </div>
+</div>
+
+<!-- MAIN CONTENT GRID -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+    
+    <!-- Left: Activity Chart -->
+    <section class="glass-card" style="padding: 1.5rem;">
+        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-chart-bar" style="color: #6366f1;"></i> Monthly Breakdown
+        </h3>
+        
+        <div class="chart-container">
+            {% set max_val = chart_values|max if chart_values|max > 0 else 1 %}
+            {% for label in chart_labels %}
+                {% set val = chart_values[loop.index0] %}
+                {% set height = (val / max_val * 100) %}
+                <div class="chart-bar-wrapper">
+                    <div class="chart-bar" style="height: {{ height }}%;" data-value="{{ val }}"></div>
+                    <span class="chart-label">{{ label }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Right: Privacy Settings -->
+    <section class="glass-card" style="padding: 1.5rem;">
+        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-user-shield" style="color: #6366f1;"></i> Privacy
+        </h3>
+        <p style="color: var(--text-sub); font-size: 0.85rem; margin-bottom: 1.5rem;">
+            Control who can see your reading activity and goals.
+        </p>
+        
+        <form action="/member/goals" method="POST" id="privacyForm">
+            <input type="hidden" name="privacy_update" value="true">
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                
+                <!-- Toggle Item -->
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600;">Public Profile</div>
+                        <div style="font-size: 0.75rem; color: var(--text-sub);">Visible to everyone</div>
+                    </div>
+                    <label class="switch" style="position: relative; display: inline-block; width: 44px; height: 22px;">
+                        <input type="checkbox" name="is_public" onchange="document.getElementById('privacyForm').submit()" 
+                            {% if reading_goal.is_public %}checked{% endif %} style="opacity: 0; width: 0; height: 0;">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 0;">
+
+                <!-- Toggle Item -->
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600;">Allow Requests</div>
+                        <div style="font-size: 0.75rem; color: var(--text-sub);">Others can add you</div>
+                    </div>
+                    <label class="switch" style="position: relative; display: inline-block; width: 44px; height: 22px;">
+                        <input type="checkbox" name="allow_requests" onchange="document.getElementById('privacyForm').submit()" 
+                            {% if reading_goal.allow_requests %}checked{% endif %} style="opacity: 0; width: 0; height: 0;">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 0;">
+
+                <!-- Toggle Item -->
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600;">Show Activity</div>
+                        <div style="font-size: 0.75rem; color: var(--text-sub);">Values, badges, reviews</div>
+                    </div>
+                    <label class="switch" style="position: relative; display: inline-block; width: 44px; height: 22px;">
+                        <input type="checkbox" name="show_activity" onchange="document.getElementById('privacyForm').submit()" 
+                            {% if reading_goal.show_activity %}checked{% endif %} style="opacity: 0; width: 0; height: 0;">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+
+            </div>
+        </form>
+    </section>
+</div>
+
+<!-- Switch Styles (if not in main css) -->
+<style>
+    .switch input:checked + .slider { background-color: #6366f1; }
+    .switch input:checked + .slider:before { transform: translateX(22px); }
+    .slider {
+        position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+        background-color: #ccc; transition: .4s; border-radius: 34px;
+    }
+    .slider:before {
+        position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px;
+        background-color: white; transition: .4s; border-radius: 50%;
+    }
+</style>
+{% endblock %}

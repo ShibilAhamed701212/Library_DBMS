@@ -4,42 +4,112 @@
 {% block header_title %}My Library Overview 
     {% if reading_goal %}
         {% set tier = reading_goal.tier if reading_goal.tier else 'Silver' %}
-        <span class="badge" style="
-            font-size: 0.75rem; 
-            vertical-align: middle; 
-            margin-left: 10px;
-            padding: 4px 12px;
-            border-radius: 20px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            {% if tier == 'Platinum' %}
-                background: linear-gradient(135deg, #e5e7eb, #94a3b8); color: #1e293b; border: 1px solid #cbd5e1;
-            {% elif tier == 'Gold' %}
-                background: linear-gradient(135deg, #fde68a, #f59e0b); color: #78350f; border: 1px solid #fbbf24;
-            {% else %}
-                background: linear-gradient(135deg, #f3f4f6, #d1d5db); color: #374151; border: 1px solid #9ca3af;
-            {% endif %}
-        ">
-            {% if tier == 'Platinum' %}💎 Platinum{% elif tier == 'Gold' %}🥇 Gold{% else %}🥈 Silver{% endif %}
-        </span>
         
-        <!-- Tier Metrics -->
-        <span style="font-size: 0.7rem; color: var(--text-sub); margin-left: 10px; opacity: 0.8;">
-            {% if tier == 'Platinum' %}
-                (Limit: 10 books | 30 days)
-            {% elif tier == 'Gold' %}
-                (Limit: 6 books | 21 days)
-            {% else %}
-                (Limit: 3 books | 14 days)
-            {% endif %}
-        </span>
+        <!-- Expanding Tier Badge -->
+        <div class="expanding-pill tier-pill">
+            <div class="pill-badge" style="
+                {% if tier == 'Platinum' %}
+                    background: linear-gradient(135deg, #e5e7eb, #94a3b8); color: #1e293b; border: 1px solid #cbd5e1;
+                {% elif tier == 'Gold' %}
+                    background: linear-gradient(135deg, #fde68a, #f59e0b); color: #78350f; border: 1px solid #fbbf24;
+                {% else %}
+                    background: linear-gradient(135deg, #f3f4f6, #d1d5db); color: #374151; border: 1px solid #9ca3af;
+                {% endif %}
+            ">
+                {% if tier == 'Platinum' %}💎 Platinum{% elif tier == 'Gold' %}🥇 Gold{% else %}🥈 Silver{% endif %}
+            </div>
+            
+            <div class="pill-details">
+                {% if tier == 'Platinum' %}
+                    <span>📚 10 Books</span><span class="separator">•</span><span>⏳ 30 Days</span>
+                {% elif tier == 'Gold' %}
+                    <span>📚 6 Books</span><span class="separator">•</span><span>⏳ 21 Days</span>
+                {% else %}
+                    <span>📚 3 Books</span><span class="separator">•</span><span>⏳ 14 Days</span>
+                {% endif %}
+            </div>
+        </div>
     {% endif %}
     
     {% if game_stats %}
-    <span class="badge" style="background: linear-gradient(135deg, #6366f1, #a855f7); color: white; margin-left: 8px;">
-        ✨ Level {{ game_stats.level }}
-    </span>
+    <!-- Expanding Level Badge -->
+    <div class="expanding-pill level-pill" style="margin-left: 8px;">
+        <div class="pill-badge" style="background: linear-gradient(135deg, #6366f1, #a855f7); color: white;">
+            ✨ Level {{ game_stats.level }}
+        </div>
+        <div class="pill-details">
+            {% set total_needed = (game_stats.level * (game_stats.level + 1) / 2) * 100 %}
+            {% set prev_level_xp = ((game_stats.level - 1) * game_stats.level / 2) * 100 %}
+            {% set next_xp_target = total_needed %}
+            
+            <span>XP: {{ game_stats.xp }}</span>
+            <span class="separator">•</span>
+            <span>Next: {{ next_xp_target|int }}</span>
+        </div>
+    </div>
     {% endif %}
+    
+    <!-- Expanding Badge CSS -->
+    <style>
+        .expanding-pill {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 50px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(0,0,0,0.05);
+            cursor: default;
+            vertical-align: middle;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid transparent;
+        }
+
+        .expanding-pill:hover {
+            background: rgba(255,255,255,1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border-color: rgba(99, 102, 241, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .pill-badge {
+            padding: 5px 14px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            border-radius: 50px;
+            z-index: 2;
+            white-space: nowrap;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .pill-details {
+            max-width: 0;
+            opacity: 0;
+            transform: translateX(-10px);
+            white-space: nowrap;
+            padding-right: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-sub);
+            display: flex;
+            align-items: center;
+        }
+
+        .expanding-pill:hover .pill-details {
+            max-width: 250px; 
+            opacity: 1;
+            transform: translateX(0);
+            padding-right: 14px;
+            padding-left: 8px;
+        }
+
+        .separator {
+            margin: 0 6px;
+            opacity: 0.3;
+        }
+    </style>
 {% endblock %}
 {% block header_subtitle %}
     Track your active borrowings and membership privileges.
@@ -86,38 +156,33 @@
 </div>
 
 <!-- Trophy Room -->
+<!-- Trophy Room -->
 {% if game_stats and game_stats.badges %}
 <section class="dashboard-section">
-    <div class="section-header">
+    <div class="section-header" style="justify-content: flex-start; align-items: center; gap: 10px;">
         <h2>🏆 My Trophy Room</h2>
+        <a href="/member/achievements" class="btn btn-sm btn-outline-secondary" style="margin-left: auto;">View Details</a>
     </div>
-    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-        {% for badge in game_stats.badges %}
-        <div class="glass-card" style="padding: 1rem; width: 120px; text-align: center; border: 1px solid rgba(99, 102, 241, 0.3); background: linear-gradient(to bottom, rgba(99, 102, 241, 0.05), transparent);">
-            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">{{ badge.icon }}</div>
-            <div style="font-weight: 700; font-size: 0.8rem;">{{ badge.name }}</div>
-            <div style="font-size: 0.65rem; color: var(--text-sub); line-height: 1.2; margin-top: 4px;">{{ badge.description }}</div>
+    
+    <a href="/member/achievements" style="text-decoration: none; color: inherit; display: block;">
+        <div class="glass-card hover-scale" style="padding: 1rem; display: flex; gap: 1rem; flex-wrap: wrap; cursor: pointer; transition: transform 0.2s ease;">
+            {% for badge in game_stats.badges[:5] %}
+            <div style="text-align: center; width: 100px;">
+                <div style="font-size: 2rem; margin-bottom: 0.2rem;">{{ badge.icon }}</div>
+                <div style="font-weight: 600; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ badge.name }}</div>
+            </div>
+            {% endfor %}
+            {% if game_stats.badges|length > 5 %}
+            <div style="display: flex; align-items: center; justify-content: center; width: 80px; font-weight: bold; color: var(--text-sub);">
+                +{{ game_stats.badges|length - 5 }} More
+            </div>
+            {% endif %}
         </div>
-        {% endfor %}
-    </div>
+    </a>
 </section>
 {% endif %}
 
-<!-- Reading Goal Progress -->
-{% if reading_goal %}
-<div class="glass-card mb-4" style="padding: 1.5rem; background: linear-gradient(to right, rgba(99, 102, 241, 0.05), rgba(79, 70, 229, 0.05)); border: 1px solid rgba(99, 102, 241, 0.2);">
-    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.75rem;">
-        <div>
-            <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                <span style="font-size: 1.5rem;">🎯</span> My {{ reading_goal.year }} Reading Goal
-            </h3>
-            <p style="margin: 0.25rem 0 0; color: var(--text-sub); font-size: 0.875rem;">
-                Keep it up! You've read <strong>{{ reading_goal.current_count }}</strong> of <strong>{{ reading_goal.target_count }}</strong> books.
-            </p>
-        </div>
-    </div>
-</div>
-{% endif %}
+
 
 <!-- Goals and Privacy -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
@@ -125,59 +190,25 @@
     <section class="dashboard-section" style="margin-top: 0;">
         <div class="section-header">
             <h2>🎯 Reading Goal</h2>
+            <a href="/member/goals" class="btn btn-outline-secondary btn-sm">View Full Details</a>
         </div>
-        <div class="section-content glass-card" style="padding: 1.5rem;">
-            {% if reading_goal %}
-            <div style="margin-bottom: 1.5rem;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-weight: 600;">
-                    <span>Progress ({{ reading_goal.year }})</span>
-                    <span>{{ reading_goal.current_count }} / {{ reading_goal.target_count }} books</span>
-                </div>
-                {% set progress = (reading_goal.current_count / reading_goal.target_count * 100) if reading_goal.target_count > 0 else 0 %}
-                <div style="height: 12px; background: rgba(0,0,0,0.05); border-radius: 6px; overflow: hidden;">
-                    <div style="height: 100%; width: {{ progress if progress <= 100 else 100 }}%; background: linear-gradient(90deg, #6366f1, #a855f7); border-radius: 6px;"></div>
-                </div>
+        <div class="section-content glass-card" style="padding: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                {% if reading_goal %}
+                <h3 style="margin: 0; margin-bottom: 0.5rem; font-size: 1.1rem;">{{ reading_goal.current_books }} / {{ reading_goal.goal_books }} Books</h3>
+                <p style="color: var(--text-sub); font-size: 0.9rem; margin: 0;">
+                    {% set progress = (reading_goal.current_books / reading_goal.goal_books * 100) if reading_goal.goal_books > 0 else 0 %}
+                    You're {{ progress|int }}% of the way there!
+                </p>
+                {% else %}
+                <p style="color: var(--text-sub);">No goal set for this year.</p>
+                {% endif %}
             </div>
-            
-            <form action="/member/goal/update" method="POST" style="display: flex; gap: 0.5rem;">
-                <input type="number" name="target" value="{{ reading_goal.target_count }}" min="1" max="100" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text-main);">
-                <button type="submit" class="btn btn-primary btn-sm">Set New Goal</button>
-            </form>
-            {% else %}
-            <p style="color: var(--text-sub);">No reading goal found for this year. Start by borrowing a book!</p>
-            {% endif %}
+            <a href="/member/goals" class="btn btn-primary">Update Goal</a>
         </div>
     </section>
 
-    <!-- PRIVACY SETTINGS -->
-    <section class="dashboard-section" style="margin-top: 0;">
-        <div class="section-header">
-            <h2>🔐 Privacy & Community</h2>
-        </div>
-        <div class="section-content glass-card" style="padding: 1.5rem;">
-            <p style="font-size: 0.9rem; color: var(--text-sub); margin-bottom: 1.5rem;">
-                Making your profile public allows fellow members to see your name, tier, and community contributions.
-            </p>
-            <form action="/member/profile/privacy" method="POST" id="privacyForm">
-                <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.02); padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
-                    <div style="font-weight: 600;">Public Profile</div>
-                    <label class="switch" style="position: relative; display: inline-block; width: 50px; height: 24px;">
-                        <input type="checkbox" name="is_public" onchange="document.getElementById('privacyForm').submit()" 
-                            {% if reading_goal.is_public %}checked{% endif %} style="opacity: 0; width: 0; height: 0;">
-                        <span class="slider round" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px;"></span>
-                    </label>
-                </div>
-            </form>
-            <style>
-                input:checked + .slider { background-color: #6366f1; }
-                input:checked + .slider:before { transform: translateX(26px); }
-                .slider:before {
-                    position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px;
-                    background-color: white; transition: .4s; border-radius: 50%;
-                }
-            </style>
-        </div>
-    </section>
+
 </div>
 
 <!-- Quick Actions -->
@@ -195,27 +226,81 @@
     <div class="section-header">
         <h2><i class="fas fa-magic me-2" style="color: #6366f1;"></i>Recommended for You</h2>
     </div>
-    <div class="recommendations-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+    <div class="recommendations-container" style="display: flex; gap: 1rem; overflow-x: auto; padding: 3rem 2rem; scroll-behavior: smooth;">
         {% for rec in recommendations %}
-        <div class="glass-card recommendation-card" style="padding: 1rem; position: relative; transition: transform 0.2s;">
-            <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ rec.title }}">
-                {{ rec.title }}
+        <div class="glass-card recommendation-card" style="min-width: 220px; width: 220px; position: relative; transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); transform-origin: center center; z-index: 1;">
+            
+            <!-- COVER IMAGE OR FALLBACK -->
+            {% if rec.cover_url %}
+            <div style="
+                height: 320px; 
+                background-image: url('{{ rec.cover_url }}');
+                background-size: cover;
+                background-position: center;
+                border-radius: 12px;
+                margin-bottom: 1rem;
+                position: relative;
+                overflow: hidden;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            ">
+                <!-- Hover Overlay Gradient -->
+                <div class="card-overlay"></div>
             </div>
-            <div style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 0.75rem;">
-                {{ rec.author }}
+            {% else %}
+            <!-- Fallback Gradient -->
+            <div style="
+                height: 320px; 
+                background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1)); 
+                display: flex; 
+                align-items: center; 
+                justify-content: center;
+                border-radius: 12px;
+                margin-bottom: 1rem;
+                position: relative;
+                overflow: hidden;
+            ">
+                <div style="font-size: 4rem;">
+                    {% if rec.category == 'Fiction' %}🏰
+                    {% elif rec.category == 'Science' %}🧬
+                    {% elif rec.category == 'Biography' %}👤
+                    {% elif rec.category == 'Technology' %}💻
+                    {% else %}📚{% endif %}
+                </div>
+                <div class="card-overlay"></div>
             </div>
-            <div>
-                <span style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.1); color: #6366f1; padding: 2px 6px; border-radius: 4px;">{{ rec.category }}</span>
-                <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-                    <form action="/member/request" method="POST" style="flex: 1;">
-                        <input type="hidden" name="book_id" value="{{ rec.book_id }}">
-                        <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;">Request</button>
-                    </form>
-                    {% if rec.pdf_src %}
-                    <a href="/member/book/read/{{ rec.book_id }}" class="btn btn-outline-secondary btn-sm" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px;">
-                        <span>📖</span> Read
-                    </a>
+            {% endif %}
+
+            <div class="rec-info">
+                <div style="font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ rec.title }}">
+                    {{ rec.title }}
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 0.5rem;">
+                    {{ rec.author }}
+                </div>
+                
+                <div class="rec-details" style="display: none; opacity: 0; transition: opacity 0.3s ease;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: #fbbf24; margin-bottom: 0.5rem;">
+                        <span>⭐ {{ "%.1f"|format(rec.avg_rating|float) }} Match</span>
+                        <span style="color: var(--text-sub);">• {{ rec.category }}</span>
+                    </div>
+                    
+                    {% if rec.description %}
+                    <div style="font-size: 0.75rem; color: var(--text-sub); margin-bottom: 0.75rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">
+                        {{ rec.description }}
+                    </div>
                     {% endif %}
+                
+                    <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                        <form action="/member/request" method="POST" style="flex: 1;">
+                            <input type="hidden" name="book_id" value="{{ rec.book_id }}">
+                            <button type="submit" class="btn btn-primary btn-sm" style="width: 100%; font-size: 0.7rem;">+ My List</button>
+                        </form>
+                        {% if rec.pdf_src %}
+                        <a href="/member/book/read/{{ rec.book_id }}" class="btn btn-outline-light btn-sm" style="flex: 1; display: flex; align-items: center; justify-content: center; font-size: 0.7rem;">
+                            ▶ Read
+                        </a>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
@@ -224,9 +309,65 @@
 </section>
 
 <style>
+    /* Netflix-style Hover Effects */
+    /* Netflix-style Hover Effects */
+    .recommendation-card {
+        /* Optimize transitions for width/layout changes */
+        transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                    min-width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                    transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                    box-shadow 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                    background-color 0.4s ease;
+    }
+
     .recommendation-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        /* "Pushing" Effect: Physically expand unit width */
+        min-width: 300px !important; /* Increased from 260px */
+        width: 300px !important;
+        
+        transform: scale(1.05) translateY(-5px); /* Slightly more pop */
+        z-index: 100 !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        background: #ffffff; /* White background for readability */
+        height: auto; /* Allow natural expansion for details */
+        border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+    
+    /* Smart Transform Origins to prevent clipping at edges */
+    .recommendation-card:first-child:hover {
+        transform-origin: left center;
+    }
+    .recommendation-card:last-child:hover {
+        transform-origin: right center;
+    }
+    
+    .recommendation-card:hover .rec-details {
+        display: block !important;
+        opacity: 1 !important;
+    }
+    
+    .card-overlay {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .recommendation-card:hover .card-overlay {
+        opacity: 1;
+    }
+    
+    /* Hide scrollbar but keep functionality */
+    .recommendations-container::-webkit-scrollbar {
+        height: 6px;
+    }
+    .recommendations-container::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,0.1);
+        border-radius: 3px;
+    }
+    .recommendations-container::-webkit-scrollbar-track {
+        background: transparent;
     }
 </style>
 

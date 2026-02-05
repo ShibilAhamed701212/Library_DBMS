@@ -1,0 +1,314 @@
+{% extends "layout.html" %}
+
+{% block title %}Community Hub{% endblock %}
+{% block header_title %}Community Hub{% endblock %}
+{% block header_subtitle %}Manage global chat, groups, and system logs.{% endblock %}
+
+{% block head %}
+<style>
+    /* Tab Navigation */
+    .hub-tabs {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.5rem;
+    }
+    .hub-tab {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--text-sub);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+    }
+    .hub-tab:hover {
+        background: rgba(0,0,0,0.05);
+        color: var(--primary);
+    }
+    .hub-tab.active {
+        background: var(--primary);
+        color: white;
+        box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);
+    }
+
+    /* Logs Table */
+    .logs-table-container {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    .log-item {
+        display: grid;
+        grid-template-columns: 50px 150px 150px 1fr 150px;
+        gap: 1rem;
+        padding: 1rem;
+        border-bottom: 1px solid var(--border);
+        align-items: center;
+        transition: background 0.2s;
+    }
+    .log-item:hover {
+        background: rgba(0,0,0,0.02);
+    }
+    .log-user img {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    
+    /* Database Stats */
+    .db-stat-card {
+        background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Tab Control -->
+<div class="hub-tabs">
+    <button class="hub-tab active" onclick="switchTab('overview')">Overview</button>
+    <button class="hub-tab" onclick="switchTab('logs')">System Logs</button>
+    <button class="hub-tab" onclick="switchTab('database')">Database Management</button>
+</div>
+
+<!-- SECTION: OVERVIEW -->
+<div id="tab-overview" class="hub-section">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+        <!-- Global Chat Launcher -->
+        <div class="glass-card" style="grid-column: 1 / -1; padding: 0; overflow: hidden; height: 750px; position: relative;">
+            <iframe src="/member/community?embed=true" style="width: 100%; height: 100%; border: none;"></iframe>
+            
+            <!-- Admin Overlay Note -->
+            <div style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; pointer-events: none;">
+                👁️ Admin View
+            </div>
+        </div>
+
+
+    </div>
+</div>
+
+<!-- SECTION: LOGS -->
+<div id="tab-logs" class="hub-section" style="display: none;">
+    <div class="glass-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3>🛡️ Audit Logs</h3>
+            <button onclick="loadLogs()" class="btn btn-sm btn-outline-secondary"><i class="fas fa-sync-alt"></i> Refresh</button>
+        </div>
+        
+        <div class="logs-table-container">
+            <div class="log-item" style="font-weight: 700; background: rgba(0,0,0,0.05);">
+                <span>#</span>
+                <span>User</span>
+                <span>Action</span>
+                <span>Details</span>
+                <span>Time</span>
+            </div>
+            <div id="logs-list">
+                <!-- Injected via JS -->
+                <div style="padding: 2rem; text-align: center; color: var(--text-sub);">Loading logs...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SECTION: DATABASE MANAGEMENT -->
+<div id="tab-database" class="hub-section" style="display: none;">
+    <!-- Danger Zone Card -->
+    <div class="glass-card" style="border: 1px solid rgba(239, 68, 68, 0.3); background: linear-gradient(135deg, rgba(239,68,68,0.05) 0%, rgba(239,68,68,0.02) 100%); position: relative; overflow: hidden;">
+        <div style="position: absolute; top: 0; right: 0; width: 200px; height: 100%; background: linear-gradient(90deg, transparent, rgba(239,68,68,0.1)); pointer-events: none;"></div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; position: relative; z-index: 1;">
+            <div>
+                <h3 style="color: var(--danger); display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; font-size: 1.25rem;">
+                    <span style="background: rgba(239,68,68,0.1); padding: 8px; border-radius: 8px;"><i class="fas fa-radiation"></i></span> 
+                    Danger Zone
+                </h3>
+                <p style="color: var(--text-sub); margin: 0; font-size: 0.9rem; max-width: 600px;">
+                    Administrative actions here are <strong style="color: var(--danger);">irreversible</strong>. Please proceed with caution.
+                </p>
+            </div>
+            <button onclick="confirmWipe()" class="btn" style="background: var(--danger); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 600; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3); transition: transform 0.2s;">
+                <i class="fas fa-trash-alt me-2"></i> Wipe All Data
+            </button>
+        </div>
+        
+        <div style="background: rgba(255,255,255,0.5); padding: 1rem; border-radius: 12px; font-size: 0.85rem; border-left: 3px solid var(--danger); color: var(--text-main);">
+            <strong>Notice:</strong> This will delete ALL private messages, group chats, and history for all users. The structure of the <strong>Global Community (ID 1)</strong> will be preserved, but its messages may be cleared.
+        </div>
+    </div>
+
+    <!-- Active Chats Grid -->
+    <div style="margin-top: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <div>
+                <h3 style="margin-bottom: 0.25rem;">📂 Active Chat Groups</h3>
+                <p style="color: var(--text-sub); margin: 0; font-size: 0.9rem;">Real-time database records of all active channels.</p>
+            </div>
+            <div class="search-box glass-input-wrapper" style="width: 300px; padding: 0.5rem 1rem;">
+                <i class="fas fa-search" style="color: var(--text-sub);"></i>
+                <input type="text" placeholder="Search groups..." onkeyup="filterChats(this.value)" style="border: none; background: transparent; outline: none; width: 100%; margin-left: 0.5rem;">
+            </div>
+        </div>
+        
+        <div class="glass-card" style="padding: 0; overflow: hidden;">
+            <table class="table" style="width: 100%; margin: 0; border-collapse: separate; border-spacing: 0;">
+                <thead>
+                    <tr style="background: rgba(0,0,0,0.02); text-align: left; color: var(--text-sub); font-size: 0.8rem; letter-spacing: 0.5px; text-transform: uppercase;">
+                        <th style="padding: 1.25rem 1.5rem; font-weight: 600;">Channel Info</th>
+                        <th style="padding: 1.25rem; font-weight: 600;">Type</th>
+                        <th style="padding: 1.25rem; font-weight: 600;">Owner</th>
+                        <th style="padding: 1.25rem; font-weight: 600;">Activity</th>
+                        <th style="padding: 1.25rem 1.5rem; text-align: right; font-weight: 600;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="chats-list">
+                   <!-- Injected via JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- TABS ---
+function switchTab(tabName) {
+    document.querySelectorAll('.hub-section').forEach(el => el.style.display = 'none');
+    document.getElementById('tab-' + tabName).style.display = 'block';
+    
+    document.querySelectorAll('.hub-tab').forEach(el => el.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    if(tabName === 'logs') loadLogs();
+    if(tabName === 'database') loadChats();
+}
+
+// --- LOGS API ---
+async function loadLogs() {
+    const container = document.getElementById('logs-list');
+    try {
+        const res = await fetch('/admin/api/logs');
+        const data = await res.json();
+        
+        if (data.success) {
+            container.innerHTML = data.logs.map(l => `
+                <div class="log-item">
+                    <span style="color: var(--text-sub); font-size: 0.8rem;">${l.id}</span>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <img src="/static/uploads/profile_pics/${l.user_pic || 'default.jpg'}" style="width: 24px; height: 24px; border-radius: 50%;">
+                        <span style="font-weight: 600; font-size: 0.9rem;">${l.user}</span>
+                    </div>
+                    <span class="badge" style="background: rgba(0,0,0,0.05); width: fit-content;">${l.action}</span>
+                    <span style="color: var(--text-sub); font-size: 0.9rem;">${l.details}</span>
+                    <span style="color: var(--text-sub); font-size: 0.8rem;">${l.time}</span>
+                </div>
+            `).join('');
+        }
+    } catch (err) {
+        container.innerHTML = `<div style="padding: 1rem; color: var(--danger);">Error loading logs: ${err}</div>`;
+    }
+}
+
+// --- CHATS API ---
+async function loadChats() {
+    const container = document.getElementById('chats-list');
+    try {
+        const res = await fetch('/admin/api/chats');
+        const data = await res.json();
+        
+        if (data.success) {
+            container.innerHTML = data.chats.map(c => `
+                <tr style="transition: background 0.2s;">
+                    <td style="padding: 1rem 1.5rem; vertical-align: middle;">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="width: 40px; height: 40px; border-radius: 12px; background: ${c.channel_id === 1 ? 'linear-gradient(135deg, #6366f1, #a855f7)' : 'rgba(0,0,0,0.05)'}; color: ${c.channel_id === 1 ? 'white' : 'var(--text-sub)'}; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem;">
+                                ${c.channel_id === 1 ? '🌐' : c.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-main);">${c.name}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-sub);">ID: #${c.channel_id}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="padding: 1rem; vertical-align: middle;">
+                        <span class="badge" style="background: rgba(0,0,0,0.05); color: var(--text-main); font-weight: 500; padding: 6px 12px; border-radius: 20px; text-transform: capitalize; border: 1px solid var(--border);">
+                            ${c.type}
+                        </span>
+                    </td>
+                    <td style="padding: 1rem; vertical-align: middle;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            ${c.owner_name ? `<div style="width: 24px; height: 24px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 0.7rem;">${c.owner_name.charAt(0)}</div>` : ''}
+                            <span style="color: var(--text-sub); font-size: 0.9rem;">${c.owner_name || 'System'}</span>
+                        </div>
+                    </td>
+                    <td style="padding: 1rem; vertical-align: middle;">
+                        <div style="font-weight: 600; font-size: 0.9rem;">${c.msg_count}</div>
+                        <div style="font-size: 0.7rem; color: var(--text-sub);">messages</div>
+                    </td>
+                    <td style="padding: 1rem 1.5rem; vertical-align: middle; text-align: right;">
+                        ${c.channel_id != 1 ? 
+                        `<button onclick="deleteChat(${c.channel_id})" class="btn btn-sm" style="color: var(--danger); background: rgba(239, 68, 68, 0.1); border-radius: 8px; width: 36px; height: 36px; transition: all 0.2s;" title="Delete Channel" onmouseover="this.style.background='var(--danger)'; this.style.color='white'" onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'; this.style.color='var(--danger)'"><i class="fas fa-trash-alt"></i></button>` : 
+                        `<span style="color: var(--primary); font-size: 0.8rem; font-weight: 600; background: rgba(79, 70, 229, 0.1); padding: 4px 10px; border-radius: 6px;"><i class="fas fa-shield-alt me-1"></i> Core</span>`}
+                    </td>
+                </tr>
+            `).join('');
+        }
+    } catch (err) {
+        container.innerHTML = `<tr><td colspan="5" style="padding: 2rem; text-align: center; color: var(--danger);">Error: ${err}</td></tr>`;
+    }
+}
+
+function filterChats(query) {
+    const rows = document.querySelectorAll("#chats-list tr");
+    query = query.toLowerCase();
+    rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(query) ? "" : "none";
+    });
+}
+
+// -- ACTIONS --
+async function deleteChat(id) {
+    if(!confirm("Are you sure you want to delete this chat permanently?")) return;
+    
+    try {
+        const res = await fetch(`/admin/api/chat/delete/${id}`, {method: 'POST'});
+        const data = await res.json();
+        if(data.success) {
+            loadChats(); // Refresh
+        } else {
+            alert("Error: " + data.error);
+        }
+    } catch(err) {
+        alert("Request failed");
+    }
+}
+
+async function confirmWipe() {
+    const code = prompt("Type 'CONFIRM' to wipe all non-global chat data. This cannot be undone.");
+    if (code !== 'CONFIRM') return;
+    
+    try {
+        const res = await fetch('/admin/api/chat/wipe', {method: 'POST'});
+        const data = await res.json();
+        if(data.success) {
+            alert("✅ System wiped successfully.");
+            loadChats();
+        } else {
+            alert("Error: " + data.error);
+        }
+    } catch(err) {
+        alert("Request failed");
+    }
+}
+</script>
+{% endblock %}
