@@ -10,7 +10,17 @@
 
 ---
 
-## 🌟 The "Mega Project" Milestone
+## 📖 Documentation Hub
+We have moved our in-depth technical documentation to the `docs/` folder. Please refer to these files for detailed insights:
+
+- 📘 **[Architectural Deep Dive](docs/01_LDBMS_Architectural_Analysis.md)** - A comprehensive breakdown of the Service-Repository Monolith pattern, Layered Architecture, and Design philosophy.
+- 🔬 **[Deep Component Analysis](docs/04_Deep_Component_Analysis.md)** - An exhaustive, technical audit of every file, its limitations, and strategic roadmap.
+- 🚀 **[Deployment Guide](docs/02_Deployment_Guide.md)** - Step-by-step instructions for deploying to platforms like Render using GitHub.
+- 💬 **[Chat System Design](docs/03_Chat_System_Design.md)** - Internal mechanics of the real-time chat, anarchy/privacy modes, and guild systems.
+
+---
+
+## 🌟 Capabilities at a Glance
 
 The LDBMS has evolved from a standard management tool into an enterprise-grade platform. Featuring **over 35 modular features**, it now combines traditional library science with cutting-edge AI, behavioral design, and real-time social interaction.
 
@@ -27,7 +37,7 @@ The LDBMS has evolved from a standard management tool into an enterprise-grade p
 
 ## 🚀 Feature Set
 
-### 💬 Real-Time Collaboration & Social Hub [NEW]
+### 💬 Real-Time Collaboration & Social Hub
 - **Channels & DMs**: Seamless real-time messaging with individual users or topic-based channels.
 - **Guilds & Communities**: Join interest-based guilds (e.g., "Sci-Fi Lovers") with role-based access (Admin/Moderator).
 - **Rich Media Support**: Share files and images with instant previews; typing indicators and read receipts.
@@ -58,13 +68,6 @@ The LDBMS has evolved from a standard management tool into an enterprise-grade p
 - **Maintenance Mode**: One-click system lockdown for updates (Admin-exclusive access).
 - **Bulk Data Management**: Import/Export capabilities for massive library catalogs.
 
-### 📖 Classic Library Management
-- **Circulation 2.0**: Atomic transactions for issuing/returning with tiered limits.
-- **Waitlist & Reservations**: In-app and email notifications when high-demand books return.
-- **Dynamic Fine Engine**: Category-specific fine rates and automated overdue reminders.
-- **Waitlist Management**: First-come-first-served automated reservation clearing.
-- **Rating & Reviews**: Social proofing and feedback for every book in the catalog.
-
 ---
 
 ## 🏗️ Technical Architecture
@@ -79,17 +82,18 @@ LDBMS/
 │   ├── config/                     # Environment & Logging Config
 │   ├── repository/                 # Data Access Layer (DAL)
 │   ├── services/                   # Business Logic (AI, Chat, Guilds, etc.)
-│   │   ├── ai_service.py           # Gemini Integration
-│   │   ├── chat_service.py         # Real-time Messaging Logic
-│   │   ├── guild_service.py        # Community Management
-│   │   └── ... (30+ services)
 │   └── routes/                     # Blueprints (Admin, Chat, Member, System)
+├── docs/                           # Documentation Module
+│   ├── 01_LDBMS_Architectural_Analysis.md
+│   ├── 02_Deployment_Guide.md
+│   └── 03_Chat_System_Design.md
+├── scripts/                        # Utility Scripts
+│   └── export_codebase_for_ai.py   # Codebase consolidation tool
 ├── templates/                      # Jinja2 Layouts (Responsive/Glassmorphism)
 │   ├── chat/                       # Chat & Guild Interfaces
 │   ├── admin/                      # Management Dashboards
 │   └── ...
 ├── static/                         # Compiled CSS, JS Bundles, Assets
-├── storage/                        # Uploaded Files & Generated Reports
 ├── mainCLI.py                      # Admin Terminal Interface
 ├── run.py                          # Entry Point (Flask + SocketIO + Ngrok)
 └── requirements.txt                # Project Dependencies
