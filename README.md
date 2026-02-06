@@ -86,7 +86,8 @@ LDBMS/
 ├── docs/                           # Documentation Module
 │   ├── 01_LDBMS_Architectural_Analysis.md
 │   ├── 02_Deployment_Guide.md
-│   └── 03_Chat_System_Design.md
+│   ├── 03_Chat_System_Design.md
+│   └── 04_Deep_Component_Analysis.md
 ├── scripts/                        # Utility Scripts
 │   └── export_codebase_for_ai.py   # Codebase consolidation tool
 ├── templates/                      # Jinja2 Layouts (Responsive/Glassmorphism)
