@@ -50,3 +50,58 @@ def get_quick_stats():
         "total_issues": issues['c'],
         "total_fines": fines['s'] or 0
     }
+
+
+# ===============================
+# CLI ANALYTICS (Pandas-powered)
+# ===============================
+
+def search_by_title(keyword):
+    """Searches books by title keyword, returns a Pandas DataFrame."""
+    import pandas as pd
+    rows = fetch_all(
+        """
+        SELECT b.book_id, b.title, COALESCE(a.name, 'Unknown') as author, 
+               b.category, b.available_copies
+        FROM books b
+        LEFT JOIN authors a ON b.author_id = a.author_id
+        WHERE b.title LIKE %s
+        ORDER BY b.title
+        """,
+        (f"%{keyword}%",)
+    )
+    return pd.DataFrame(rows) if rows else pd.DataFrame()
+
+
+def available_books():
+    """Returns all books with available_copies > 0 as a Pandas DataFrame."""
+    import pandas as pd
+    rows = fetch_all(
+        """
+        SELECT b.book_id, b.title, COALESCE(a.name, 'Unknown') as author, 
+               b.category, b.available_copies
+        FROM books b
+        LEFT JOIN authors a ON b.author_id = a.author_id
+        WHERE b.available_copies > 0
+        ORDER BY b.title
+        """
+    )
+    return pd.DataFrame(rows) if rows else pd.DataFrame()
+
+
+def overdue_books():
+    """Returns all currently overdue issues as a Pandas DataFrame."""
+    import pandas as pd
+    rows = fetch_all(
+        """
+        SELECT i.issue_id, u.name as user_name, b.title, i.issue_date,
+               DATEDIFF(CURDATE(), i.issue_date) as days_held
+        FROM issues i
+        JOIN users u ON i.user_id = u.user_id
+        JOIN books b ON i.book_id = b.book_id
+        WHERE i.return_date IS NULL
+          AND DATEDIFF(CURDATE(), i.issue_date) > 14
+        ORDER BY days_held DESC
+        """
+    )
+    return pd.DataFrame(rows) if rows else pd.DataFrame()

@@ -15,9 +15,9 @@ def get_tier_config(tier):
     default_days = int(get_setting('default_issue_days', 7))
 
     configs = {
-        'Silver': {'max_books': default_max, 'loan_days': default_days},
-        'Gold': {'max_books': 6, 'loan_days': 21},
-        'Platinum': {'max_books': 10, 'loan_days': 30}
+        'Silver': {'tier': 'Silver', 'max_books': default_max, 'loan_days': default_days},
+        'Gold': {'tier': 'Gold', 'max_books': 6, 'loan_days': 21},
+        'Platinum': {'tier': 'Platinum', 'max_books': 10, 'loan_days': 30}
     }
     return configs.get(tier, configs['Silver'])
 

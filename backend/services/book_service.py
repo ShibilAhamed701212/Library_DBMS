@@ -216,16 +216,22 @@ def import_books_csv(file_stream):
         for index, row in df.iterrows():
             try:
                 title = str(row['title']).strip()
-                author = str(row['author']).strip()
+                author_name = str(row['author']).strip()
                 category = str(row['category']).strip()
                 copies = int(row['copies'])
                 
                 if copies < 1:
                     errors.append(f"Row {index+1}: Copies must be > 0")
                     continue
+                
+                # Resolve author name to author_id
+                author = fetch_one("SELECT author_id FROM authors WHERE name = %s", (author_name,))
+                if not author:
+                    execute("INSERT INTO authors (name) VALUES (%s)", (author_name,))
+                    author = fetch_one("SELECT author_id FROM authors WHERE name = %s", (author_name,))
+                author_id = author['author_id']
                     
-                # Call add_book
-                add_book(title, author, category, copies)
+                add_book(title, author_id, category, copies)
                 success_count += 1
                 
             except Exception as row_err:

@@ -20,28 +20,41 @@ sys.path.insert(0, project_root)
 # ------------------------------------------------------
 from backend.services.user_service import add_user
 from backend.services.book_service import add_book
-from backend.repository.db_access import fetch_one
+from backend.repository.db_access import fetch_all, fetch_one, execute
 from backend.config.db import get_connection
 
 # ======================================================
-# CLEAR EXISTING BOOKS
+# CLEAR EXISTING DATA
 # ======================================================
 
-def clear_books():
+def clear_data():
     """
-    Deletes all existing book records from the database.
+    Deletes all existing records from the database in correct order.
     """
-    print("\n🗑️  Clearing existing books...")
+    print("\n🗑️  Clearing existing data...")
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM books")
+        
+        # Disable foreign key checks for thorough cleanup
+        cursor.execute("SET FOREIGN_KEY_CHECKS = 0")
+        
+        cursor.execute("TRUNCATE TABLE issues")
+        cursor.execute("TRUNCATE TABLE book_requests")
+        cursor.execute("TRUNCATE TABLE book_suggestions")
+        cursor.execute("TRUNCATE TABLE books")
+        cursor.execute("TRUNCATE TABLE authors")
+        cursor.execute("TRUNCATE TABLE series")
+        cursor.execute("TRUNCATE TABLE users")
+        
+        cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
+        
         conn.commit()
         cursor.close()
         conn.close()
-        print("✅ All existing books deleted")
+        print("✅ All existing data cleared")
     except Exception as e:
-        print(f"❌ Error clearing books: {e}")
+        print(f"❌ Error clearing data: {e}")
 
 
 # ======================================================
@@ -51,9 +64,6 @@ def clear_books():
 def seed_users():
     """
     Inserts admin and member users.
-    - Uses add_user() service
-    - Automatically hashes passwords
-    - Enforces uniqueness on email
     """
     users = [
         ("Admin User", "admin@library.com", "admin", "Admin@123"),
@@ -64,7 +74,7 @@ def seed_users():
 
     for name, email, role, password in users:
         result = add_user(name, email, role, password)
-        print(result)
+        print(f"User: {name} -> {result}")
 
 
 # ======================================================
@@ -74,7 +84,6 @@ def seed_users():
 def seed_books():
     """
     Inserts 30 diverse books across multiple categories.
-    Format: (title, author, category, total_copies)
     """
     books = [
         # Programming & Technology (8 books)
@@ -116,9 +125,18 @@ def seed_books():
         ("Becoming", "Michelle Obama", "Biography", 15),
     ]
 
-    for title, author, category, copies in books:
-        result = add_book(title, author, category, copies)
-        print(result)
+    for title, author_name, category, copies in books:
+        # 1. Ensure Author exists
+        author = fetch_one("SELECT author_id FROM authors WHERE name = %s", (author_name,))
+        if not author:
+            execute("INSERT INTO authors (name) VALUES (%s)", (author_name,))
+            author = fetch_one("SELECT author_id FROM authors WHERE name = %s", (author_name,))
+        
+        author_id = author['author_id']
+        
+        # 2. Add Book
+        result = add_book(title, author_id, category, copies)
+        print(f"Book: {title} -> ID: {result}")
 
 
 # ======================================================
@@ -146,24 +164,21 @@ def verify_seed():
 def main():
     """
     Main entry point for seeding.
-    
-    Execution order:
-    1. Clear existing books
-    2. Seed users
-    3. Seed 30 new books
-    4. Verify seed
     """
     print("\n" + "="*50)
     print("🌱 DATABASE SEEDING STARTED")
     print("="*50)
     
-    clear_books()
+    clear_data()
     
     print("\n🌱 Seeding users...")
     seed_users()
 
     print("\n📚 Seeding 30 books...")
     seed_books()
+
+    print("\n🔒 Finalizing users (bypassing forced password change)...")
+    execute("UPDATE users SET must_change_password = FALSE")
 
     print("\n🔍 Verifying seed...")
     verify_seed()

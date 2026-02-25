@@ -39,7 +39,7 @@ def generate_weekly_report():
     pdf.cell(0, 10, 'Most Popular Books this Week:', ln=True)
     pdf.set_font("helvetica", size=12)
     for i, book in enumerate(top_books[:5], 1):
-        pdf.cell(0, 10, f'{i}. {book["title"]} ({book["count"]} borrows)', ln=True)
+        pdf.cell(0, 10, f'{i}. {book["title"]} ({book["issue_count"]} borrows)', ln=True)
 
     # 3. Save PDF
     report_dir = "reports"

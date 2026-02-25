@@ -206,8 +206,6 @@ def route_get_friends():
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
-# Include other necessary routes like upload/me if needed...
-# For brevity in this large rebuild, focusing on core structure.
 @chat_bp.route('/me', methods=['GET'])
 @member_required
 def route_get_me():
@@ -698,7 +696,6 @@ def route_upload_file():
         unique_name = f"{uuid.uuid4().hex}.{ext}"
         
         # Save to static/uploads/chat using Flask's configured static folder
-        from flask import current_app
         save_dir = os.path.join(current_app.static_folder, 'uploads', 'chat')
         os.makedirs(save_dir, exist_ok=True)
         
@@ -777,7 +774,6 @@ def route_update_rules(channel_id):
     if not channel:
         return jsonify({'error': 'Channel not found'}), 404
         
-    # Check permissions
     # Check permissions
     if user_role != 'admin' and channel.get('created_by') != user_id:
         # Check channel admin

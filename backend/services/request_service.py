@@ -119,7 +119,7 @@ def process_request(request_id: int, action: str):
         try:
             from backend.services.email_service import notify_request_status
             notify_request_status(req["name"], req["email"], req["title"], "Rejected")
-        except:
+        except Exception:
             pass
         return "✅ Request Rejected"
 

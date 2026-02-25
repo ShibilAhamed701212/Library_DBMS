@@ -1,321 +1,342 @@
 """
-mainCLI.py
-----------
-Advanced CLI for Library DBMS
-
-This file provides a command-line interface (CLI) for the Library Management System.
-
-Key features:
-- Secure login using the same authentication logic as Flask
-- Role-based menus (Admin / Member)
-- Reuses service layer (no duplicate logic)
-- Uses Pandas-powered analytics for search/filter
-- Safe password input (Windows / IDE compatible)
+mainCLI.py — Command-Line Interface for LDBMS
+Uses the same service layer as the Flask web app.
 """
 
-# ===================== STANDARD LIBRARIES =====================
-
-import sys              # Used for system-level operations (future-safe, exits, etc.)
-import getpass          # Secure password input (does not echo characters)
-
-
-# ===================== SERVICE LAYER IMPORTS =====================
-# These are the SAME services used by the Flask web app
-# This ensures consistency between CLI and Web UI
+import sys
+import getpass
 
 from backend.services.auth_service import authenticate_user
 from backend.services.user_service import view_users, add_user, delete_user
 from backend.services.book_service import view_books, add_book, delete_book
 from backend.services.issue_service import issue_book, return_book
-from backend.services.analytics_service import (
-    search_by_title,
-    available_books,
-    overdue_books
-)
+from backend.services.analytics_service import search_by_title, available_books, overdue_books
+from backend.repository.db_access import fetch_one, execute
 
 
-# ===================== CLI UTILITY FUNCTIONS =====================
+# ─── Formatting Helpers ───────────────────────────────────────────
 
-def divider():
-    """
-    Prints a visual divider line for better CLI readability.
-    """
-    print("\n" + "=" * 60)
+RESET  = "\033[0m"
+BOLD   = "\033[1m"
+DIM    = "\033[2m"
+GREEN  = "\033[32m"
+RED    = "\033[31m"
+CYAN   = "\033[36m"
+YELLOW = "\033[33m"
+MAGENTA = "\033[35m"
+WHITE  = "\033[97m"
+BG_DARK = "\033[48;5;236m"
+
+LINE = f"{DIM}{'─' * 62}{RESET}"
+THICK_LINE = f"{DIM}{'═' * 62}{RESET}"
+
+
+def banner(title: str, icon: str = "📚"):
+    """Prints a styled section banner."""
+    print(f"\n{THICK_LINE}")
+    print(f"  {icon}  {BOLD}{title}{RESET}")
+    print(THICK_LINE)
+
+
+def success(msg: str):
+    print(f"  {GREEN}✔ {msg}{RESET}")
+
+
+def error(msg: str):
+    print(f"  {RED}✘ {msg}{RESET}")
+
+
+def warn(msg: str):
+    print(f"  {YELLOW}⚠ {msg}{RESET}")
 
 
 def pause():
-    """
-    Pauses execution until user presses ENTER.
-    Prevents menu from instantly refreshing.
-    """
-    input("\nPress ENTER to continue...")
+    input(f"\n  {DIM}Press ENTER to continue...{RESET}")
 
 
 def read_int(prompt: str):
-    """
-    Safely reads integer input from the user.
-
-    Prevents ValueError crashes when user enters invalid input.
-    Returns:
-        int   -> if valid
-        None  -> if invalid
-    """
+    """Safely reads an integer from stdin."""
     try:
-        return int(input(prompt))
+        return int(input(f"  {prompt}"))
     except ValueError:
-        print("❌ Please enter a valid number")
+        error("Please enter a valid number")
         return None
+
+
+def print_table(rows: list, columns: list, col_widths: list = None):
+    """
+    Pretty-prints a list of dicts as an aligned table.
+
+    Args:
+        rows: list of dicts (each row)
+        columns: list of (key, header_label) tuples
+        col_widths: optional explicit widths per column
+    """
+    if not rows:
+        warn("No data found")
+        return
+
+    keys    = [c[0] for c in columns]
+    headers = [c[1] for c in columns]
+
+    # Auto-calculate column widths if not provided
+    if col_widths is None:
+        col_widths = []
+        for i, key in enumerate(keys):
+            max_data = max((len(str(r.get(key, ""))) for r in rows), default=0)
+            col_widths.append(max(len(headers[i]), max_data) + 2)
+
+    # Header
+    header_line = "  "
+    sep_line    = "  "
+    for i, h in enumerate(headers):
+        header_line += f"{BOLD}{h:<{col_widths[i]}}{RESET}"
+        sep_line    += f"{DIM}{'─' * col_widths[i]}{RESET}"
+
+    print(sep_line)
+    print(header_line)
+    print(sep_line)
+
+    # Rows
+    for row in rows:
+        line = "  "
+        for i, key in enumerate(keys):
+            val = row.get(key, "—")
+            if val is None:
+                val = "—"
+            # Format datetime objects
+            if hasattr(val, "strftime"):
+                val = val.strftime("%Y-%m-%d %H:%M")
+            line += f"{str(val):<{col_widths[i]}}"
+        print(line)
+
+    print(sep_line)
+    print(f"  {DIM}{len(rows)} record(s){RESET}\n")
 
 
 def print_df(df):
-    """
-    Pretty-prints a Pandas DataFrame safely.
-
-    - Avoids ugly index numbering
-    - Handles empty or None DataFrames gracefully
-    """
+    """Pretty-prints a Pandas DataFrame."""
     if df is None or df.empty:
-        print("⚠ No data found")
+        warn("No data found")
     else:
-        print(df.to_string(index=False))
+        print(f"\n{df.to_string(index=False)}\n")
 
 
-# ===================== LOGIN HANDLER =====================
+# ─── Login ────────────────────────────────────────────────────────
 
 def cli_login():
-    """
-    Handles CLI login flow.
+    banner("LIBRARY MANAGEMENT SYSTEM — LOGIN", "📚")
 
-    Steps:
-    1. Ask for email
-    2. Securely ask for password
-    3. Authenticate using auth_service
-    4. Return user object if valid
-    """
-
-    divider()
-    print("📚 LIBRARY MANAGEMENT SYSTEM — CLI LOGIN")
-    divider()
-
-    # Read email input
-    email = input("Email: ").strip()
-
-    # Basic validation
+    email = input("  Email: ").strip()
     if not email:
-        print("❌ Email cannot be empty")
+        error("Email cannot be empty")
         return None
 
-    # ---- SAFE PASSWORD INPUT ----
-    # getpass hides input and works in Windows / IDE terminals
     try:
-        password = getpass.getpass("Password: ")
+        password = getpass.getpass("  Password: ")
     except (KeyboardInterrupt, EOFError):
-        # Handle Ctrl+C or broken input stream
-        print("\n❌ Login cancelled")
+        print()
+        error("Login cancelled")
         return None
 
-    # Validate password
     if not password:
-        print("❌ Password cannot be empty")
+        error("Password cannot be empty")
         return None
 
-    # Authenticate using service layer (DB-backed)
     user = authenticate_user(email, password)
-
-    # Authentication failure
     if not user:
-        print("❌ Invalid email or password")
+        error("Invalid email or password")
         return None
 
-    # Success
-    print(f"\n✅ Login successful | Role: {user['role'].upper()}")
+    success(f"Login successful  ·  Role: {BOLD}{user['role'].upper()}{RESET}")
     return user
 
 
-# ===================== ADMIN MENU =====================
+# ─── Admin Menu ───────────────────────────────────────────────────
+
+ADMIN_MENU = f"""
+  {CYAN}USER MANAGEMENT{RESET}
+   1 │ View Users
+   2 │ Add User
+   3 │ Delete User
+
+  {CYAN}BOOK MANAGEMENT{RESET}
+   4 │ View Books
+   5 │ Add Book
+   6 │ Delete Book
+
+  {CYAN}CIRCULATION{RESET}
+   7 │ Issue Book
+   8 │ Return Book
+
+  {CYAN}ANALYTICS{RESET}
+   9 │ Search Book by Title
+  10 │ Available Books
+  11 │ Overdue Books
+
+  {DIM} 0 │ Logout{RESET}
+"""
+
 
 def admin_menu(user):
-    """
-    Displays and handles Admin menu operations.
-
-    Admin capabilities:
-    - User management
-    - Book management
-    - Issue / return books
-    - Analytics (Pandas-powered)
-    """
-
     while True:
-        divider()
-        print(f"👑 ADMIN DASHBOARD — {user['email']}")
-        divider()
+        banner(f"ADMIN DASHBOARD  —  {user['email']}", "👑")
+        print(ADMIN_MENU)
 
-        # Menu options
-        print("""
-01. View Users
-02. Add User
-03. Delete User
-04. View Books
-05. Add Book
-06. Delete Book
-07. Issue Book
-08. Return Book
-09. Search Book by Title
-10. Available Books
-11. Overdue Books
-00. Logout
-""")
+        choice = input(f"  {BOLD}▸ Choice:{RESET} ").strip().lstrip("0") or "0"
 
-        # Read menu choice
-        choice = input("👉 Enter choice: ").strip()
-
-        # Logout
-        if choice == "00":
-            print("👋 Logged out")
+        if choice == "0":
+            success("Logged out. Goodbye!")
             break
 
-        # View all users
-        elif choice == "01":
-            for u in view_users():
-                print(u)
+        elif choice == "1":
+            print(f"\n  {BOLD}All Users{RESET}")
+            users = view_users()
+            print_table(users, [
+                ("user_id", "ID"),
+                ("name",    "Name"),
+                ("email",   "Email"),
+                ("role",    "Role"),
+                ("created_at", "Joined"),
+            ])
 
-        # Add a new user
-        elif choice == "02":
-            name = input("Name: ").strip()
-            email = input("Email: ").strip()
-            role = input("Role (admin/member): ").strip().lower()
-            password = getpass.getpass("Password: ")
-            print(add_user(name, email, role, password))
+        elif choice == "2":
+            print(f"\n  {BOLD}Add New User{RESET}")
+            print(LINE)
+            name     = input("  Name: ").strip()
+            email    = input("  Email: ").strip()
+            role     = input("  Role (admin/member): ").strip().lower()
+            password = getpass.getpass("  Password: ")
+            result   = add_user(name, email, role, password)
+            print(f"\n  {result}")
 
-        # Delete a user
-        elif choice == "03":
+        elif choice == "3":
             uid = read_int("User ID to delete: ")
             if uid is not None:
-                print(delete_user(uid))
+                confirm = input(f"  {YELLOW}Confirm delete user #{uid}? (y/n):{RESET} ").strip().lower()
+                if confirm == "y":
+                    print(f"\n  {delete_user(uid)}")
+                else:
+                    warn("Cancelled")
 
-        # View all books
-        elif choice == "04":
-            for b in view_books():
-                print(b)
+        elif choice == "4":
+            print(f"\n  {BOLD}All Books{RESET}")
+            books = view_books()
+            print_table(books, [
+                ("book_id",   "ID"),
+                ("title",     "Title"),
+                ("author",    "Author"),
+                ("category",  "Category"),
+                ("available_copies", "Avail"),
+                ("total_copies",     "Total"),
+            ])
 
-        # Add a new book
-        elif choice == "05":
-            title = input("Title: ").strip()
-            author = input("Author: ").strip()
-            category = input("Category: ").strip()
-            copies = read_int("Total copies: ")
+        elif choice == "5":
+            print(f"\n  {BOLD}Add New Book{RESET}")
+            print(LINE)
+            title       = input("  Title: ").strip()
+            author_name = input("  Author: ").strip()
+            category    = input("  Category: ").strip()
+            copies      = read_int("Total copies: ")
             if copies is not None:
-                add_book(title, author, category, copies)
-                print("✅ Book added")
+                author = fetch_one("SELECT author_id FROM authors WHERE name = %s", (author_name,))
+                if not author:
+                    execute("INSERT INTO authors (name) VALUES (%s)", (author_name,))
+                    author = fetch_one("SELECT author_id FROM authors WHERE name = %s", (author_name,))
+                add_book(title, author['author_id'], category, copies)
+                success("Book added successfully")
 
-        # Delete a book
-        elif choice == "06":
+        elif choice == "6":
             bid = read_int("Book ID to delete: ")
             if bid is not None:
-                print(delete_book(bid))
+                confirm = input(f"  {YELLOW}Confirm delete book #{bid}? (y/n):{RESET} ").strip().lower()
+                if confirm == "y":
+                    print(f"\n  {delete_book(bid)}")
+                else:
+                    warn("Cancelled")
 
-        # Issue a book
-        elif choice == "07":
+        elif choice == "7":
+            print(f"\n  {BOLD}Issue Book{RESET}")
+            print(LINE)
             uid = read_int("User ID: ")
             bid = read_int("Book ID: ")
-            if uid is not None and bid is not None:
-                print(issue_book(uid, bid))
+            if uid and bid:
+                print(f"\n  {issue_book(uid, bid)}")
 
-        # Return a book
-        elif choice == "08":
+        elif choice == "8":
+            print(f"\n  {BOLD}Return Book{RESET}")
+            print(LINE)
             uid = read_int("User ID: ")
             bid = read_int("Book ID: ")
-            if uid is not None and bid is not None:
-                print(return_book(uid, bid))
+            if uid and bid:
+                print(f"\n  {return_book(uid, bid)}")
 
-        # Search books (Pandas)
-        elif choice == "09":
-            key = input("Search title: ")
+        elif choice == "9":
+            key = input("  Search title: ").strip()
             print_df(search_by_title(key))
 
-        # View available books (Pandas filter)
         elif choice == "10":
+            print(f"\n  {BOLD}Available Books{RESET}")
             print_df(available_books())
 
-        # View overdue books (Pandas analytics)
         elif choice == "11":
+            print(f"\n  {BOLD}Overdue Books{RESET}")
             print_df(overdue_books())
 
-        # Invalid menu option
         else:
-            print("❌ Invalid choice")
+            error("Invalid choice — enter a number from the menu")
 
         pause()
 
 
-# ===================== MEMBER MENU =====================
+# ─── Member Menu ──────────────────────────────────────────────────
+
+MEMBER_MENU = f"""
+  {CYAN}CATALOG{RESET}
+   1 │ View Available Books
+   2 │ Search Book by Title
+
+  {DIM} 0 │ Logout{RESET}
+"""
+
 
 def member_menu(user):
-    """
-    Displays and handles Member menu operations.
-
-    Member capabilities:
-    - View available books
-    - Search books
-    """
-
     while True:
-        divider()
-        print(f"👤 MEMBER DASHBOARD — {user['email']}")
-        divider()
+        banner(f"MEMBER DASHBOARD  —  {user['email']}", "👤")
+        print(MEMBER_MENU)
 
-        print("""
-01. View Available Books
-02. Search Book by Title
-00. Logout
-""")
+        choice = input(f"  {BOLD}▸ Choice:{RESET} ").strip().lstrip("0") or "0"
 
-        choice = input("👉 Enter choice: ").strip()
-
-        # Logout
-        if choice == "00":
-            print("👋 Logged out")
+        if choice == "0":
+            success("Logged out. Goodbye!")
             break
 
-        # View available books
-        elif choice == "01":
+        elif choice == "1":
+            print(f"\n  {BOLD}Available Books{RESET}")
             print_df(available_books())
 
-        # Search books
-        elif choice == "02":
-            key = input("Search title: ")
+        elif choice == "2":
+            key = input("  Search title: ").strip()
             print_df(search_by_title(key))
 
         else:
-            print("❌ Invalid choice")
+            error("Invalid choice — enter a number from the menu")
 
         pause()
 
 
-# ===================== PROGRAM ENTRY POINT =====================
+# ─── Entry Point ──────────────────────────────────────────────────
 
 def main():
-    """
-    Entry point for CLI application.
-
-    Flow:
-    1. Login
-    2. Route user based on role
-    """
-
     user = cli_login()
-
-    # Exit if login failed
     if not user:
         return
 
-    # Role-based menu routing
     if user["role"] == "admin":
         admin_menu(user)
     else:
         member_menu(user)
 
 
-# Run CLI only if executed directly
 if __name__ == "__main__":
     main()

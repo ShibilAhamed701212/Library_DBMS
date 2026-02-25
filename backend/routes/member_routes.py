@@ -8,17 +8,13 @@ import json
 import os
 from datetime import datetime, timedelta
 
-# Import database access functions
 from backend.repository.db_access import (
     execute_query,
     fetch_all,
     fetch_one
 )
-
-# Import authentication decorator
 from backend.middleware.auth import member_required
 
-# Blueprint for member routes
 member_bp = Blueprint('member', __name__, url_prefix='/member')
 
 def ensure_isbn_column_exists():
@@ -124,9 +120,7 @@ def member_goals():
     # GET: Fetch Data
     reading_goal = get_or_create_goal(user_id)
     
-    # Calculate Extended Stats
-    # Calculate Extended Stats
-    # 1. Monthly Breakdown (Books returned per month)
+    # Calculate Extended Stats — Monthly Breakdown (Books returned per month)
     monthly_stats = fetch_all("""
         SELECT MONTH(return_date) as month_num, COUNT(*) as count 
         FROM issues 
@@ -235,7 +229,7 @@ def member_achievements():
 @member_required
 def member_read_book(book_id):
     """Renders the in-app digital reader for a specific book."""
-    from backend.repository.db_access import fetch_one
+
     
     # Fetch book details
     book = fetch_one("SELECT * FROM books WHERE book_id = %s", (book_id,))
@@ -261,7 +255,7 @@ def member_catalog_view():
     """
     Renders the searchable Book Catalog with server-side pagination.
     """
-    from flask import request
+
     from backend.services.book_service import view_books_paginated, get_all_authors, get_all_categories
     
     page = request.args.get('page', 1, type=int)
@@ -369,7 +363,7 @@ def member_request_book():
     """
     Handles book request submissions.
     """
-    from flask import request, redirect, flash
+
     from backend.services.request_service import create_request
 
     user_id = session["user_id"]
@@ -394,9 +388,7 @@ def member_suggest_book():
     
     Robust implementation: dynamically detects schema variations.
     """
-    from flask import request, redirect, flash, render_template, jsonify, current_app
-    from backend.repository.db_access import execute_query, fetch_all
-    from datetime import datetime
+
     
     # helper to get available columns
     def get_table_columns():
@@ -561,7 +553,7 @@ def member_delete_my_account():
     """
     Allows a member to delete their own account.
     """
-    from flask import flash, redirect, session
+
     from backend.services.user_service import delete_user
     
     user_id = session.get("user_id")
@@ -583,7 +575,7 @@ def member_submit_review():
     """
     Handles review submission.
     """
-    from flask import request, redirect, flash, session
+
     from backend.services.review_service import add_review
     
     user_id = session.get("user_id")
@@ -621,7 +613,7 @@ def member_submit_review():
 def member_profile():
     """renders the profile page"""
     from backend.services.gamification_service import get_user_badges
-    from backend.repository.db_access import fetch_one # Direct DB access to bypass stale service
+
     
     user_id = session["user_id"]
     
@@ -633,8 +625,6 @@ def member_profile():
     
     badges = get_user_badges(user_id)
     
-    # DEBUG: Check if profile_pic is present
-    print(f"👤 Profile Page: User Data = {user}", flush=True)
     
     return render_template("member/profile.html", active_page="member_profile", profile_user=user, badges=badges)
 
@@ -707,8 +697,6 @@ def upload_profile_pic():
             project_root = current_file.parent.parent.parent # routes -> backend -> pythonProject
             upload_dir = project_root / "static" / "uploads" / "avatars"
             
-            # Print for debug
-            print(f"📂 Upload Target Path (Pathlib): {upload_dir}", flush=True)
             
             os.makedirs(upload_dir, exist_ok=True)
             
@@ -770,7 +758,7 @@ def member_ai_chat():
     Renders the AI Assistant Chat Interface.
     Handlers API requests for chat interaction.
     """
-    from flask import render_template, request, jsonify, session
+
     from backend.brain.orchestrator import brain
     
     # API Handler

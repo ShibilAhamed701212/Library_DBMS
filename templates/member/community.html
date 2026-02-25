@@ -152,6 +152,39 @@ body {
     background: rgba(0, 0, 0, 0.1);
 }
 
+/* Database Stats */
+.db-stat-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* FORCED VISIBILITY: Ensure text stays readable on this dark page */
+.header-title h1, 
+.header-title p, 
+.header-user-name,
+#mobileBackBtn,
+.identity-user div,
+.identity-bar button,
+#activeChatName,
+#chatSettingsPanel h4 {
+    color: white !important;
+}
+.header-user-role,
+.anon-switch span {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+.notif-btn {
+    color: white !important;
+}
+.notif-btn:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
 .sidebar-header {
     padding: 24px;
     border-bottom: 1px solid var(--glass-border);
@@ -1372,12 +1405,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const bio = document.getElementById('profileBioInput').value;
         
         try {
-            constres = await fetch('/member/profile/update', {
+            const res = await fetch('/member/profile/update', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ name, bio })
             });
-            const data = awaitres.json();
+            const data = await res.json();
             
             if(data.success) {
                 alert('✅ Profile updated!');
@@ -1436,9 +1469,11 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("❌ Failed to toggle anonymous:", e);
         }
     }
-    
+</script>
 
-    <script src="{{ url_for('static', filename='js/js_channel_settings.js') }}"></script>
+<script src="{{ url_for('static', filename='js/js_channel_settings.js') }}"></script>
+
+<script>
     document.addEventListener('DOMContentLoaded', () => {
         // Initialize Modals properly
         const cgEl = document.getElementById('createGroupModal');

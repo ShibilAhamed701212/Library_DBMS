@@ -6,13 +6,13 @@
 
 {% block content %}
 <!-- FORMS ROW -->
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;" class="fade-in">
     <!-- ISSUE BOOK -->
-    <section class="dashboard-section">
+    <section class="dashboard-section glass-card">
         <div class="section-header">
             <h2>📤 Issue Book</h2>
         </div>
-        <div class="section-content glass-card">
+        <div class="section-content">
             <form action="/admin/issue" method="POST">
                 <div class="form-group">
                     <label>Member</label>
@@ -38,11 +38,11 @@
     </section>
 
     <!-- RETURN BOOK -->
-    <section class="dashboard-section">
+    <section class="dashboard-section glass-card">
         <div class="section-header">
             <h2>📥 Return Book</h2>
         </div>
-        <div class="section-content glass-card">
+        <div class="section-content">
             <form action="/admin/return" method="POST" id="returnBookForm">
                 <div class="form-group">
                     <label>Member</label>
@@ -60,21 +60,20 @@
                     </select>
                     <small id="returnBookHelp" style="color: var(--text-sub); margin-top: 0.25rem; display: block;"></small>
                 </div>
-                <button type="submit" class="btn btn-danger" id="returnSubmitBtn" style="width: 100%;" disabled>Process Return</button>
+                <button type="submit" class="btn btn-primary" id="returnSubmitBtn" style="width: 100%; background: var(--danger);" disabled>Process Return</button>
             </form>
         </div>
     </section>
 </div>
 
 <script>
-// Dynamic Return Book filtering - shows only books borrowed by selected member
+// Dynamic Return Book filtering
 document.getElementById('returnMemberSelect').addEventListener('change', async function() {
     const userId = this.value;
     const bookSelect = document.getElementById('returnBookSelect');
     const bookHelp = document.getElementById('returnBookHelp');
     const submitBtn = document.getElementById('returnSubmitBtn');
     
-    // Reset and disable while loading
     bookSelect.innerHTML = '<option value="" disabled selected>Loading...</option>';
     bookSelect.disabled = true;
     submitBtn.disabled = true;
@@ -117,13 +116,13 @@ document.getElementById('returnMemberSelect').addEventListener('change', async f
 </script>
 
 <!-- ACTIVE ISSUES -->
-<section class="dashboard-section">
+<section class="dashboard-section fade-in fade-in-delay-2">
     <div class="section-header">
         <h2>🔖 Currently Borrowed</h2>
     </div>
     <div class="section-content">
-        <div class="table-container glass-card">
-            <table>
+        <div class="table-container glass-card" style="padding: 0; overflow: hidden;">
+            <table class="table-premium">
                 <thead>
                     <tr>
                         <th>Issue ID</th>
@@ -135,14 +134,14 @@ document.getElementById('returnMemberSelect').addEventListener('change', async f
                 <tbody>
                     {% for i in active_issues %}
                     <tr>
-                        <td>#{{ i.issue_id }}</td>
-                        <td style="font-weight: 500;">{{ i.user_name }}</td>
+                        <td class="text-primary-bold">#{{ i.issue_id }}</td>
+                        <td class="text-medium">{{ i.user_name }}</td>
                         <td>{{ i.book_title }}</td>
                         <td>{{ i.issue_date }}</td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="4" style="text-align: center; color: var(--text-sub); padding: 2rem;">No active issues.</td>
+                        <td colspan="4" class="empty-state">No active issues.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -152,13 +151,13 @@ document.getElementById('returnMemberSelect').addEventListener('change', async f
 </section>
 
 <!-- PAST ISSUES -->
-<section class="dashboard-section">
+<section class="dashboard-section fade-in fade-in-delay-3">
     <div class="section-header">
         <h2>📚 Borrowing History (Returned)</h2>
     </div>
     <div class="section-content">
-        <div class="table-container glass-card">
-            <table>
+        <div class="table-container glass-card" style="padding: 0; overflow: hidden;">
+            <table class="table-premium">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -173,8 +172,8 @@ document.getElementById('returnMemberSelect').addEventListener('change', async f
                 <tbody>
                     {% for i in past_issues %}
                     <tr>
-                        <td>#{{ i.issue_id }}</td>
-                        <td style="font-weight: 500;">{{ i.user_name }}</td>
+                        <td class="text-primary-bold">#{{ i.issue_id }}</td>
+                        <td class="text-medium">{{ i.user_name }}</td>
                         <td>{{ i.book_title }}</td>
                         <td>{{ i.issue_date }}</td>
                         <td>{{ i.return_date }}</td>
@@ -185,7 +184,7 @@ document.getElementById('returnMemberSelect').addEventListener('change', async f
                                     <span class="badge badge-success">PAID</span>
                                 {% else %}
                                     <form action="/admin/fine/pay/{{ i.issue_id }}" method="POST" style="display:inline;">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">Collect</button>
+                                        <button type="submit" class="btn btn-sm" style="color: var(--danger); border: 1px solid var(--danger); background: none; border-radius: 8px;">Collect</button>
                                     </form>
                                 {% endif %}
                             {% else %}
@@ -199,4 +198,5 @@ document.getElementById('returnMemberSelect').addEventListener('change', async f
         </div>
     </div>
 </section>
+
 {% endblock %}

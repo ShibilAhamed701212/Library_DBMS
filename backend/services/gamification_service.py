@@ -97,12 +97,12 @@ def check_for_badges(user_id):
     try:
         res_reviews = fetch_one("SELECT COUNT(*) as cnt FROM reviews WHERE user_id = %s", (user_id,))
         total_reviews = res_reviews['cnt'] if res_reviews else 0
-    except:
+    except Exception:
         total_reviews = 0 # Table might not exist yet
         
-    # 3. Unique Genres
+    # 3. Unique Categories
     res_genres = fetch_one("""
-        SELECT COUNT(DISTINCT b.genre) as cnt 
+        SELECT COUNT(DISTINCT b.category) as cnt 
         FROM issues i 
         JOIN books b ON i.book_id = b.book_id 
         WHERE i.user_id = %s

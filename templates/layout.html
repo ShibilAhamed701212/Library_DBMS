@@ -13,23 +13,16 @@
         }
     </style>
 
-    <!-- Theme Detection Script -->
+    <!-- Theme Detection Script (prevents FOUC) -->
     <script>
         (function() {
-            const savedTheme = localStorage.getItem('theme');
-            const configTheme = "{{ system_settings.default_theme or 'auto' }}";
-            
-            let themeToApply = 'light';
-            
-            if (savedTheme) {
-                themeToApply = savedTheme;
-            } else if (configTheme !== 'auto') {
-                themeToApply = configTheme;
-            } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                themeToApply = 'dark';
-            }
-            
-            document.documentElement.setAttribute('data-theme', themeToApply);
+            const saved = localStorage.getItem('theme');
+            const config = "{{ system_settings.default_theme or 'auto' }}";
+            let t = 'light';
+            if (saved) t = saved;
+            else if (config !== 'auto') t = config;
+            else if (window.matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
+            document.documentElement.setAttribute('data-theme', t);
         })();
     </script>
     
@@ -74,7 +67,7 @@
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-logo">
                 <span style="font-size: 1.5rem; color: var(--primary);"><i class="fas fa-book-open"></i></span> {{ system_settings.library_name }}
-                <div style="font-size: 0.75rem; color: var(--text-sub); font-weight: 400; margin-top: 0.25rem;">{{ system_settings.library_tagline }}</div>
+                <div class="sidebar-subtitle">{{ system_settings.library_tagline }}</div>
             </div>
             
             <!-- Theme Toggle -->
@@ -88,77 +81,77 @@
             <nav class="nav-links">
                 {% if session.get('role') == 'admin' %}
                     <a href="/admin/dashboard" class="nav-link {% if active_page == 'admin_overview' %}active{% endif %}">
-                        <i class="fas fa-chart-line"></i> Overview
+                        <i class="fas fa-chart-line icon-overview"></i> Overview
                     </a>
                     <a href="/admin/books" class="nav-link {% if active_page == 'admin_books' %}active{% endif %}">
-                        <i class="fas fa-book"></i> Books
+                        <i class="fas fa-book icon-books"></i> Books
                     </a>
                     <a href="/admin/users" class="nav-link {% if active_page == 'admin_users' %}active{% endif %}">
-                        <i class="fas fa-users"></i> Users
+                        <i class="fas fa-users icon-users"></i> Users
                     </a>
                     <a href="/admin/issues" class="nav-link {% if active_page == 'admin_issues' %}active{% endif %}">
-                        <i class="fas fa-exchange-alt"></i> Issue/Return
+                        <i class="fas fa-exchange-alt icon-exchange"></i> Issue/Return
                     </a>
                     <a href="/admin/requests" class="nav-link {% if active_page == 'admin_requests' %}active{% endif %}">
-                        <i class="fas fa-hourglass-half"></i> Requests
+                        <i class="fas fa-hourglass-half icon-requests"></i> Requests
                     </a>
                     <a href="/admin/suggestions" class="nav-link {% if active_page == 'admin_suggestions' %}active{% endif %}">
-                        <i class="fas fa-lightbulb"></i> Suggestions
+                        <i class="fas fa-lightbulb icon-suggest"></i> Suggestions
                     </a>
                     <a href="/admin/purchase-list" class="nav-link {% if active_page == 'admin_purchase_list' %}active{% endif %}">
-                        <i class="fas fa-shopping-cart"></i> Purchase List
+                        <i class="fas fa-shopping-cart icon-catalog"></i> Purchase List
                     </a>
                     <a href="/reports" class="nav-link {% if active_page == 'admin_reports' or active_page == 'admin_analytics' %}active{% endif %}">
-                        <i class="fas fa-chart-pie"></i> Insights
+                        <i class="fas fa-chart-pie icon-insights"></i> Insights
                     </a>
                     <a href="/admin/community" class="nav-link {% if active_page == 'admin_community' %}active{% endif %}">
-                        <i class="fas fa-users-cog"></i> Community Hub
+                        <i class="fas fa-users-cog icon-community"></i> Community Hub
                     </a>
                     <a href="/admin/scanner" class="nav-link {% if active_page == 'admin_scanner' %}active{% endif %}">
-                        <i class="fas fa-qrcode"></i> Scanner
+                        <i class="fas fa-qrcode icon-scanner"></i> Scanner
                     </a>
                     <a href="/admin/support" class="nav-link {% if active_page == 'admin_support' %}active{% endif %}">
-                        <i class="fas fa-headset"></i> Support
+                        <i class="fas fa-headset icon-support"></i> Support
                     </a>
                     <a href="/admin/settings" class="nav-link {% if active_page == 'admin_settings' %}active{% endif %}">
-                        <i class="fas fa-cog"></i> Settings
+                        <i class="fas fa-cog icon-settings"></i> Settings
                     </a>
                     <a href="/admin/system/health" class="nav-link {% if active_page == 'admin_health' %}active{% endif %}">
-                        <i class="fas fa-heartbeat"></i> System Health
+                        <i class="fas fa-heartbeat icon-health"></i> System Health
                     </a>
                 {% else %}
                     <a href="/member/dashboard" class="nav-link {% if active_page == 'member_overview' %}active{% endif %}">
-                        <i class="fas fa-tachometer-alt"></i> Overview
+                        <i class="fas fa-tachometer-alt icon-overview"></i> Overview
                     </a>
                     <a href="/member/goals" class="nav-link {% if active_page == 'member_goals' %}active{% endif %}">
-                        <i class="fas fa-bullseye"></i> My Goals
+                        <i class="fas fa-bullseye icon-goals"></i> My Goals
                     </a>
                     <a href="/member/achievements" class="nav-link {% if active_page == 'member_achievements' %}active{% endif %}">
-                        <i class="fas fa-trophy"></i> Trophy Room
+                        <i class="fas fa-trophy icon-trophy"></i> Trophy Room
                     </a>
                     <a href="/member/catalog" class="nav-link {% if active_page == 'member_catalog' %}active{% endif %}">
-                        <i class="fas fa-book"></i> Catalog
+                        <i class="fas fa-book icon-catalog"></i> Catalog
                     </a>
                     <a href="/member/suggest-book" class="nav-link {% if active_page == 'suggest_book' %}active{% endif %}">
-                        <i class="fas fa-lightbulb"></i> Suggest Book
+                        <i class="fas fa-lightbulb icon-suggest"></i> Suggest Book
                     </a>
                     <a href="{{ url_for('member.member_ai_chat') }}" class="nav-link {% if active_page == 'ai_chat' %}active{% endif %}">
-                        <i class="fas fa-brain"></i> AI Assistant
+                        <i class="fas fa-brain icon-ai"></i> AI Assistant
                     </a>
                     <a href="/member/wishlist" class="nav-link {% if active_page == 'member_wishlist' %}active{% endif %}">
-                        <i class="fas fa-heart"></i> Wishlist
+                        <i class="fas fa-heart icon-wishlist"></i> Wishlist
                     </a>
                     <a href="/member/community" class="nav-link {% if active_page == 'member_community' %}active{% endif %}">
-                        <i class="fas fa-comments"></i> Community
+                        <i class="fas fa-comments icon-community"></i> Community
                     </a>
                      <a href="/member/support" class="nav-link {% if active_page == 'member_support' %}active{% endif %}">
-                        <i class="fas fa-ticket-alt"></i> Support
+                        <i class="fas fa-ticket-alt icon-support"></i> Support
                     </a>
                     <a href="/member/api-keys" class="nav-link {% if active_page == 'member_api_keys' %}active{% endif %}">
-                        <i class="fas fa-key"></i> Developer API
+                        <i class="fas fa-key icon-api"></i> Developer API
                     </a>
                     <a href="/member/profile" class="nav-link {% if active_page == 'member_profile' %}active{% endif %}">
-                        <i class="fas fa-user-circle"></i> My Profile
+                        <i class="fas fa-user-circle icon-profile"></i> My Profile
                     </a>
                 {% endif %}
             </nav>
@@ -181,25 +174,25 @@
                 <div class="user-profile" style="display: flex; gap: 1rem; align-items: center;">
                     <!-- Notifications -->
                     <div class="notification-wrapper" style="position: relative;">
-                        <button class="icon-btn" id="notifBtn" style="background: none; border: none; font-size: 1.25rem; cursor: pointer; position: relative; padding: 5px; border-radius: 5px; transition: background 0.2s;">
+                        <button class="notif-btn" id="notifBtn">
                             🔔
                             {% if unread_count > 0 %}
-                            <span class="badge" style="position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.7rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">{{ unread_count }}</span>
+                            <span class="notif-badge">{{ unread_count }}</span>
                             {% endif %}
                         </button>
                         
                         <!-- Dropdown -->
-                        <div class="notif-dropdown glass-card shadow-lg" id="notifDropdown" style="display: none; position: absolute; top: 120%; right: 0; width: 320px; padding: 0.5rem; z-index: 1000; border: 1px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
-                            <div style="display: flex; justify-content: space-between; padding: 0.5rem; border-bottom: 1px solid var(--border);">
+                        <div class="notif-dropdown glass-card" id="notifDropdown">
+                            <div class="notif-dropdown-header">
                                 <strong>Notifications</strong>
                                 {% if unread_count > 0 %}
                                 <a href="/notifications/read/all" style="font-size: 0.8rem;">Mark all read</a>
                                 {% endif %}
                             </div>
                             {% if unread_notifications %}
-                                <div style="max-height: 300px; overflow-y: auto;">
+                                <div class="notif-dropdown-body">
                                 {% for n in unread_notifications %}
-                                    <div style="padding: 0.75rem; border-bottom: 1px solid var(--border);">
+                                    <div class="notif-item">
                                         <p style="margin: 0; font-size: 0.9rem;">{{ n.message }}</p>
                                         <div style="display: flex; justify-content: space-between; margin-top: 0.5rem;">
                                             <small style="color: var(--text-sub);">{{ n.created_at }}</small>
@@ -209,37 +202,27 @@
                                 {% endfor %}
                                 </div>
                             {% else %}
-                                <div style="padding: 1rem; text-align: center; color: var(--text-sub);">No new notifications</div>
+                                <div class="notif-empty">No new notifications</div>
                             {% endif %}
                         </div>
                     </div>
                     
-                    <style>
-                        .icon-btn:hover { background: rgba(0,0,0,0.05); }
-                        [data-theme="dark"] .icon-btn:hover { background: rgba(255,255,255,0.1); }
-                        .notif-dropdown { animation: slideIn 0.2s ease-out; }
-                        @keyframes slideIn {
-                            from { opacity: 0; transform: translateY(-10px); }
-                            to { opacity: 1; transform: translateY(0); }
-                        }
-                    </style>
-
-                    <div style="text-align: right;">
-                        <span style="display: block; font-weight: 600;">{{ session.get('name', 'User') }}</span>
-                        <span style="font-size: 0.75rem; color: var(--text-sub);">{{ session.get('role')|capitalize }}</span>
+                    <div class="header-user-info">
+                        <span class="header-user-name">{{ session.get('name', 'User') }}</span>
+                        <span class="header-user-role">{{ session.get('role')|capitalize }}</span>
                     </div>
                     {% if session.get('role') == 'member' %}
                     <a href="/member/profile" style="text-decoration: none;">
-                        <div style="width: 40px; height: 40px; background: #2563eb; color: white; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+                        <div class="header-avatar header-avatar-member">
                             {% if session.get('profile_pic') %}
-                            <img src="{{ url_for('static', filename=session.get('profile_pic')) }}" style="width: 100%; height: 100%; object-fit: cover;">
+                            <img src="{{ url_for('static', filename=session.get('profile_pic')) }}" alt="Profile">
                             {% else %}
                             {{ session.get('name', 'U')[0] }}
                             {% endif %}
                         </div>
                     </a>
                     {% else %}
-                    <div style="width: 40px; height: 40px; background: #6b7280; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+                    <div class="header-avatar header-avatar-admin">
                         {{ session.get('name', 'A')[0] }}
                     </div>
                     {% endif %}
@@ -286,21 +269,16 @@
         const html = document.documentElement;
 
         function updateToggleUI(theme) {
-            if (theme === 'dark') {
-                themeIcon.innerHTML = '<i class="fas fa-sun"></i>';
-                themeText.innerText = 'Light Mode';
-            } else {
-                themeIcon.innerHTML = '<i class="fas fa-moon"></i>';
-                themeText.innerText = 'Dark Mode';
-            }
+            themeIcon.innerHTML = theme === 'dark' 
+                ? '<i class="fas fa-sun"></i>' 
+                : '<i class="fas fa-moon"></i>';
+            themeText.innerText = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
         }
 
         updateToggleUI(html.getAttribute('data-theme'));
 
         themeToggle.addEventListener('click', () => {
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            
+            const newTheme = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
             html.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
             updateToggleUI(newTheme);
@@ -324,7 +302,6 @@
             });
         }
     </script>
-
 
     {% block scripts %}{% endblock %}
 

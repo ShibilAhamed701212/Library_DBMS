@@ -6,7 +6,7 @@ def get_all_settings():
     try:
         rows = fetch_all("SELECT setting_key, setting_value FROM settings")
         return {r['setting_key']: r['setting_value'] for r in rows}
-    except:
+    except Exception:
         return {}
 
 def get_setting(key, default=None):
@@ -14,7 +14,7 @@ def get_setting(key, default=None):
     try:
         res = fetch_one("SELECT setting_value FROM settings WHERE setting_key = %s", (key,))
         return res['setting_value'] if res else default
-    except:
+    except Exception:
         return default
 
 def is_maintenance_mode():

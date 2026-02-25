@@ -35,23 +35,20 @@ def create_room(user_id, name, room_type):
     Creates a new chat room and adds the creator as 'admin'.
     """
     # 1. Create Room
-    execute(
+    room_id = execute(
         "INSERT INTO chat_rooms (room_name, room_type, created_by) VALUES (%s, %s, %s)",
         (name, room_type, user_id)
     )
     
-    # Get the ID (Warning: fetch_one("SELECT LAST_INSERT_ID()") is safer in same transaction, 
-    # but db_access.execute commits immediately. We will query by name/creator/time or use max ID)
-    # Ideally db_access should return lastrowid. Inspecting db_access execute... it returns rowcount.
-    # We will query max_id for this user.
-    room = fetch_one(
-        "SELECT room_id FROM chat_rooms WHERE created_by = %s ORDER BY created_at DESC LIMIT 1",
-        (user_id,)
-    )
-    if not room:
-        raise Exception("Room creation failed")
-    
-    room_id = room['room_id']
+    if not room_id:
+        # Fallback: query for the room we just created
+        room = fetch_one(
+            "SELECT room_id FROM chat_rooms WHERE created_by = %s ORDER BY created_at DESC LIMIT 1",
+            (user_id,)
+        )
+        if not room:
+            raise Exception("Room creation failed")
+        room_id = room['room_id']
     
     # 2. Add Creator as Admin
     # First get their anon ID
@@ -148,7 +145,7 @@ def delete_message(user_id, message_id):
         
     if msg['anon_id'] != anon_id:
         # Allow room admin to delete?
-        member = fetch_one("SELECT role FROM room_members WHERE room_id = %s AND anon_id = %s", (msg['room_id'], anon_id))
+        member = fetch_one("SELECT role FROM room_members WHERE room_id = %s AND anon_id = %s", (msg['channel_id'], anon_id))
         if not member or member['role'] not in ['admin', 'moderator']:
              raise Exception("Unauthorized")
 
@@ -168,7 +165,6 @@ def invite_user_to_room(room_id, email, requester_id):
     # For now, allow any member to invite? Or just admins?
     # Let's say any member for now.
     
-    send_notification = True # We should notify them
     
     # Add to room members directly
     target_anon_id = get_or_create_anon_id(target_user_id)

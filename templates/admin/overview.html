@@ -6,141 +6,141 @@
 
 {% block content %}
 <!-- Premium Stats Grid -->
-<div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+<div class="stats-grid-auto fade-in">
     <!-- Users Card -->
-    <div class="glass-card stat-card-premium" style="display: flex; align-items: center; gap: 1.5rem; padding: 1.5rem; position: relative; overflow: hidden;">
-        <div style="width: 60px; height: 60px; border-radius: 12px; background: linear-gradient(135deg, #4f46e5 0%, #818cf8 100%); display: flex; align-items: center; justify-content: center; font-size: 1.75rem; color: white; box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);">
+    <div class="glass-card stat-card-premium">
+        <div class="icon-box icon-box-purple">
             <i class="fas fa-users"></i>
         </div>
         <div>
-            <span style="display: block; font-size: 0.875rem; color: var(--text-sub); font-weight: 500; margin-bottom: 4px;">Total Users</span>
-            <span style="display: block; font-size: 1.75rem; font-weight: 800; color: var(--text-main); line-height: 1.2;">{{ quick_stats.total_users }}</span>
+            <span class="stat-label-sm">Total Users</span>
+            <span class="stat-value-lg">{{ quick_stats.total_users }}</span>
         </div>
     </div>
 
     <!-- Books Card -->
-    <div class="glass-card stat-card-premium" style="display: flex; align-items: center; gap: 1.5rem; padding: 1.5rem; position: relative; overflow: hidden;">
-        <div style="width: 60px; height: 60px; border-radius: 12px; background: linear-gradient(135deg, #059669 0%, #34d399 100%); display: flex; align-items: center; justify-content: center; font-size: 1.75rem; color: white; box-shadow: 0 10px 15px -3px rgba(5, 150, 105, 0.3);">
+    <div class="glass-card stat-card-premium">
+        <div class="icon-box icon-box-green">
             <i class="fas fa-book"></i>
         </div>
         <div>
-            <span style="display: block; font-size: 0.875rem; color: var(--text-sub); font-weight: 500; margin-bottom: 4px;">Total Books</span>
-            <span style="display: block; font-size: 1.75rem; font-weight: 800; color: var(--text-main); line-height: 1.2;">{{ quick_stats.total_books }}</span>
+            <span class="stat-label-sm">Total Books</span>
+            <span class="stat-value-lg">{{ quick_stats.total_books }}</span>
         </div>
     </div>
 
     <!-- Issues Card -->
-    <div class="glass-card stat-card-premium" style="display: flex; align-items: center; gap: 1.5rem; padding: 1.5rem; position: relative; overflow: hidden;">
-        <div style="width: 60px; height: 60px; border-radius: 12px; background: linear-gradient(135deg, #d97706 0%, #fbbf24 100%); display: flex; align-items: center; justify-content: center; font-size: 1.75rem; color: white; box-shadow: 0 10px 15px -3px rgba(217, 119, 6, 0.3);">
+    <div class="glass-card stat-card-premium">
+        <div class="icon-box icon-box-amber">
             <i class="fas fa-clipboard-list"></i>
         </div>
         <div>
-            <span style="display: block; font-size: 0.875rem; color: var(--text-sub); font-weight: 500; margin-bottom: 4px;">Active Issues</span>
-            <span style="display: block; font-size: 1.75rem; font-weight: 800; color: var(--text-main); line-height: 1.2;">{{ quick_stats.total_issues }}</span>
+            <span class="stat-label-sm">Active Issues</span>
+            <span class="stat-value-lg">{{ quick_stats.total_issues }}</span>
         </div>
     </div>
 
     <!-- Fines Card -->
-    <div class="glass-card stat-card-premium" style="display: flex; align-items: center; gap: 1.5rem; padding: 1.5rem; position: relative; overflow: hidden;">
-        <div style="width: 60px; height: 60px; border-radius: 12px; background: linear-gradient(135deg, #dc2626 0%, #f87171 100%); display: flex; align-items: center; justify-content: center; font-size: 1.75rem; color: white; box-shadow: 0 10px 15px -3px rgba(220, 38, 38, 0.3);">
+    <div class="glass-card stat-card-premium">
+        <div class="icon-box icon-box-red">
             <i class="fas fa-coins"></i>
         </div>
         <div>
-            <span style="display: block; font-size: 0.875rem; color: var(--text-sub); font-weight: 500; margin-bottom: 4px;">Total Fines</span>
-            <span style="display: block; font-size: 1.75rem; font-weight: 800; color: var(--text-main); line-height: 1.2;">{{ system_settings.currency_symbol }}{{ quick_stats.total_fines }}</span>
+            <span class="stat-label-sm">Total Fines</span>
+            <span class="stat-value-lg">{{ system_settings.currency_symbol }}{{ quick_stats.total_fines }}</span>
         </div>
     </div>
 </div>
 
 <!-- Analytics Charts -->
-<div class="charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 2rem;">
+<div class="charts-grid-auto fade-in fade-in-delay-2">
     <!-- Monthly Trends -->
-    <div class="glass-card" style="padding: 1.5rem; min-height: 400px; display: flex; flex-direction: column;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
-            <h3 style="margin: 0; font-weight: 700; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
-                <span style="width: 8px; height: 8px; background: #4f46e5; border-radius: 50%; display: inline-block;"></span>
+    <div class="glass-card chart-card">
+        <div class="chart-card-header">
+            <h3 class="chart-card-title">
+                <span class="chart-dot chart-dot-purple"></span>
                 Monthly Trends
             </h3>
-            <span class="badge" style="background: rgba(79, 70, 229, 0.1); color: #4f46e5;">Borrowing</span>
+            <span class="badge-sm badge-purple">Borrowing</span>
         </div>
-        <div style="flex: 1; position: relative; min-height: 0;">
+        <div class="chart-card-body">
             <canvas id="monthlyChart"></canvas>
         </div>
     </div>
 
     <!-- Category Distribution -->
-    <div class="glass-card" style="padding: 1.5rem; min-height: 400px; display: flex; flex-direction: column;">
-         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
-            <h3 style="margin: 0; font-weight: 700; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
-                <span style="width: 8px; height: 8px; background: #059669; border-radius: 50%; display: inline-block;"></span>
+    <div class="glass-card chart-card">
+        <div class="chart-card-header">
+            <h3 class="chart-card-title">
+                <span class="chart-dot chart-dot-green"></span>
                 Top Categories
             </h3>
-            <span class="badge" style="background: rgba(5, 150, 105, 0.1); color: #059669;">Inventory</span>
+            <span class="badge-sm badge-green">Inventory</span>
         </div>
-        <div style="flex: 1; position: relative; min-height: 0;">
+        <div class="chart-card-body">
             <canvas id="categoryChart"></canvas>
         </div>
     </div>
 
     <!-- User Demographics -->
-    <div class="glass-card" style="padding: 1.5rem; min-height: 400px; display: flex; flex-direction: column;">
-         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
-            <h3 style="margin: 0; font-weight: 700; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
-                <span style="width: 8px; height: 8px; background: #d97706; border-radius: 50%; display: inline-block;"></span>
+    <div class="glass-card chart-card">
+        <div class="chart-card-header">
+            <h3 class="chart-card-title">
+                <span class="chart-dot chart-dot-amber"></span>
                 User Demographics
             </h3>
-            <span class="badge" style="background: rgba(217, 119, 6, 0.1); color: #d97706;">Members</span>
+            <span class="badge-sm badge-amber">Members</span>
         </div>
-        <div style="flex: 1; position: relative; min-height: 0; display: flex; justify-content: center; align-items: center;">
+        <div class="chart-card-body" style="display: flex; justify-content: center; align-items: center;">
             <canvas id="userChart" style="max-height: 280px;"></canvas>
         </div>
     </div>
 </div>
 
 <!-- Recent Activity -->
-<section style="margin-top: 2.5rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+<section class="page-section fade-in fade-in-delay-3">
+    <div class="section-header-row">
         <div>
-            <h2 style="margin: 0; font-size: 1.25rem; font-weight: 700;">Recent Activity</h2>
-            <p style="margin: 0.25rem 0 0; color: var(--text-sub); font-size: 0.9rem;">Latest check-outs and returns</p>
+            <h2 class="section-heading">Recent Activity</h2>
+            <p class="section-subheading">Latest check-outs and returns</p>
         </div>
-        <a href="/admin/issues" class="btn btn-outline-primary btn-sm" style="border-radius: 20px; padding: 0.5rem 1.25rem;">View All Activity</a>
+        <a href="/admin/issues" class="btn btn-pill btn-outline-primary btn-sm">View All Activity</a>
     </div>
 
     <div class="glass-card" style="padding: 0; overflow: hidden;">
         <div class="table-responsive">
-            <table class="table" style="margin: 0; width: 100%;">
-                <thead style="background: rgba(0,0,0,0.02); border-bottom: 1px solid var(--border);">
+            <table class="table-premium">
+                <thead>
                     <tr>
-                        <th style="padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-sub); font-weight: 600;">Issue ID</th>
-                        <th style="padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-sub); font-weight: 600;">User</th>
-                        <th style="padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-sub); font-weight: 600;">Book</th>
-                        <th style="padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-sub); font-weight: 600;">Issue Date</th>
-                        <th style="padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-sub); font-weight: 600; text-align: right;">Action</th>
+                        <th>Issue ID</th>
+                        <th>User</th>
+                        <th>Book</th>
+                        <th>Issue Date</th>
+                        <th style="text-align: right;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for i in recent_issues %}
-                    <tr style="border-bottom: 1px solid var(--border); transition: background 0.2s;">
-                        <td style="padding: 1rem 1.5rem; font-weight: 600; color: var(--primary);">#{{ i.issue_id }}</td>
-                        <td style="padding: 1rem 1.5rem;">
-                             <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <div style="width: 32px; height: 32px; background: var(--bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; color: var(--text-sub);">
+                    <tr>
+                        <td class="text-primary-bold">#{{ i.issue_id }}</td>
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar-sm">
                                     <i class="fas fa-user"></i>
                                 </div>
-                                <span style="font-weight: 500;">{{ i.user_name }}</span>
+                                <span class="text-medium">{{ i.user_name }}</span>
                             </div>
                         </td>
-                        <td style="padding: 1rem 1.5rem;">{{ i.book_title }}</td>
-                        <td style="padding: 1rem 1.5rem; color: var(--text-sub);">{{ i.issue_date }}</td>
-                        <td style="padding: 1rem 1.5rem; text-align: right;">
-                            <a href="/admin/issues" class="btn btn-sm btn-link" style="padding: 0; color: var(--text-sub);"><i class="fas fa-chevron-right"></i></a>
+                        <td>{{ i.book_title }}</td>
+                        <td style="color: var(--text-sub);">{{ i.issue_date }}</td>
+                        <td style="text-align: right;">
+                            <a href="/admin/issues" class="btn btn-sm" style="padding: 0; color: var(--text-sub);"><i class="fas fa-chevron-right"></i></a>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" style="text-align: center; color: var(--text-sub); padding: 3rem;">
-                            <div style="font-size: 2rem; opacity: 0.3; margin-bottom: 0.5rem;">💤</div>
+                        <td colspan="5" class="empty-state">
+                            <div class="empty-state-icon">💤</div>
                             No recent activity found.
                         </td>
                     </tr>
@@ -155,117 +155,80 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // Chart.js default styling
+    const chartColors = {
+        primary: '#4f46e5',
+        primaryLight: 'rgba(79, 70, 229, 0.1)',
+        palette: ['#4f46e5', '#059669', '#d97706', '#dc2626', '#2563eb', '#db2777', '#0d9488', '#6366f1', '#e67e22', '#16a085']
+    };
+
+    const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        devicePixelRatio: 2,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    usePointStyle: true,
+                    pointStyle: 'circle',
+                    padding: 20,
+                    font: { family: 'Inter', size: 12 }
+                }
+            }
+        }
+    };
+
     // 1. Monthly Trends Chart
-    const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
-    const monthlyLabels = [{% for s in monthly_stats %}"{{ s.month }}",{% endfor %}];
-    const monthlyData = [{% for s in monthly_stats %}{{ s.count }},{% endfor %}];
-    
-    new Chart(monthlyCtx, {
+    new Chart(document.getElementById('monthlyChart').getContext('2d'), {
         type: 'line',
         data: {
-            labels: monthlyLabels,
+            labels: [{% for s in monthly_stats %}"{{ s.month }}",{% endfor %}],
             datasets: [{
                 label: 'Books Issued',
-                data: monthlyData,
-                borderColor: '#4e73df',
-                backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                data: [{% for s in monthly_stats %}{{ s.count }},{% endfor %}],
+                borderColor: chartColors.primary,
+                backgroundColor: chartColors.primaryLight,
                 fill: true,
                 tension: 0.4,
                 pointRadius: 4,
-                pointBackgroundColor: '#4e73df'
+                pointBackgroundColor: chartColors.primary
             }]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            devicePixelRatio: 2, // High-res for zooming
-            plugins: {
-                legend: { 
-                    position: 'bottom',
-                    labels: {
-                        usePointStyle: true,
-                        pointStyle: 'circle',
-                        padding: 20
-                    }
-                }
-            },
+            ...commonOptions,
             scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1,
-                        precision: 0
-                    }
-                }
+                y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } }
             }
         }
     });
 
     // 2. Category Distribution Chart
-    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
-    const catLabels = [{% for s in category_stats %}"{{ s.category }}",{% endfor %}];
-    const catData = [{% for s in category_stats %}{{ s.total_issues }},{% endfor %}];
-    
-    new Chart(categoryCtx, {
+    new Chart(document.getElementById('categoryChart').getContext('2d'), {
         type: 'doughnut',
         data: {
-            labels: catLabels,
+            labels: [{% for s in category_stats %}"{{ s.category }}",{% endfor %}],
             datasets: [{
-                data: catData,
-                backgroundColor: [
-                    '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
-                    '#858796', '#5a5c69', '#2c3e50', '#e67e22', '#16a085'
-                ],
+                data: [{% for s in category_stats %}{{ s.total_issues }},{% endfor %}],
+                backgroundColor: chartColors.palette,
                 borderWidth: 2
             }]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            devicePixelRatio: 2,
-            plugins: {
-                legend: { 
-                    position: 'bottom',
-                    labels: {
-                        usePointStyle: true,
-                        pointStyle: 'circle',
-                        padding: 15
-                    }
-                }
-            }
-        }
+        options: commonOptions
     });
 
     // 3. User Demographics Chart
-    const userCtx = document.getElementById('userChart').getContext('2d');
-    const userLabels = [{% for s in user_stats %}"{{ s.role|capitalize }}",{% endfor %}];
-    const userData = [{% for s in user_stats %}{{ s.count }},{% endfor %}];
-    
-    new Chart(userCtx, {
+    new Chart(document.getElementById('userChart').getContext('2d'), {
         type: 'pie',
         data: {
-            labels: userLabels,
+            labels: [{% for s in user_stats %}"{{ s.role|capitalize }}",{% endfor %}],
             datasets: [{
-                data: userData,
-                backgroundColor: ['#4e73df', '#1cc88a', '#f6c23e'],
+                data: [{% for s in user_stats %}{{ s.count }},{% endfor %}],
+                backgroundColor: chartColors.palette.slice(0, 3),
                 borderWidth: 2
             }]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            devicePixelRatio: 2,
-            plugins: {
-                legend: { 
-                    position: 'bottom',
-                    labels: {
-                        usePointStyle: true,
-                        pointStyle: 'circle',
-                        padding: 20
-                    }
-                }
-            }
-        }
+        options: commonOptions
     });
 </script>
 {% endblock %}

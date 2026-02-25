@@ -90,7 +90,7 @@ def respond_to_friend_request(request_id, current_user_id, status):
         
     return True
 
-    return True
+
 
 def update_privacy_settings(user_id, is_public, allow_requests, show_activity):
     """Updates user granular privacy settings."""

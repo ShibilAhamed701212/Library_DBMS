@@ -14,7 +14,10 @@ def discover_by_vibe(user_vibe):
     hf_token = os.getenv('HF_TOKEN')  # Free Hugging Face API token
     
     # Fetch ALL books for semantic mapping (within reasonable limits)
-    books = fetch_all("SELECT title, author, category FROM books LIMIT 200")
+    books = fetch_all("""
+        SELECT b.title, COALESCE(a.name, 'Unknown') as author, b.category 
+        FROM books b LEFT JOIN authors a ON b.author_id = a.author_id LIMIT 200
+    """)
     book_context = "\n".join([f"- {b['title']} | {b['author']} | {b['category']}" for b in books])
     
     # Method 1: Gemini (if API key provided)

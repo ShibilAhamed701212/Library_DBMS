@@ -1,3 +1,4 @@
+import re
 import requests
 from backend.repository.db_access import execute, fetch_one, fetch_all
 from backend.config.config import get_config
@@ -11,11 +12,16 @@ def enrich_book_metadata(book_id):
     - Sets Series Order.
     - NEW: Fetches Book Cover & Description.
     """
-    book = fetch_one("SELECT * FROM books WHERE book_id = %s", (book_id,))
+    book = fetch_one("""
+        SELECT b.*, a.name as author_name 
+        FROM books b 
+        LEFT JOIN authors a ON b.author_id = a.author_id 
+        WHERE b.book_id = %s
+    """, (book_id,))
     if not book: return "Book not found."
     
     title = book['title']
-    author_name = book['author']
+    author_name = book.get('author_name') or book.get('author') or 'Unknown'
     
     try:
         # 1. FETCH AUTHOR BIO (OpenLibrary)
@@ -42,7 +48,6 @@ def enrich_book_metadata(book_id):
             # Limit bio length
             if bio:
                 # CLEANUP: Strip HTML tags (like <q>, <i>, <br>)
-                import re
                 bio = re.sub(r'<[^>]+>', '', bio)
                 bio = bio[:4000] + "..." if len(bio) > 4000 else bio
                 
@@ -138,7 +143,6 @@ def enrich_book_metadata(book_id):
             
             # --- 3.3 Identify Series ---
             subtitle = info.get('subtitle', '')
-            import re
             text_to_search = f"{info.get('title')} {info.get('subtitle', '')} {info.get('description', '')[:200]}"
             
             patterns = [

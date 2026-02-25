@@ -15,44 +15,20 @@ DESIGN PRINCIPLES FOLLOWED:
 # =====================================================
 
 from flask import (
-    Blueprint,          # Groups admin-related routes
-    render_template,    # Renders Jinja2 HTML templates
-    session,            # Stores logged-in user info
-    redirect,           # Redirects browser to another URL
-    request,            # Reads POSTed form data
-    flash,              # Sends messages to UI
-    url_for             # Generates URLs for routes
+    Blueprint, render_template, session, redirect,
+    request, flash, url_for, jsonify
 )
 
-# =====================================================
-# INTERNAL PROJECT IMPORTS
-# =====================================================
-
-# DB read helper (single-row SELECT)
 from backend.repository.db_access import fetch_one, fetch_all
-
-# Access control decorator
 from backend.utils.decorators import admin_required
-
-# Service-layer functions (business logic)
 from backend.services.user_service import view_users, add_user
 from backend.services.book_service import view_books_paginated, view_books
 from backend.services.issue_service import issue_book, return_book, send_overdue_reminders
 from backend.services.request_service import get_pending_requests, process_request
 from backend.services.report_service import most_issued_books, most_active_users, monthly_issue_count, export_report, book_category_distribution
 
-# =====================================================
-# BLUEPRINT DEFINITION
-# =====================================================
-
-
-# All admin routes will be registered under this blueprint
 admin_bp = Blueprint("admin", __name__)
 
-
-# =====================================================
-# ADMIN DASHBOARD (GET)
-# =====================================================
 
 # =====================================================
 # ADMIN OVERVIEW (DASHBOARD)
@@ -126,7 +102,6 @@ def admin_books_view():
 def admin_get_book_json(book_id):
     """Securely returns book details for the Edit Modal."""
     from backend.services.book_service import get_book
-    from flask import jsonify
     try:
         book = get_book(book_id)
         if not book:
@@ -1056,47 +1031,19 @@ def admin_export_report(report_type):
 @admin_bp.route("/admin/issue", methods=["POST"])
 @admin_required
 def admin_issue_book():
-    """
-    Issues a book to a user.
-
-    Triggered when admin submits:
-    - Issue Book form
-
-    URL:
-        POST /admin/issue
-    """
-
-    # -------------------------------------------------
-    # STEP 1: READ FORM DATA
-    # -------------------------------------------------
+    """Issues a book to a user. POST /admin/issue"""
     user_id = request.form.get("user_id")
     book_id = request.form.get("book_id")
 
-    # -------------------------------------------------
-    # STEP 2: VALIDATE INPUT
-    # -------------------------------------------------
     if not user_id or not book_id:
         flash("❌ User ID and Book ID are required", "error")
         return redirect("/admin/issues")
 
-    # -------------------------------------------------
-    # STEP 3: SERVICE LAYER CALL
-    # -------------------------------------------------
     try:
-        # Convert inputs to integers (SAFE)
-        uid = int(user_id)
-        bid = int(book_id)
-
-        # Business rules, limits, transactions are handled
-        # inside issue_service.issue_book()
-        result = issue_book(uid, bid)
-
+        result = issue_book(int(user_id), int(book_id))
     except ValueError:
         result = "❌ Invalid User ID or Book ID (Must be numeric)"
 
-    # -------------------------------------------------
-    # STEP 4: FEEDBACK + REDIRECT
-    # -------------------------------------------------
     flash(result)
     return redirect("/admin/issues")
 
@@ -1108,51 +1055,22 @@ def admin_issue_book():
 @admin_bp.route("/admin/return", methods=["POST"])
 @admin_required
 def admin_return_book():
-    """
-    Returns a previously issued book.
-
-    Triggered when admin submits:
-    - Return Book form
-
-    URL:
-        POST /admin/return
-    """
-
-    # -------------------------------------------------
-    # STEP 1: READ FORM DATA
-    # -------------------------------------------------
+    """Returns a previously issued book. POST /admin/return"""
     user_id = request.form.get("user_id")
     book_id = request.form.get("book_id")
 
-    # -------------------------------------------------
-    # STEP 2: VALIDATE INPUT
-    # -------------------------------------------------
     if not user_id or not book_id:
         flash("❌ User ID and Book ID are required", "error")
         return redirect("/admin/issues")
 
-    # -------------------------------------------------
-    # STEP 3: SERVICE LAYER CALL
-    # -------------------------------------------------
     try:
-        # Convert inputs to integers (SAFE)
-        uid = int(user_id)
-        bid = int(book_id)
-
-        # Handles:
-        # - Finding active issue
-        # - Fine calculation
-        # - Transaction safety
-        result = return_book(uid, bid)
-
+        result = return_book(int(user_id), int(book_id))
     except ValueError:
         result = "❌ Invalid User ID or Book ID (Must be numeric)"
 
-    # -------------------------------------------------
-    # STEP 4: FEEDBACK + REDIRECT
-    # -------------------------------------------------
     flash(result)
     return redirect("/admin/issues")
+
 
 
 
@@ -1455,7 +1373,6 @@ def api_search_books():
 @admin_required
 def api_get_series_books(series_id):
     """JSON API to get books in a series."""
-    from flask import jsonify
     from backend.services.author_service import get_series_books
     books = get_series_books(series_id)
     return jsonify(books)
@@ -1465,7 +1382,6 @@ def api_get_series_books(series_id):
 @admin_required
 def admin_settings_ai_suggest():
     """Returns AI-suggested settings based on description."""
-    from flask import jsonify
     data = request.get_json()
     description = data.get("description", "")
     if not description:
@@ -1487,8 +1403,6 @@ def api_get_user_borrowed_books(user_id):
     Returns a JSON list of books currently borrowed by a specific user.
     Used for dynamic filtering in Return Book form.
     """
-    from flask import jsonify
-    
     borrowed_books = fetch_all(
         """
         SELECT b.book_id, b.title

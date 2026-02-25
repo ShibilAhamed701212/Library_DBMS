@@ -419,12 +419,13 @@ def return_book(user_id: int, book_id: int):
             print(f"Waitlist notification warning: {ignored}")
 
         # Notify Borrower of Return
+        book_title = b_data['title'] if b_data else f"Book #{book_id}"
         from backend.services.notification_service import add_notification
-        add_notification(user_id, f"✅ Returned: '{book_id}' (Fine: ₹{fine})")
+        add_notification(user_id, f"✅ Returned: '{book_title}' (Fine: ₹{fine})")
         
         # Activity Log
         from backend.services.activity_service import log_user_activity
-        log_user_activity(user_id, "RETURN", f"Returned book {book_id}")
+        log_user_activity(user_id, "RETURN", f"Returned '{book_title}'")
 
         return f"✅ Book returned | Fine: ₹{fine}"
 
