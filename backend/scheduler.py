@@ -17,7 +17,7 @@ def start_scheduler():
     scheduler.add_job(func=generate_weekly_report, trigger="cron", day_of_week="mon", hour=9, minute=0)
     
     scheduler.start()
-    print("⏰ Scheduler started. Automated emails will be sent daily at 10:00 AM.")
+    print("[SCHEDULER] Started. Automated emails will be sent daily at 10:00 AM.")
     
     # Shut down the scheduler when exiting the app
     atexit.register(lambda: scheduler.shutdown())

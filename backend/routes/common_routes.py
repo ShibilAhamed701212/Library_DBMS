@@ -5,7 +5,7 @@ common_bp = Blueprint('common_bp', __name__)
 
 @common_bp.route("/notifications/read/<int:notif_id>")
 def mark_read(notif_id):
-    if 'user_id' not in session: return redirect("/")
+    if 'user_id' not in session: return redirect("/login")
     
     from backend.services.notification_service import mark_notification_read
     mark_notification_read(notif_id, session['user_id'])
@@ -13,7 +13,7 @@ def mark_read(notif_id):
 
 @common_bp.route("/notifications/read/all")
 def mark_all_read_route():
-    if 'user_id' not in session: return redirect("/")
+    if 'user_id' not in session: return redirect("/login")
     
     from backend.services.notification_service import mark_all_read
     mark_all_read(session['user_id'])

@@ -35,7 +35,7 @@ def add_book(title, author_id, category, total_copies, pdf_src=None, series_id=N
     """
 
     if total_copies <= 0:
-        return "❌ Total copies must be positive"
+        return "Total copies must be positive"
 
     book_id = execute(
         """
@@ -60,14 +60,14 @@ def update_book(book_id, title, author_id, category, total_copies, series_id=Non
     """
     book = get_book(book_id)
     if not book:
-        return "❌ Book not found"
+        return "Book not found"
 
     # Calculate stock adjustment
     diff = total_copies - book['total_copies']
     new_available = book['available_copies'] + diff
 
     if new_available < 0:
-        return f"❌ Cannot reduce stock to {total_copies}. {abs(new_available)} copies are currently issued."
+        return f"Cannot reduce stock to {total_copies}. {abs(new_available)} copies are currently issued."
 
     execute(
         """
@@ -79,7 +79,7 @@ def update_book(book_id, title, author_id, category, total_copies, series_id=Non
         (title, author_id, category, total_copies, new_available, series_id, series_order, book_id)
     )
 
-    return "✅ Book updated successfully"
+    return "Book updated successfully"
 
 
 # ===============================
@@ -118,11 +118,21 @@ def view_books_paginated(page: int = 1, per_page: int = 10, search_query: str = 
     count_query = query.replace("SELECT b.*, a.name as author_name, s.name as series_title", "SELECT COUNT(*) AS c", 1)
     count_params = params.copy()
     
+    total_count = fetch_one(count_query, tuple(count_params))["c"]
+    
+    if not total_count:
+        return {
+            "books": [],
+            "total": 0,
+            "page": page,
+            "per_page": per_page,
+            "total_pages": 1
+        }
+        
     query += " ORDER BY b.title ASC LIMIT %s OFFSET %s"
     params.extend([per_page, offset])
     
     books = fetch_all(query, tuple(params))
-    total_count = fetch_one(count_query, tuple(count_params))["c"]
     
     import math
     return {
@@ -185,10 +195,10 @@ def delete_book(book_id: int):
 
     # If no rows were affected, book does not exist
     if affected == 0:
-        return "❌ Book not found"
+        return "Book not found"
 
     # Confirm deletion
-    return "🗑️ Book deleted successfully"
+    return "Book deleted successfully"
 
 
 def import_books_csv(file_stream):
@@ -208,7 +218,7 @@ def import_books_csv(file_stream):
         
         required = {'title', 'author', 'category', 'copies'}
         if not required.issubset(df.columns):
-            return f"❌ CSV missing required columns: {required - set(df.columns)}"
+            return f"CSV missing required columns: {required - set(df.columns)}"
             
         success_count = 0
         errors = []
@@ -237,7 +247,7 @@ def import_books_csv(file_stream):
             except Exception as row_err:
                 errors.append(f"Row {index+1}: {str(row_err)}")
                 
-        result = f"✅ Imported {success_count} books."
+        result = f"Imported {success_count} books."
         if errors:
             result += f" ( {len(errors)} failed inputs)"
             # Optionally log errors
@@ -245,7 +255,7 @@ def import_books_csv(file_stream):
         return result
         
     except Exception as e:
-        return f"❌ Import failed: {str(e)}"
+        return f"Import failed: {str(e)}"
 
 def get_all_authors():
     """Returns authors from the normalized authors table."""

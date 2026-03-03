@@ -1,374 +1,248 @@
 {% extends "layout.html" %}
+{% set active_page = 'member_catalog' %}
+{% block title %}Library Catalog{% endblock %}
 
-{% block title %}Book Catalog{% endblock %}
-{% block header_title %}Discover Books{% endblock %}
-{% block header_subtitle %}Browse our collection and request items to borrow.{% endblock %}
-
-{% block head %}
-<style>
-    .catalog-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 1.5rem;
-        margin-top: 1.5rem;
-    }
-    .book-card {
-        display: flex;
-        flex-direction: column;
-        border-radius: 16px;
-        overflow: hidden;
-        transition: transform 0.2s, box-shadow 0.2s;
-        border: 1px solid var(--border);
-        background: var(--card-bg);
-    }
-    .book-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-    }
-    .book-cover-wrapper {
-        position: relative;
-        height: 320px;
-        background: var(--bg);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        border-bottom: 1px solid var(--border);
-    }
-    .book-cover {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.3s;
-    }
-    .book-card:hover .book-cover {
-        transform: scale(1.03);
-    }
-    .book-placeholder {
-        width: 100%; height: 100%;
-        display: flex; flex-direction: column;
-        align-items: center; justify-content: center;
-        padding: 2rem; text-align: center;
-        background: linear-gradient(135deg, var(--primary) 0%, #0063cc 100%);
-        color: white;
-    }
-    .book-info {
-        padding: 1rem;
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-    }
-    .book-title {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: var(--text-main);
-        margin: 0 0 0.25rem 0;
-        line-height: 1.4;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-    .book-author {
-        font-size: 0.9rem;
-        color: var(--text-sub);
-        margin-bottom: 1rem;
-    }
-    .book-meta {
-        margin-top: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-    .action-row {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 0.5rem;
-    }
-    .badge-float {
-        position: absolute; top: 10px; right: 10px; z-index: 2;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        padding: 0.5rem 0.8rem;
-        border-radius: 20px;
-        font-weight: 700;
-        font-size: 0.85rem;
-        color: white !important;
-    }
-    .badge-success { background-color: #3b82f6 !important; border: 2px solid white; }
-    .badge-danger { background-color: #ef4444 !important; border: 2px solid white; }
-    .pagination {
-        margin-top: 3rem;
-        margin-bottom: 3rem;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 1rem;
-        width: 100%;
-    }
-    .page-info {
-        font-weight: 500;
-        color: var(--text-main);
-    }
-    .glass-input {
-        background: rgba(255, 255, 255, 0.4);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.6);
-        border-radius: 12px;
-        color: var(--text-main);
-        transition: all 0.2s ease;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-        height: 42px; /* Fixed height for uniformity */
-        display: flex; 
-        align-items: center;
-    }
-    .glass-input:focus-within, .glass-input:focus {
-        background: rgba(255, 255, 255, 0.8);
-        border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.15);
-    }
-    .glass-input input {
-        background: transparent !important;
-        border: none !important;
-        outline: none !important;
-        box-shadow: none !important;
-        width: 100%;
-        height: 100%;
-        color: inherit;
-    }
-    .glass-input input:-webkit-autofill,
-    .glass-input input:-webkit-autofill:hover, 
-    .glass-input input:-webkit-autofill:focus {
-        -webkit-box-shadow: 0 0 0px 1000px white inset !important;
-        transition: background-color 5000s ease-in-out 0s;
-    }
-
-    @media (max-width: 768px) {
-        .catalog-grid {
-            grid-template-columns: 1fr; /* Full width cards */
-            padding: 0 1rem;
-        }
-        /* Stack Form Elements */
-        form[action="/member/catalog"] {
-            flex-direction: column;
-            align-items: stretch !important;
-            gap: 1rem !important;
-        }
-        form[action="/member/catalog"] > div {
-            min-width: 100% !important;
-            width: 100% !important;
-        }
-    }
-</style>
+{% block header_search %}
+<div class="relative w-full max-w-xl">
+    <form action="/member/catalog" method="GET" class="flex items-center">
+        <span class="material-symbols-outlined absolute left-4 text-base-400 text-[20px] pointer-events-none">search</span>
+        <input type="text" name="q" value="{{ q }}" placeholder="Search by title, author, or ISBN..." 
+            class="w-full bg-base-800 text-base-100 pl-11 pr-4 py-3 rounded-full border border-base-700/50 focus:border-brand-500 focus:bg-base-900 focus:outline-none text-sm placeholder-base-400 transition-all shadow-[0_2px_10px_rgba(0,0,0,0.2)]">
+        {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+    </form>
+</div>
 {% endblock %}
 
 {% block content %}
-<div style="margin-bottom: 2rem; padding: 0.5rem 0;">
-    <form action="/member/catalog" method="GET" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;">
-        <div style="flex: 2; min-width: 200px;">
-            <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 600; opacity: 0.9;">Search by Title or Author</label>
-            <div class="glass-input" style="display: flex; align-items: center; padding: 0 1rem;">
-                <span style="margin-right: 0.75rem; opacity: 0.7;">🔍</span>
-                <input type="text" name="q" value="{{ q }}" placeholder="e.g. Harry Potter or J.K. Rowling..." autocomplete="off">
-            </div>
-        </div>
+<div class="w-full max-w-7xl mx-auto space-y-8 pb-10">
 
-        <div style="flex: 1; min-width: 150px;">
-            <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 600; opacity: 0.9;">Category</label>
-            <select name="category" class="form-control glass-input" style="width: 100%; padding: 0 1rem; appearance: none; cursor: pointer;">
-                <option value="" style="color: black;">All Categories</option>
-                {% for c in categories %}
-                <option value="{{ c.category }}" {% if selected_category == c.category %}selected{% endif %} style="color: black;">{{ c.category }}</option>
-                {% endfor %}
-            </select>
-        </div>
+    <!-- Category Pills -->
+    <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 pt-2 -mx-4 px-4 md:mx-0 md:px-0 scroll-smooth">
+        <a href="/member/catalog{% if q %}?q={{ q }}{% endif %}" class="shrink-0 px-5 py-2 rounded-full text-sm font-semibold transition-all {% if not selected_category %}bg-brand-600 text-white shadow-[0_4px_15px_rgba(37,99,235,0.3)]{% else %}bg-base-800 text-base-300 hover:bg-base-700 hover:text-white border border-base-700/50{% endif %}">
+            All Books
+        </a>
+        {% for c in categories %}
+        <a href="/member/catalog?category={{ c.category }}{% if q %}&q={{ q }}{% endif %}" class="shrink-0 px-5 py-2 rounded-full text-sm font-semibold transition-all {% if selected_category == c.category %}bg-brand-600 text-white shadow-[0_4px_15px_rgba(37,99,235,0.3)]{% else %}bg-base-800 text-base-300 hover:bg-base-700 hover:text-white border border-base-700/50{% endif %}">
+            {{ c.category }}
+        </a>
+        {% endfor %}
+    </div>
 
-        <div style="display: flex; gap: 0.5rem; flex: 1; min-width: 150px;">
-            <div style="width: 100%;">
-                <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 600; opacity: 0;">Action</label>
-                <div style="display: flex; gap: 0.5rem; height: 42px;">
-                    <button type="submit" class="btn btn-primary" style="height: 100%; flex: 1; display: flex; align-items: center; justify-content: center;">Apply</button>
-                    <a href="/member/catalog" class="btn btn-outline-secondary" style="height: 100%; flex: 1; display: flex; align-items: center; justify-content: center; text-decoration: none;">Reset</a>
-                </div>
-            </div>
-        </div>
-    </form>
-</div>
-
-{% if not books %}
-<div style="text-align: center; padding: 5rem; background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border);">
-    <div style="font-size: 3rem; margin-bottom: 1rem;">📭</div>
-    <h3>No books found matching your search.</h3>
-    <p style="color: var(--text-sub);">Try a different keyword or browse all books.</p>
-    <a href="/member/catalog" class="btn btn-primary" style="margin-top: 1.5rem;">Clear Search</a>
-</div>
-{% else %}
-<div class="catalog-grid">
-    {% for b in books %}
-    <div class="book-card glass-card">
-        <!-- Cover Section -->
-        <div class="book-cover-wrapper">
-            <span class="badge badge-float {{ 'badge-success' if b.available_copies > 0 else 'badge-danger' }}">
-                {{ b.available_copies }} left
-            </span>
-            
-            <img src="https://covers.openlibrary.org/b/title/{{ b.title|urlencode }}-M.jpg" 
-                 class="book-cover" 
-                 alt="{{ b.title }}"
-                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-            
-            <div class="book-placeholder" style="display: none;">
-                <div class="title-initials">{{ b.title[0]|upper }}</div>
-                <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">{{ b.category }}</div>
-            </div>
+    <!-- Main Header -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+            <h1 class="text-3xl md:text-4xl font-black text-white tracking-tight">Library Catalog</h1>
+            <p class="text-sm md:text-base font-medium text-base-400 mt-2">Browse over {{ total }} titles in the library collection.</p>
         </div>
         
-        <!-- Info Section -->
-        <div class="book-info">
-            <!-- Series Badge -->
-            {% if b.series_title %}
-            <div style="margin-bottom: 0.5rem;">
-                <a href="/member/series/{{ b.series_id }}" class="badge" style="background: rgba(99, 102, 241, 0.1); color: #6366f1; font-size: 0.7rem; text-decoration: none;">
-                    ⛓️ {{ b.series_title }} #{{ b.series_order }}
-                </a>
+        <!-- Sort / Filter Desktop -->
+        <div class="hidden md:flex bg-base-800 p-1 border border-base-700 rounded-xl">
+            <button class="px-6 py-2 text-sm font-bold text-white bg-brand-600 rounded-lg shadow-sm">Trending</button>
+            <button class="px-6 py-2 text-sm font-bold text-base-400 hover:text-white transition-colors">New</button>
+            <button class="px-6 py-2 text-sm font-bold text-base-400 hover:text-white transition-colors">Recommended</button>
+        </div>
+    </div>
+
+    {% if not books %}
+    <div class="glass-card flex flex-col items-center justify-center p-16 text-center border-base-700 rounded-2xl">
+        <div class="w-20 h-20 rounded-full bg-base-800 border border-base-700 flex items-center justify-center mb-6">
+            <span class="material-symbols-outlined text-[36px] text-base-400">search_off</span>
+        </div>
+        <h3 class="text-xl font-bold text-white mb-2">No items found</h3>
+        <p class="text-base-400 text-sm max-w-md">We couldn't find anything matching your search criteria in the selected category.</p>
+        <a href="/member/catalog" class="btn-brand mt-6 inline-flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px]">restart_alt</span> Reset Filters
+        </a>
+    </div>
+    {% else %}
+
+    <!-- Book Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 stagger-in pt-4">
+        {% for b in books %}
+        <div class="flex flex-col h-full fade-in relative group rounded-2xl overflow-hidden bg-base-800 shadow-[0_10px_30px_rgba(0,0,0,0.5)] border border-base-700/50 mb-4 transition-transform duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.8),0_0_20px_rgba(37,99,235,0.2)] hover:border-brand-500/30 rounded-[20px] border border-base-700/50 flex flex-col h-full transition-all duration-300 hover:-translate-y-1 hover:border-brand-500/30 hover:shadow-[0_15px_30px_rgba(0,0,0,0.5),0_0_15px_rgba(37,99,235,0.1)] group fade-in" style="animation-delay: {{ loop.index * 50 }}ms;">
+            
+            <!-- Top Image Area -->
+            <div class="relative h-64 bg-base-900 border-b border-base-800 flex items-center justify-center p-4 overflow-hidden">
+                <!-- Blurred background -->
+                <div class="absolute inset-0 bg-cover bg-center blur-xl opacity-30 transform scale-110" style="background-image: url('https://covers.openlibrary.org/b/title/{{ b.title|urlencode }}-L.jpg')"></div>
+                
+                <img src="https://covers.openlibrary.org/b/title/{{ b.title|urlencode }}-L.jpg" 
+                     class="relative z-10 h-full w-auto rounded-lg shadow-xl shadow-black/50 transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-3" 
+                     alt="{{ b.title }}"
+                     onerror="this.src='https://placehold.co/400x600/1e293b/60a5fa?text={{ b.title[0]|upper }}';">
+
+                <!-- Floating Tags -->
+                <div class="absolute top-3 right-3 flex flex-col gap-2 items-end z-20">
+                    {% if b.available_copies > 0 %}
+                    <span class="px-2.5 py-1 text-[9px] font-black uppercase tracking-widest rounded-md backdrop-blur-md border border-white/10 bg-emerald-500/80 text-white shadow-lg">
+                        In Stock
+                    </span>
+                    {% else %}
+                    <span class="px-2.5 py-1 text-[9px] font-black uppercase tracking-widest rounded-md backdrop-blur-md border border-white/10 bg-rose-500/80 text-white shadow-lg">
+                        Waitlist
+                    </span>
+                    {% endif %}
+                    <span class="px-2.5 py-1 bg-black/50 text-[9px] font-bold text-base-300 uppercase tracking-widest rounded-md backdrop-blur-md border border-white/10 flex items-center gap-1 shadow-lg">
+                        <span class="material-symbols-outlined text-[10px]">sell</span> {{ b.category }}
+                    </span>
+                </div>
+
+                <!-- Heart Icon Top Left -->
+                <form action="/member/wishlist/add" method="POST" class="absolute top-3 left-3 z-20 m-0">
+                    <input type="hidden" name="book_id" value="{{ b.book_id }}">
+                    <button type="submit" class="w-8 h-8 rounded-md bg-black/50 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/70 hover:text-rose-400 hover:bg-black/80 transition-all shadow-lg active:scale-95" title="Add to Wishlist">
+                        <span class="material-symbols-outlined text-[16px]">favorite</span>
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Details Area -->
+            <div class="p-5 flex-grow flex flex-col bg-base-800/20">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="text-[10px] text-amber-400 font-bold tracking-widest flex items-center">
+                        <span class="material-symbols-outlined text-[12px] mr-1">star</span> 4.8
+                    </span>
+                </div>
+                <h3 class="text-lg font-black text-white leading-tight mb-1 line-clamp-2" title="{{ b.title }}">{{ b.title }}</h3>
+                <p class="text-xs font-semibold text-base-400 mb-6 truncate">by {{ b.author_name or 'Unknown Author' }}</p>
+                
+                <div class="mt-auto grid grid-cols-2 gap-3 items-center">
+                    <button class="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-base-800 hover:bg-base-700 text-base-300 hover:text-white text-xs font-bold rounded-lg transition-colors border border-base-700" onclick="openReviewModal('{{ b.book_id }}', '{{ b.title|escape }}')">
+                        <span class="material-symbols-outlined text-[16px]">edit_square</span> Review
+                    </button>
+                    
+                    {% if b.available_copies > 0 %}
+                    <form action="/member/request" method="POST" class="w-full m-0">
+                        <input type="hidden" name="book_id" value="{{ b.book_id }}">
+                        <button type="submit" class="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded-lg transition-colors shadow-sm disabled:opacity-50">
+                            Borrow
+                        </button>
+                    </form>
+                    {% else %}
+                    <form action="/member/waitlist/join" method="POST" class="w-full m-0">
+                        <input type="hidden" name="book_id" value="{{ b.book_id }}">
+                        <button type="submit" class="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white text-xs font-bold rounded-lg transition-colors border border-rose-500/20 shadow-sm disabled:opacity-50">
+                            Waitlist
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    <div class="pt-10 flex flex-col md:flex-row items-center justify-between border-t border-base-800/50 mt-10">
+        <span class="text-sm font-medium text-base-400 mb-4 md:mb-0">Showing page <strong class="text-white">{{ current_page }}</strong> of <strong class="text-white">{{ total_pages }}</strong></span>
+        
+        <div class="flex items-center gap-1 sm:gap-2">
+            {% if current_page > 1 %}
+            <a href="/member/catalog?page={{ current_page - 1 }}&q={{ q }}&category={{ selected_category }}" class="w-10 h-10 flex items-center justify-center rounded-xl bg-base-800 border border-base-700 text-base-300 hover:text-white hover:border-brand-500/50 hover:bg-brand-500/10 transition-all shadow-sm group">
+                <span class="material-symbols-outlined text-[20px] group-hover:-translate-x-0.5 transition-transform">arrow_back</span>
+            </a>
+            {% else %}
+            <div class="w-10 h-10 flex items-center justify-center rounded-xl bg-base-900 border border-base-800 text-base-600 opacity-50 cursor-not-allowed">
+                <span class="material-symbols-outlined text-[20px]">arrow_back</span>
             </div>
             {% endif %}
 
-            <div style="display:flex; justify-content:space-between; align-items:start;">
-                <h3 class="book-title" title="{{ b.title }}">{{ b.title }}</h3>
+            <div class="hidden sm:flex items-center gap-1 px-4 py-2 bg-base-800 border border-base-700 rounded-xl">
+                <span class="text-sm font-bold text-white">{{ current_page }}</span>
+                <span class="text-sm font-medium text-base-500 mx-1">/</span>
+                <span class="text-sm font-medium text-base-400">{{ total_pages }}</span>
             </div>
-            
-            <p class="book-author">by <a href="/member/author/{{ b.author_id }}" style="color: var(--text-sub);">{{ b.author_name }}</a></p>
-            
-            <div class="book-meta">
-                <!-- Meta Row: Category & Rating -->
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                    <span class="badge" style="background: var(--stat-icon-bg); color: var(--primary);">{{ b.category }}</span>
-                    <button class="btn btn-sm btn-ghost" onclick="openReviewModal('{{ b.book_id }}', '{{ b.title|escape }}')" style="padding: 2px 8px; font-size: 0.8rem;">
-                        ⭐ Rate
-                    </button>
-                </div>
 
-                <!-- Action Row -->
-                <div class="action-row">
-                    <!-- Check Availability Logic -->
-                    {% if b.available_copies > 0 %}
-                    <form action="/member/request" method="POST" style="margin:0;">
-                        <input type="hidden" name="book_id" value="{{ b.book_id }}">
-                        <button type="submit" class="btn btn-sm btn-primary w-100">Request</button>
-                    </form>
-                    {% else %}
-                    <form action="/member/waitlist/join" method="POST" style="margin:0;">
-                        <input type="hidden" name="book_id" value="{{ b.book_id }}">
-                        <button type="submit" class="btn btn-sm btn-warning w-100">Join Waitlist</button>
-                    </form>
-                    {% endif %}
-
-                    <!-- Wishlist Button -->
-                    <form action="/member/wishlist/add" method="POST" style="margin:0;">
-                        <input type="hidden" name="book_id" value="{{ b.book_id }}">
-                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Add to Wishlist" style="padding: 0.4rem 0.8rem;">
-                            ❤️
-                        </button>
-                    </form>
-                </div>
-
-                <!-- Secondary Row if PDF exists -->
-                {% if b.pdf_src %}
-                <a href="{{ url_for('static', filename=b.pdf_src) }}" target="_blank" class="btn btn-sm btn-outline-success w-100">
-                    📖 Read Online
-                </a>
-                {% endif %}
+            {% if current_page < total_pages %}
+            <a href="/member/catalog?page={{ current_page + 1 }}&q={{ q }}&category={{ selected_category }}" class="w-10 h-10 flex items-center justify-center rounded-xl bg-base-800 border border-base-700 text-base-300 hover:text-white hover:border-brand-500/50 hover:bg-brand-500/10 transition-all shadow-sm group">
+                <span class="material-symbols-outlined text-[20px] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+            </a>
+            {% else %}
+            <div class="w-10 h-10 flex items-center justify-center rounded-xl bg-base-900 border border-base-800 text-base-600 opacity-50 cursor-not-allowed">
+                <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
             </div>
+            {% endif %}
         </div>
     </div>
-    {% endfor %}
-</div>
-
-<!-- PAGINATION CONTROLS -->
-<div class="pagination">
-    {% if current_page > 1 %}
-    <a href="/member/catalog?page={{ current_page - 1 }}&q={{ q }}&author={{ selected_author }}&category={{ selected_category }}" class="btn btn-danger btn-sm">Previous</a>
-    {% else %}
-    <button class="btn btn-disabled btn-sm" disabled>Previous</button>
     {% endif %}
 
-    <span class="page-info">Page <strong>{{ current_page }}</strong> of {{ total_pages }}</span>
-
-    {% if current_page < total_pages %}
-    <a href="/member/catalog?page={{ current_page + 1 }}&q={{ q }}&author={{ selected_author }}&category={{ selected_category }}" class="btn btn-primary btn-sm">Next</a>
-    {% else %}
-    <button class="btn btn-disabled btn-sm" disabled>Next</button>
-    {% endif %}
 </div>
-{% endif %}
 
-<!-- Review Modal -->
-<div id="reviewModal" class="modal-overlay" style="display: none;">
-    <div class="modal-content glass-card p-4" style="max-width: 500px; width: 90%; margin: 10% auto; position: relative;">
-        <span onclick="closeReviewModal()" style="position: absolute; top: 1rem; right: 1rem; cursor: pointer; font-size: 1.5rem;">&times;</span>
-        <h3>Rate & Review</h3>
-        <p id="modalBookTitle" style="color: var(--text-sub); margin-bottom: 1rem;"></p>
+<!-- Review Modal Overlay -->
+<div id="reviewModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 opacity-0 transition-opacity duration-300">
+    <div class="bg-base-900 border border-base-700 rounded-3xl w-full max-w-md shadow-[0_20px_50px_rgba(0,0,0,0.8)] transform scale-95 transition-transform duration-300 overflow-hidden">
         
-        <form action="/member/review/add" method="POST">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-brand-600 to-indigo-600 p-6 flex justify-between items-start relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+            <div class="relative z-10">
+                <h3 class="text-xl font-black text-white leading-tight text-shadow-sm">Rate & Review</h3>
+                <p id="modalBookTitle" class="text-white/80 text-sm font-medium mt-1 truncate max-w-[280px]"></p>
+            </div>
+            <button onclick="closeReviewModal()" class="relative z-10 text-white/70 hover:text-white transition-colors bg-black/20 hover:bg-black/40 rounded-full p-1 border border-white/10">
+                <span class="material-symbols-outlined text-[20px] block">close</span>
+            </button>
+        </div>
+        
+        <!-- Body -->
+        <form action="/member/review/add" method="POST" class="p-6">
             <input type="hidden" name="book_id" id="modalBookId">
             
-            <div class="mb-3">
-                <label>Rating:</label>
-                <div class="rating-stars">
-                    <input type="radio" name="rating" value="5" id="r5"><label for="r5">★</label>
-                    <input type="radio" name="rating" value="4" id="r4"><label for="r4">★</label>
-                    <input type="radio" name="rating" value="3" id="r3"><label for="r3">★</label>
-                    <input type="radio" name="rating" value="2" id="r2"><label for="r2">★</label>
-                    <input type="radio" name="rating" value="1" id="r1"><label for="r1">★</label>
+            <div class="mb-6">
+                <label class="block text-xs font-bold tracking-widest text-base-400 uppercase mb-3 text-center">Your Rating</label>
+                <div class="flex flex-row-reverse justify-center gap-2 group">
+                    <input type="radio" name="rating" value="5" id="r5" class="peer hidden" required>
+                    <label for="r5" class="text-4xl text-base-700 cursor-pointer transition-all peer-checked:text-amber-400 peer-checked:drop-shadow-[0_0_8px_rgba(251,191,36,0.6)] hover:text-amber-300 peer-hover:text-amber-300">★</label>
+                    
+                    <input type="radio" name="rating" value="4" id="r4" class="peer hidden" required>
+                    <label for="r4" class="text-4xl text-base-700 cursor-pointer transition-all peer-checked:text-amber-400 peer-checked:drop-shadow-[0_0_8px_rgba(251,191,36,0.6)] hover:text-amber-300 peer-hover:text-amber-300">★</label>
+                    
+                    <input type="radio" name="rating" value="3" id="r3" class="peer hidden" required>
+                    <label for="r3" class="text-4xl text-base-700 cursor-pointer transition-all peer-checked:text-amber-400 peer-checked:drop-shadow-[0_0_8px_rgba(251,191,36,0.6)] hover:text-amber-300 peer-hover:text-amber-300">★</label>
+                    
+                    <input type="radio" name="rating" value="2" id="r2" class="peer hidden" required>
+                    <label for="r2" class="text-4xl text-base-700 cursor-pointer transition-all peer-checked:text-amber-400 peer-checked:drop-shadow-[0_0_8px_rgba(251,191,36,0.6)] hover:text-amber-300 peer-hover:text-amber-300">★</label>
+                    
+                    <input type="radio" name="rating" value="1" id="r1" class="peer hidden" required>
+                    <label for="r1" class="text-4xl text-base-700 cursor-pointer transition-all peer-checked:text-amber-400 peer-checked:drop-shadow-[0_0_8px_rgba(251,191,36,0.6)] hover:text-amber-300 peer-hover:text-amber-300">★</label>
                 </div>
             </div>
             
-            <div class="mb-3">
-                <label>Comment (Optional):</label>
-                <textarea name="comment" class="form-control" rows="3" placeholder="Share your thoughts..."></textarea>
+            <div class="mb-6">
+                <label class="block text-xs font-bold tracking-widest text-base-400 uppercase mb-2">Write a review (Optional)</label>
+                <textarea name="comment" rows="4" placeholder="What did you think about this book?" 
+                    class="w-full bg-base-800 border border-base-700 rounded-xl px-4 py-3 text-sm text-base-100 placeholder-base-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 resize-none transition-all"></textarea>
             </div>
             
-            <button type="submit" class="btn btn-primary w-100">Submit Review</button>
+            <button type="submit" class="w-full flex justify-center items-center gap-2 py-3.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-sm font-bold shadow-[0_4px_15px_rgba(37,99,235,0.3)] transition-all">
+                Submit Review
+            </button>
         </form>
     </div>
 </div>
-
-<style>
-    .modal-overlay {
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.5);
-        z-index: 1000;
-        backdrop-filter: blur(5px);
-    }
-    .rating-stars {
-        display: flex;
-        flex-direction: row-reverse;
-        justify-content: flex-end;
-        gap: 0.5rem;
-    }
-    .rating-stars input { display: none; }
-    .rating-stars label {
-        font-size: 1.5rem;
-        color: #ddd;
-        cursor: pointer;
-        transition: color 0.2s;
-    }
-    .rating-stars input:checked ~ label,
-    .rating-stars label:hover,
-    .rating-stars label:hover ~ label {
-        color: #f6c23e;
-    }
-</style>
 
 <script>
     function openReviewModal(id, title) {
         document.getElementById('modalBookId').value = id;
         document.getElementById('modalBookTitle').innerText = title;
-        document.getElementById('reviewModal').style.display = 'block';
+        const modal = document.getElementById('reviewModal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.firstElementChild.classList.remove('scale-95');
+        }, 10);
+        document.body.style.overflow = 'hidden';
     }
+    
     function closeReviewModal() {
-        document.getElementById('reviewModal').style.display = 'none';
+        const modal = document.getElementById('reviewModal');
+        modal.classList.add('opacity-0');
+        modal.firstElementChild.classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }, 300);
     }
 </script>
 {% endblock %}

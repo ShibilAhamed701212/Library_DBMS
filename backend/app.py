@@ -101,10 +101,13 @@ def create_app():
     # Keeps routes modular and clean
 
     # Register main application blueprints
-    app.register_blueprint(auth_bp)     # /
+    app.register_blueprint(auth_bp)     # /login
     app.register_blueprint(admin_bp)    # /dashboard
     app.register_blueprint(member_bp)   # /member/dashboard
     app.register_blueprint(system_bp)   # /system
+    
+    from backend.routes.public_routes import public_bp
+    app.register_blueprint(public_bp)   # / (public landing)
     
     from backend.routes.chat_routes import chat_bp
     app.register_blueprint(chat_bp, url_prefix='/chat')

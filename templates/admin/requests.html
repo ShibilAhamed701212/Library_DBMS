@@ -1,49 +1,89 @@
 {% extends "layout.html" %}
-
+{% set active_page = 'admin_requests' %}
 {% block title %}Pending Requests{% endblock %}
-{% block header_title %}Member Requests{% endblock %}
-{% block header_subtitle %}Approve or reject book requests from members.{% endblock %}
+
+{% block header_title %}Transfer Authorizations{% endblock %}
+{% block header_subtitle %}Approve or reject physical checkout requests from operatives.{% endblock %}
 
 {% block content %}
-<section class="dashboard-section">
-    <div class="section-header">
-        <h2>⏳ Pending Requests</h2>
-        <span class="badge badge-pending">{{ pending_requests|length }} New</span>
+<div class="w-full max-w-7xl mx-auto space-y-6">
+
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-black text-white tracking-tight">Active Requests</h1>
+            <p class="text-sm font-medium text-base-400 mt-1">Reviewing {{ pending_requests|length }} pending transfer protocols</p>
+        </div>
+        
+        <div class="flex items-center gap-2">
+            <span class="inline-flex items-center justify-center bg-amber-500/10 border border-amber-500/20 text-amber-500 px-3 py-1.5 rounded-lg text-xs font-bold tracking-widest uppercase shadow-sm">
+                <span class="material-symbols-outlined text-[14px] mr-1">hourglass_empty</span>
+                {{ pending_requests|length }} Pending
+            </span>
+        </div>
     </div>
-    <div class="section-content">
-        <div class="table-container glass-card">
-            <table>
-                <thead>
+
+    <div class="glass-card rounded-[20px] overflow-hidden border-base-700 fade-in">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-base-900/50 text-[10px] font-bold tracking-widest uppercase text-base-500 border-b border-base-700/50">
                     <tr>
-                        <th>ID</th>
-                        <th>Date</th>
-                        <th>User</th>
-                        <th>Book</th>
-                        <th>Actions</th>
+                        <th class="px-6 py-5">Protocol ID</th>
+                        <th class="px-6 py-5">Operative</th>
+                        <th class="px-6 py-5">Target Node (Book)</th>
+                        <th class="px-6 py-5">Timestamp</th>
+                        <th class="px-6 py-5 text-right">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="divide-y divide-base-800/50">
                     {% for req in pending_requests %}
-                    <tr>
-                        <td>#{{ req.request_id }}</td>
-                        <td>{{ req.request_date }}</td>
-                        <td style="font-weight: 500;">{{ req.user_name }}</td>
-                        <td>{{ req.book_title }}</td>
-                        <td>
-                            <form action="/admin/request/approve" method="POST" style="display:inline;">
-                                <input type="hidden" name="request_id" value="{{ req.request_id }}">
-                                <button type="submit" class="btn btn-primary btn-sm">Approve</button>
-                            </form>
-                            <form action="/admin/request/reject" method="POST" style="display:inline;">
-                                <input type="hidden" name="request_id" value="{{ req.request_id }}">
-                                <button type="submit" class="btn btn-danger btn-sm">Reject</button>
-                            </form>
+                    <tr class="hover:bg-base-800/30 transition-colors group">
+                        <td class="px-6 py-4">
+                            <span class="text-sm font-mono text-base-400">#REQ-{{ req.request_id }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-brand-500/20 text-brand-400 flex items-center justify-center font-bold text-xs ring-1 ring-brand-500/30 shadow-sm">
+                                    {{ req.user_name[0]|upper }}
+                                </div>
+                                <span class="text-sm font-bold text-base-100 group-hover:text-brand-400 transition-colors">{{ req.user_name }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-base-500 text-[18px]">menu_book</span>
+                                <span class="text-sm font-semibold text-white truncate max-w-[250px]" title="{{ req.book_title }}">{{ req.book_title }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-xs font-medium text-base-400">{{ req.request_date }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <form action="/admin/request/approve" method="POST" class="m-0">
+                                    <input type="hidden" name="request_id" value="{{ req.request_id }}">
+                                    <button type="submit" class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-500 hover:text-emerald-400 text-[11px] font-bold tracking-widest uppercase rounded-lg transition-colors">
+                                        <span class="material-symbols-outlined text-[14px]">check_circle</span> Approve
+                                    </button>
+                                </form>
+                                <form action="/admin/request/reject" method="POST" class="m-0">
+                                    <input type="hidden" name="request_id" value="{{ req.request_id }}">
+                                    <button type="submit" class="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-500 hover:text-rose-400 text-[11px] font-bold tracking-widest uppercase rounded-lg transition-colors">
+                                        <span class="material-symbols-outlined text-[14px]">cancel</span> Reject
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" style="text-align: center; color: var(--text-sub); padding: 2rem;">
-                            No pending requests at the moment.
+                        <td colspan="5" class="px-6 py-16 text-center">
+                            <div class="flex flex-col items-center justify-center">
+                                <div class="w-16 h-16 rounded-full bg-base-800 border border-base-700 flex items-center justify-center mb-4">
+                                    <span class="material-symbols-outlined text-[28px] text-base-500">done_all</span>
+                                </div>
+                                <h3 class="text-base font-bold text-white mb-1">Queue Empty</h3>
+                                <p class="text-sm text-base-400 font-medium">All authorizations have been processed successfully.</p>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -51,5 +91,6 @@
             </table>
         </div>
     </div>
-</section>
+
+</div>
 {% endblock %}

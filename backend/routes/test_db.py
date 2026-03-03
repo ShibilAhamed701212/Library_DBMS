@@ -4,7 +4,7 @@ from backend.repository.db_access import fetch_all
 test_bp = Blueprint('test', __name__)
 
 @test_bp.route('/test/db-schema')
-def test_db_schema():
+def db_schema_route():
     try:
         # Get table structure
         table_info = fetch_all("SHOW CREATE TABLE book_suggestions")

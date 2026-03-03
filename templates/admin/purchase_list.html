@@ -2,123 +2,158 @@
 
 {% block title %}Purchase List{% endblock %}
 {% block header_title %}Purchase List{% endblock %}
-{% block header_subtitle %}Review and finalize book purchases from approved suggestions{% endblock %}
+{% block header_subtitle %}Finalize integration of approved knowledge nodes into the core library architecture.{% endblock %}
+
+{% block head %}
+<style>
+    /* Premium Manual Entry */
+    .nexus-entry-box {
+        background: rgba(var(--primary-rgb), 0.05);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(var(--primary-rgb), 0.2);
+        border-radius: 24px;
+        padding: 30px;
+        margin-bottom: 3rem;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .acquisition-vessel {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 24px;
+        overflow: hidden;
+    }
+
+    .acquisition-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .acquisition-table th {
+        padding: 20px 25px;
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-sub);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .acquisition-table td {
+        padding: 20px 25px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        vertical-align: middle;
+    }
+
+    .node-title-lux {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 700;
+        color: white;
+        font-size: 1rem;
+        margin-bottom: 4px;
+    }
+
+    .node-arch-sub {
+        font-size: 0.8rem;
+        color: var(--text-sub);
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<!-- MANUAL ADD SECTION -->
-<div class="glass-card" style="margin-bottom: 2rem; padding: 1.5rem;">
-    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-        <span style="font-size: 1.5rem;">➕</span>
+<!-- Manual Acquisition Directive -->
+<div class="nexus-entry-box fade-in">
+    <div class="d-flex align-items-center gap-3">
+        <div style="width: 45px; height: 45px; border-radius: 12px; background: var(--primary); display: flex; align-items: center; justify-content: center; color: white;">
+            <i class="fas fa-plus"></i>
+        </div>
         <div>
-            <h3 style="margin: 0; font-size: 1.1rem;">Add Book to Purchase List</h3>
-            <p style="margin: 0; font-size: 0.85rem; color: var(--text-sub);">Manually add a book you want to purchase</p>
+            <h3 style="margin: 0; color: white; font-family: 'Outfit', sans-serif;">Inject Manual Acquisition</h3>
+            <p style="margin: 0; color: var(--text-sub); font-size: 0.85rem;">Specify a new node for immediate purchase queue.</p>
         </div>
     </div>
-    <form action="{{ url_for('admin.admin_add_manual_purchase') }}" method="POST" style="display: grid; grid-template-columns: 1fr 1fr 2fr auto; gap: 1rem; align-items: end;">
-        <div class="form-group" style="margin: 0;">
-            <label>Book Title</label>
-            <input type="text" name="title" placeholder="Enter book title..." required class="form-control">
+    
+    <form action="{{ url_for('admin.admin_add_manual_purchase') }}" method="POST" class="row g-3">
+        <div class="col-md-3">
+            <input type="text" name="title" class="form-control-cyber" placeholder="Target Title" required>
         </div>
-        <div class="form-group" style="margin: 0;">
-            <label>Author</label>
-            <input type="text" name="author" placeholder="Enter author name..." required class="form-control">
+        <div class="col-md-3">
+            <input type="text" name="author" class="form-control-cyber" placeholder="Architect / Author" required>
         </div>
-        <div class="form-group" style="margin: 0;">
-            <label>Notes (Optional)</label>
-            <input type="text" name="notes" placeholder="ISBN, publisher, reason..." class="form-control">
+        <div class="col-md-4">
+            <input type="text" name="notes" class="form-control-cyber" placeholder="Additional Metadata (ISBN, Vendor, etc.)">
         </div>
-        <button type="submit" class="btn btn-primary" style="height: 42px;">
-            <span>📥</span> Add to List
-        </button>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Queue Node</button>
+        </div>
     </form>
 </div>
 
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <span>Approved Books (Ready to Purchase)</span>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Suggestion ID</th>
-                        <th>Book Details</th>
-                        <th>Suggested By</th>
-                        <th>Notes</th>
-                        <th>Approved Date</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for p in pending_purchases %}
-                    <tr>
-                        <td>#{{ p.suggestion_id }}</td>
-                        <td>
-                            <div style="font-weight: 600; color: #2c3e50;">{{ p.title }}</div>
-                            <div style="font-size: 0.85rem; color: #6c757d;">{{ p.author }}</div>
-                        </td>
-                        <td>
-                            <div>{{ p.user_name }}</div>
-                            <!-- <div style="font-size: 0.8rem; color: #6c757d;">{{ p.email }}</div> -->
-                        </td>
-                        <td>
-                            <div style="max-width: 200px; font-size: 0.9rem;">
-                                {{ p.reason or '-' }}
-                            </div>
-                        </td>
-                        <td>
-                            {{ p.suggestion_date.strftime('%Y-%m-%d') if p.suggestion_date else '-' }}
-                        </td>
-                        <td>
-                            <div class="d-flex gap-2">
-                                <form action="{{ url_for('admin.admin_add_purchased_book', suggestion_id=p.suggestion_id) }}" method="POST" onsubmit="return confirm('Confirm purchase? This will add the book to the library inventory.');">
-                                    <button type="submit" class="btn btn-success btn-sm">
-                                        <span class="icon">➕</span> Add
-                                    </button>
-                                </form>
-                                <form action="{{ url_for('admin.admin_remove_purchase', suggestion_id=p.suggestion_id) }}" method="POST" onsubmit="return confirm('Remove this item from the purchase list?');">
-                                    <button type="submit" class="btn btn-danger btn-sm">
-                                        <span class="icon">🗑️</span> Remove
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="6" style="text-align: center; padding: 3rem; color: #6c757d;">
-                            <i class="fas fa-shopping-cart fa-3x mb-3" style="opacity: 0.3;"></i>
-                            <p>No books in the purchase list.</p>
-                            <a href="/admin/suggestions" class="btn btn-primary btn-sm mt-2">Go to Suggestions</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+<!-- Acquisition Registry -->
+<div class="acquisition-vessel fade-in fade-in-delay-1">
+    <div class="table-responsive">
+        <table class="acquisition-table">
+            <thead>
+                <tr>
+                    <th>Ref ID</th>
+                    <th>Node Manifest</th>
+                    <th>Requester</th>
+                    <th>Parameters</th>
+                    <th>Authorized</th>
+                    <th style="text-align: right;">Action Nexus</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in pending_purchases %}
+                <tr>
+                    <td class="text-primary" style="font-family: monospace; font-weight: 700;">#ACQ_{{ p.suggestion_id }}</td>
+                    <td>
+                        <div class="node-title-lux">{{ p.title }}</div>
+                        <div class="node-arch-sub">{{ p.author }}</div>
+                    </td>
+                    <td>
+                        <span class="badge-cyber" style="background: rgba(255,255,255,0.05);">{{ p.user_name }}</span>
+                    </td>
+                    <td>
+                        <div style="font-size: 0.8rem; color: var(--text-sub); max-width: 250px;">
+                            {{ p.reason or 'No additional data' }}
+                        </div>
+                    </td>
+                    <td>
+                        <span style="font-size: 0.85rem; color: var(--text-sub);">{{ p.suggestion_date.strftime('%Y-%m-%d') if p.suggestion_date else 'T-Static' }}</span>
+                    </td>
+                    <td style="text-align: right;">
+                        <div class="d-flex gap-2 justify-content-end">
+                            <form action="{{ url_for('admin.admin_add_purchased_book', suggestion_id=p.suggestion_id) }}" method="POST">
+                                <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Commit purchase sequence? Node will be integrated into core inventory.')">
+                                    <i class="fas fa-check"></i> Commit
+                                </button>
+                            </form>
+                            <form action="{{ url_for('admin.admin_remove_purchase', suggestion_id=p.suggestion_id) }}" method="POST">
+                                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Abort acquisition?')">
+                                     <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 100px; color: var(--text-sub);">
+                        <div style="font-size: 3rem; margin-bottom: 15px;">🛒</div>
+                        <p>No nodes currently in acquisition queue.</p>
+                        <a href="/admin/suggestions" class="btn btn-outline-primary btn-sm mt-3">Scan Suggestions</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
-
-<style>
-    .table td {
-        vertical-align: middle;
-    }
-    .btn-success {
-        background-color: #10b981;
-        border: none;
-        color: white;
-        font-weight: 500;
-        padding: 0.5rem 1rem;
-        border-radius: 6px;
-        transition: all 0.2s;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    .btn-success:hover {
-        background-color: #059669;
-        transform: translateY(-1px);
-    }
-</style>
 {% endblock %}

@@ -21,11 +21,13 @@ def get_smart_recommendations(user_id, limit=6):
     if not user_categories:
         # Fallback: Just return popular books if no history
         return fetch_all("""
-            SELECT b.*, COALESCE(AVG(r.rating), 0) as avg_rating
+            SELECT b.book_id, b.title, b.author, b.category, b.cover_url, b.description, 
+                   COALESCE(AVG(r.rating), 0) as avg_rating
             FROM books b
             LEFT JOIN reviews r ON b.book_id = r.book_id
+            AND b.available_copies > 0
             GROUP BY b.book_id
-            ORDER BY avg_rating DESC, available_copies DESC
+            ORDER BY avg_rating DESC, b.available_copies DESC
             LIMIT %s
         """, (limit,))
 
@@ -39,9 +41,9 @@ def get_smart_recommendations(user_id, limit=6):
     
     # Base query for category-based recs
     query = f"""
-        SELECT b.book_id, b.title, COALESCE(a.name, 'Unknown') as author, b.category, b.cover_url, b.description, COALESCE(AVG(r.rating), 0) as avg_rating
+        SELECT b.book_id, b.title, b.author, b.category, b.cover_url, b.description, 
+               COALESCE(AVG(r.rating), 0) as avg_rating
         FROM books b
-        LEFT JOIN authors a ON b.author_id = a.author_id
         LEFT JOIN reviews r ON b.book_id = r.book_id
         WHERE b.category IN ({placeholders})
         AND b.book_id NOT IN (SELECT book_id FROM issues WHERE user_id = %s)
@@ -65,9 +67,9 @@ def get_smart_recommendations(user_id, limit=6):
         
         # Query for general popular/random books
         fallback_query = """
-            SELECT b.book_id, b.title, COALESCE(a.name, 'Unknown') as author, b.category, b.cover_url, b.description, COALESCE(AVG(r.rating), 0) as avg_rating
+            SELECT b.book_id, b.title, b.author, b.category, b.cover_url, b.description, 
+                   COALESCE(AVG(r.rating), 0) as avg_rating
             FROM books b
-            LEFT JOIN authors a ON b.author_id = a.author_id
             LEFT JOIN reviews r ON b.book_id = r.book_id
             WHERE b.book_id NOT IN (SELECT book_id FROM issues WHERE user_id = %s)
             AND b.available_copies > 0

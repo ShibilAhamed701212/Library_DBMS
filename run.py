@@ -49,7 +49,7 @@ def start_ngrok():
             tunnel = ngrok.connect("127.0.0.1:5000")
             return tunnel.public_url
         except Exception as e:
-            print(f"⚠️ Ngrok error: {e}")
+            print(f"[ERROR] Ngrok error: {e}")
     return None
 
 if __name__ == "__main__":
@@ -84,13 +84,13 @@ if __name__ == "__main__":
         
         # Display startup info
         print("\n" + "="*60)
-        print("🚀 LDBMS IS STARTING UP!")
-        print(f"👉 Local URL:   http://127.0.0.1:5000")
+        print("[START] LDBMS IS STARTING UP!")
+        print(f"[LINK] Local URL:   http://127.0.0.1:5000")
         if public_url:
-            print(f"🌐 Public URL:  {public_url}")
+            print(f"[WEB] Public URL:  {public_url}")
         else:
-            print(f"🌐 Public URL:  Not available")
+            print(f"[WEB] Public URL:  Not available")
         print("="*60 + "\n")
     
     from backend import socketio
-    socketio.run(app, debug=True, host='0.0.0.0', use_reloader=True, log_output=True)
+    socketio.run(app, debug=True, host='0.0.0.0', use_reloader=True, log_output=True, allow_unsafe_werkzeug=True)

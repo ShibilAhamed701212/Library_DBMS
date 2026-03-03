@@ -1,69 +1,246 @@
-
 {% extends "layout.html" %}
-
+{% set active_page = 'member_profile' %}
 {% block title %}My Profile{% endblock %}
-{% block header_title %}My Profile{% endblock %}
-{% block header_subtitle %}Manage your account settings{% endblock %}
+
+{% block header_title %}Account Settings{% endblock %}
+{% block header_subtitle %}Manage your digital identity and library credentials.{% endblock %}
 
 {% block content %}
-<div class="glass-card" style="max-width: 600px; margin: 2rem auto; padding: 2.5rem; text-align: center;">
-    {# Robustness Fix: specific variable (new code) OR generic variable (old code) #}
-    {% set display_user = profile_user if profile_user is defined else user %}
+<div class="w-full max-w-5xl mx-auto space-y-6 lg:space-y-8 pb-10">
     
-    <div style="margin-bottom: 2rem; position: relative; display: inline-block;">
-        <div style="width: 150px; height: 150px; border-radius: 50%; overflow: hidden; border: 4px solid var(--primary); margin: 0 auto; background: var(--card-bg);">
-            {# Try DB user first, then Session (since header works with session) #}
-            {% set pic_url = display_user.profile_pic or session.get('profile_pic') %}
-            
-            {% if pic_url %}
-            <img src="{{ url_for('static', filename=pic_url) }}?v={{ range(1, 1000) | random }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
-            {% else %}
-            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 4rem; background: var(--primary); color: white;">
-                {{ display_user.name[0]|upper }}
-            </div>
-            {% endif %}
-        </div>
+    <!-- Profile Header Card (Mobile & Desktop) -->
+    <div class="glass-card flex flex-col md:flex-row items-center md:items-start gap-6 p-6 lg:p-10 border-base-700 rounded-[24px] relative overflow-hidden fade-in">
         
-        <!-- Upload Button Icon -->
-        <label for="avatarInput" style="position: absolute; bottom: 0; right: 0; background: var(--accent); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
-            📷
-        </label>
-    </div>
-    
-    <!-- Upload Form -->
-    <form action="/member/profile/upload" method="POST" enctype="multipart/form-data" id="uploadForm" style="display: none;">
-        <input type="file" name="avatar" id="avatarInput" accept="image/*" onchange="document.getElementById('uploadForm').submit()">
-    </form>
-    
-    <!-- User Details -->
-    <h2 style="margin-bottom: 0.5rem; color: var(--text-main);">{{ display_user.name }}</h2>
-    <p style="color: var(--text-sub); margin-bottom: 2rem;">{{ display_user.email }}</p>
-    
-    <div style="text-align: left; background: rgba(0,0,0,0.05); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem;">
-        <p><strong>Member ID:</strong> {{ display_user.user_id }}</p>
-        <p><strong>Role:</strong> {{ display_user.role|capitalize }}</p>
-        <p><strong>Joined:</strong> {{ display_user.created_at or 'N/A' }}</p>
+        <!-- Abstract gradient top/right corner -->
+        <div class="absolute -top-24 -right-24 w-64 h-64 bg-brand-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+        <!-- Avatar Container -->
+        <div class="relative shrink-0 group">
+            <div class="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-base-800 shadow-[0_10px_30px_rgba(0,0,0,0.5)] overflow-hidden bg-base-800 flex items-center justify-center relative">
+                {% set pic_url = profile_user.profile_pic or session.get('profile_pic') %}
+                {% if pic_url %}
+                    <img src="{{ url_for('static', filename=pic_url) }}?v={{ range(1, 1000) | random }}" alt="Avatar" class="w-full h-full object-cover">
+                {% else %}
+                    <div class="w-full h-full bg-gradient-to-br from-brand-500 to-indigo-600 flex items-center justify-center">
+                        <span class="text-white text-5xl font-black">{{ profile_user.name[0]|upper }}</span>
+                    </div>
+                {% endif %}
+
+                <!-- Hover Overlay for Upload -->
+                <label for="avatarInput" class="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer backdrop-blur-sm">
+                    <span class="text-white text-xs font-bold tracking-widest uppercase flex flex-col items-center gap-1">
+                        <span class="material-symbols-outlined text-[24px]">photo_camera</span>
+                        Change
+                    </span>
+                </label>
+            </div>
+            
+            <form action="/member/profile/upload" method="POST" enctype="multipart/form-data" id="uploadForm" class="hidden">
+                <input type="file" name="avatar" id="avatarInput" accept="image/*" onchange="document.getElementById('uploadForm').submit()">
+            </form>
+        </div>
+
+        <!-- Profile Info -->
+        <div class="flex-grow text-center md:text-left relative z-10 w-full">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-black text-white tracking-tight -mb-1">{{ profile_user.name }}</h1>
+                    <p class="text-base-400 font-medium text-sm md:text-base">{{ profile_user.email }}</p>
+                </div>
+                
+                <button onclick="toggleEdit()" class="hidden md:flex items-center gap-2 px-5 py-2.5 bg-base-800 hover:bg-base-700 text-base-100 border border-base-700/50 rounded-full text-sm font-bold transition-all shadow-sm shrink-0">
+                    <span class="material-symbols-outlined text-[18px]">edit</span> Edit Profile
+                </button>
+            </div>
+
+            <!-- Tags -->
+            <div class="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-6">
+                <!-- Tier Display -->
+                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs font-bold uppercase tracking-widest">
+                    <span class="material-symbols-outlined text-[14px]">workspace_premium</span>
+                    {{ profile_user.tier|upper if profile_user.tier else 'GOLD MEMBER' }}
+                </span>
+                
+                <!-- Role Display -->
+                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-md bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs font-bold uppercase tracking-widest">
+                    {{ profile_user.role|upper }}
+                </span>
+                
+                <span class="text-xs text-base-500 font-medium ml-2">Member since {{ profile_user.created_at.strftime('%Y') if profile_user.created_at else '2021' }}</span>
+            </div>
+
+            <!-- Mobile Edit Button -->
+            <button onclick="toggleEdit()" class="md:hidden w-full mb-6 flex items-center justify-center gap-2 px-5 py-2.5 bg-base-800 hover:bg-base-700 text-base-100 border border-base-700/50 rounded-xl text-sm font-bold transition-all">
+                <span class="material-symbols-outlined text-[18px]">edit</span> Edit Profile
+            </button>
+
+            <!-- Bio Display -->
+            <div id="bioDisplay" class="bg-base-900/50 rounded-xl p-4 border border-base-800">
+                <p class="text-base-300 text-sm md:text-base leading-relaxed">
+                    {{ profile_user.bio or 'Hello! I love exploring new worlds through books. Always looking for my next great sci-fi read.' }}
+                </p>
+            </div>
+
+            <!-- Bio Edit (Hidden by Default) -->
+            <div id="bioEdit" class="hidden mt-2">
+                <textarea id="bioInput" rows="3" class="w-full bg-base-900 border border-base-700 rounded-xl px-4 py-3 text-sm text-base-100 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-medium">{{ profile_user.bio or '' }}</textarea>
+                <div class="flex gap-2 mt-3">
+                    <button onclick="saveBio()" class="flex-1 md:flex-none px-6 py-2 bg-brand-600 hover:bg-brand-500 text-white text-sm font-bold rounded-lg transition-all shadow-[0_4px_15px_rgba(37,99,235,0.2)]">Save Changes</button>
+                    <button onclick="toggleEdit()" class="flex-1 md:flex-none px-6 py-2 bg-base-800 hover:bg-base-700 text-base-300 text-sm font-bold border border-base-700 rounded-lg transition-all">Cancel</button>
+                </div>
+            </div>
+            
+        </div>
     </div>
 
-    <!-- Badges -->
-    <h3 style="text-align: left; margin-bottom: 1rem;">My Badges</h3>
-    <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem;">
-        {% if badges %}
-            {% for badge in badges %}
-            <div style="background: var(--card-bg); border: 1px solid var(--border); padding: 1rem; border-radius: 12px; text-align: center; width: 100px;">
-                <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">{{ badge.icon }}</div>
-                <div style="font-size: 0.8rem; font-weight: bold;">{{ badge.name }}</div>
-                <div style="font-size: 0.7rem; color: var(--text-sub);">{{ badge.description }}</div>
-            </div>
-            {% endfor %}
-        {% else %}
-            <p style="color: var(--text-sub);">No badges yet. Borrow books to earn them!</p>
-        {% endif %}
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-3 gap-3 md:gap-6 stagger-in">
+        <div class="glass-card p-4 md:p-6 rounded-[20px] text-center flex flex-col items-center justify-center border-base-700">
+            <span class="material-symbols-outlined text-brand-400 text-[28px] md:text-[32px] mb-2">library_books</span>
+            <h3 class="text-2xl md:text-3xl font-black text-white leading-none mb-1">42</h3>
+            <p class="text-[10px] md:text-xs font-bold text-base-500 uppercase tracking-widest">Borrowed</p>
+        </div>
+        <div class="glass-card p-4 md:p-6 rounded-[20px] text-center flex flex-col items-center justify-center border-base-700">
+            <span class="material-symbols-outlined text-emerald-400 text-[28px] md:text-[32px] mb-2">menu_book</span>
+            <h3 class="text-2xl md:text-3xl font-black text-white leading-none mb-1">3</h3>
+            <p class="text-[10px] md:text-xs font-bold text-base-500 uppercase tracking-widest">Active Books</p>
+        </div>
+        <div class="glass-card p-4 md:p-6 rounded-[20px] text-center flex flex-col items-center justify-center border-base-700">
+            <span class="material-symbols-outlined text-rose-400 text-[28px] md:text-[32px] mb-2">payments</span>
+            <h3 class="text-2xl md:text-3xl font-black text-white leading-none mb-1">$0.00</h3>
+            <p class="text-[10px] md:text-xs font-bold text-base-500 uppercase tracking-widest">Fine Bal.</p>
+        </div>
     </div>
-    
-    <!-- Actions -->
-    <form action="/member/delete-account" method="POST" onsubmit="return confirm('Are you sure you want to delete your account? This cannot be undone.');">
-        <button type="submit" class="btn btn-outline-danger">Delete Account</button>
-    </form>
+
+    <!-- Lower Section Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-20 lg:pb-0 stagger-in">
+        
+        <!-- Left: Badges & Rewards -->
+        <div class="space-y-6">
+            <h2 class="text-xs font-bold tracking-widest text-base-500 uppercase px-1">Rewards & Badges</h2>
+            
+            <div class="glass-card p-6 border-base-700 rounded-[20px]">
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {% if badges %}
+                        {% for badge in badges %}
+                        <div class="bg-base-900/50 border border-base-800 rounded-2xl p-4 text-center group hover:bg-base-800 transition-colors">
+                            <div class="text-4xl mb-3 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] group-hover:scale-110 transition-transform">{{ badge.icon }}</div>
+                            <h4 class="text-sm font-bold text-white mb-1 leading-tight">{{ badge.name }}</h4>
+                            <p class="text-[10px] text-base-400">{{ badge.description }}</p>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="col-span-full py-8 text-center bg-base-900/30 rounded-2xl border border-dashed border-base-700">
+                            <span class="material-symbols-outlined text-4xl text-base-600 mb-2">military_tech</span>
+                            <p class="text-sm font-medium text-base-400">Read books to unlock your first badges!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Right: Preferences & Danger Zone -->
+        <div class="space-y-6">
+            <h2 class="text-xs font-bold tracking-widest text-base-500 uppercase px-1">Account Preferences</h2>
+            
+            <!-- Link list card -->
+            <div class="glass-card border-base-700 rounded-[20px] overflow-hidden divide-y divide-base-800/50">
+                
+                <a href="/member/goals" class="flex items-center justify-between p-5 hover:bg-base-800/50 transition-colors group">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+                            <span class="material-symbols-outlined">track_changes</span>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-white group-hover:text-brand-400 transition-colors">Reading Goals & Privacy</h4>
+                            <p class="text-xs text-base-400">Manage yearly targets and public visibility</p>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-base-500 group-hover:text-brand-400">chevron_right</span>
+                </a>
+                
+                <a href="/change-password" class="flex items-center justify-between p-5 hover:bg-base-800/50 transition-colors group">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center">
+                            <span class="material-symbols-outlined">key</span>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-white group-hover:text-brand-400 transition-colors">Change Password</h4>
+                            <p class="text-xs text-base-400">Update your account security token</p>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-base-500 group-hover:text-brand-400">chevron_right</span>
+                </a>
+
+                <a href="/logout" class="flex items-center justify-between p-5 hover:bg-base-800/50 transition-colors group">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full bg-base-700 text-base-300 flex items-center justify-center">
+                            <span class="material-symbols-outlined">logout</span>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-white group-hover:text-base-300 transition-colors">Log Out</h4>
+                            <p class="text-xs text-base-400">End your current session securely</p>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-base-500 group-hover:text-base-300">chevron_right</span>
+                </a>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="bg-rose-950/20 border border-rose-900/30 rounded-[20px] p-6 mt-6">
+                <div class="flex items-start gap-4">
+                    <div class="w-10 h-10 shrink-0 rounded-full bg-rose-500/20 text-rose-500 flex items-center justify-center">
+                        <span class="material-symbols-outlined">warning</span>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-rose-400 mb-1">Delete Account</h4>
+                        <p class="text-xs text-rose-400/70 mb-4 leading-relaxed">Permanently erase your digital footprint from the library archive. This action cannot be undone.</p>
+                        <form action="/member/delete-account" method="POST" onsubmit="return confirm('Initiate self-destruct protocol? This will erase ALL your library data permanently.');">
+                            <button type="submit" class="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 text-xs font-bold tracking-widest uppercase rounded-lg transition-colors">
+                                Delete Account
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
 </div>
+
+<script>
+function toggleEdit() {
+    const display = document.getElementById('bioDisplay');
+    const edit = document.getElementById('bioEdit');
+    if (display.classList.contains('hidden')) {
+        // Hide edit, show display
+        edit.classList.add('hidden');
+        display.classList.remove('hidden');
+    } else {
+        // Show edit, hide display
+        display.classList.add('hidden');
+        edit.classList.remove('hidden');
+    }
+}
+
+async function saveBio() {
+    const bio = document.getElementById('bioInput').value;
+    try {
+        const response = await fetch('/member/profile/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bio: bio })
+        });
+        if (response.ok) {
+            window.location.reload();
+        } else {
+             alert('Failed to update bio.');
+        }
+    } catch (e) {
+        alert('Failed to update bio: ' + e);
+    }
+}
+</script>
 {% endblock %}

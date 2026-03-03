@@ -31,7 +31,7 @@ def clear_data():
     """
     Deletes all existing records from the database in correct order.
     """
-    print("\n🗑️  Clearing existing data...")
+    print("\n[CLEAN] Clearing existing data...")
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -52,9 +52,9 @@ def clear_data():
         conn.commit()
         cursor.close()
         conn.close()
-        print("✅ All existing data cleared")
+        print("[OK] All existing data cleared")
     except Exception as e:
-        print(f"❌ Error clearing data: {e}")
+        print(f"[ERROR] Error clearing data: {e}")
 
 
 # ======================================================
@@ -151,10 +151,10 @@ def verify_seed():
     book_count = fetch_one("SELECT COUNT(*) as count FROM books")
     
     if admin and book_count:
-        print(f"✅ Seed verification successful")
-        print(f"📚 Total books in database: {book_count['count']}")
+        print(f"[OK] Seed verification successful")
+        print(f"Total books in database: {book_count['count']}")
     else:
-        print("❌ Seed verification failed")
+        print("[ERROR] Seed verification failed")
 
 
 # ======================================================
@@ -166,25 +166,25 @@ def main():
     Main entry point for seeding.
     """
     print("\n" + "="*50)
-    print("🌱 DATABASE SEEDING STARTED")
+    print("DATABASE SEEDING STARTED")
     print("="*50)
     
     clear_data()
     
-    print("\n🌱 Seeding users...")
+    print("\nSeeding users...")
     seed_users()
 
-    print("\n📚 Seeding 30 books...")
+    print("\nSeeding 30 books...")
     seed_books()
 
-    print("\n🔒 Finalizing users (bypassing forced password change)...")
+    print("\nFinalizing users (bypassing forced password change)...")
     execute("UPDATE users SET must_change_password = FALSE")
 
-    print("\n🔍 Verifying seed...")
+    print("\nVerifying seed...")
     verify_seed()
 
     print("\n" + "="*50)
-    print("✅ DATABASE SEEDING COMPLETED")
+    print("DATABASE SEEDING COMPLETED")
     print("="*50 + "\n")
 
 

@@ -1,48 +1,85 @@
-
 {% extends "layout.html" %}
+{% set active_page = 'admin_support' %}
+{% block title %}Desk Support{% endblock %}
 
-{% block title %}Support Management{% endblock %}
-{% block header_title %}Support Tickets{% endblock %}
-{% block header_subtitle %}Manage user inquiries and issues.{% endblock %}
+{% block header_title %}Desk Support{% endblock %}
+{% block header_subtitle %}Monitor and respond to structural anomalies reported by network nodes.{% endblock %}
 
 {% block content %}
-<div class="glass-card" style="padding: 0; overflow: hidden;">
-    <table style="width: 100%; border-collapse: collapse;">
-        <thead style="background: rgba(0,0,0,0.03); border-bottom: 1px solid var(--border);">
-            <tr>
-                <th style="padding: 1rem; text-align: left;">ID</th>
-                <th style="padding: 1rem; text-align: left;">User</th>
-                <th style="padding: 1rem; text-align: left;">Subject</th>
-                <th style="padding: 1rem; text-align: center;">Status</th>
-                <th style="padding: 1rem; text-align: right;">Date</th>
-                <th style="padding: 1rem;">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% if not tickets %}
-            <tr><td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-sub);">No tickets found.</td></tr>
-            {% else %}
-            {% for t in tickets %}
-            <tr style="border-bottom: 1px solid var(--border);">
-                <td style="padding: 1rem;">#{{ t.ticket_id }}</td>
-                <td style="padding: 1rem;">
-                    <strong>{{ t.user_name }}</strong><br>
-                    <span style="font-size: 0.8rem; color: var(--text-sub);">{{ t.email }}</span>
-                </td>
-                <td style="padding: 1rem; font-weight: 500;">{{ t.subject }}</td>
-                <td style="padding: 1rem; text-align: center;">
-                    <span class="badge {{ 'badge-success' if t.status == 'closed' else 'badge-warning' }}">
-                        {{ t.status|upper }}
-                    </span>
-                </td>
-                <td style="padding: 1rem; text-align: right; color: var(--text-sub);">{{ t.created_at }}</td>
-                <td style="padding: 1rem;">
-                    <a href="/admin/support/{{ t.ticket_id }}" class="btn btn-primary btn-sm">View</a>
-                </td>
-            </tr>
-            {% endfor %}
-            {% endif %}
-        </tbody>
-    </table>
+<div class="w-full max-w-7xl mx-auto pb-10 space-y-8">
+    
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-black text-white tracking-tight">Active Transmissions</h1>
+            <p class="text-sm font-medium text-base-400 mt-1">Intercepting <span class="font-bold text-white">{{ tickets|length }}</span> network requests.</p>
+        </div>
+    </div>
+
+    <!-- Tickets Table -->
+    <div class="glass-card rounded-[24px] border border-base-700/50 overflow-hidden relative fade-in">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-base-900/50 text-[10px] font-bold tracking-widest uppercase text-base-500 border-b border-base-700/50">
+                    <tr>
+                        <th class="px-6 py-4">Reference</th>
+                        <th class="px-6 py-4">Reporting Node</th>
+                        <th class="px-6 py-4">Subject Vector</th>
+                        <th class="px-6 py-4 text-center">Protocol Status</th>
+                        <th class="px-6 py-4 text-right">Timestamp</th>
+                        <th class="px-6 py-4 text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-base-800/50">
+                    {% if not tickets %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-16 text-center">
+                            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-base-800 border border-base-700 mb-4">
+                                <span class="material-symbols-outlined text-[32px] text-base-500">done_all</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-white mb-1">Silence on the Network</h3>
+                            <p class="text-sm text-base-400">All transmissions resolved. No support queries pending.</p>
+                        </td>
+                    </tr>
+                    {% else %}
+                    {% for t in tickets %}
+                    <tr class="hover:bg-base-800/30 transition-colors group">
+                        <td class="px-6 py-4">
+                            <span class="text-xs font-mono font-bold text-brand-500 bg-brand-500/10 px-2 py-1 rounded">REF-{{ '{:04d}'.format(t.ticket_id) }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="font-bold text-white text-sm mb-0.5">{{ t.user_name }}</div>
+                            <div class="text-[10px] font-medium text-base-400 tracking-wide">{{ t.email }}</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-sm font-medium text-base-300 line-clamp-1" title="{{ t.subject }}">{{ t.subject }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            {% if t.status == 'closed' %}
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-base-800 border border-base-700 text-base-400 rounded-md text-[9px] font-black tracking-widest uppercase shadow-sm">
+                                    <span class="material-symbols-outlined text-[12px] opacity-70">lock</span> Resolved
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-md text-[9px] font-black tracking-widest uppercase shadow-sm">
+                                    <span class="relative flex h-1.5 w-1.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span><span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span></span>
+                                    Active Thread
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <span class="text-xs font-medium text-base-400">{{ t.created_at.strftime('%b %d, %H:%M') if t.created_at else t.created_at }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <a href="/admin/support/{{ t.ticket_id }}" class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-[11px] font-bold shadow-sm transition-colors">
+                                <span class="material-symbols-outlined text-[14px]">login</span> Intercept
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
 </div>
 {% endblock %}

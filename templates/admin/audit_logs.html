@@ -6,32 +6,118 @@
 {% block header_subtitle %}Track administrative actions and security events.{% endblock %}
 
 {% block content %}
-<div class="glass-card" style="padding: 0; overflow: hidden;">
-    <table style="width: 100%; border-collapse: collapse;">
-        <thead style="background: rgba(0,0,0,0.03); border-bottom: 1px solid var(--border);">
-            <tr>
-                <th style="padding: 1rem; text-align: left;">Timestamp</th>
-                <th style="padding: 1rem; text-align: left;">Admin</th>
-                <th style="padding: 1rem; text-align: left;">Action</th>
-                <th style="padding: 1rem; text-align: left;">Details</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% if not logs %}
-            <tr><td colspan="4" style="padding: 2rem; text-align: center; color: var(--text-sub);">No logs found.</td></tr>
-            {% else %}
-            {% for log in logs %}
-            <tr style="border-bottom: 1px solid var(--border);">
-                <td style="padding: 1rem; font-family: monospace; font-size: 0.9em; color: var(--text-sub);">{{ log.timestamp }}</td>
-                <td style="padding: 1rem; font-weight: 500;">{{ log.admin_name }}</td>
-                <td style="padding: 1rem;">
-                    <span class="badge" style="background: var(--bg); border: 1px solid var(--border);">{{ log.action }}</span>
-                </td>
-                <td style="padding: 1rem; color: var(--text-sub);">{{ log.details }}</td>
-            </tr>
-            {% endfor %}
-            {% endif %}
-        </tbody>
-    </table>
+<div class="space-y-6 fade-in">
+    <!-- Filters / Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-base-900/50 backdrop-blur-xl border border-base-700/50 p-6 rounded-3xl shadow-xl">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 border border-amber-500/20">
+                    <span class="material-symbols-outlined">security</span>
+                </div>
+                <div>
+                    <div class="text-[10px] font-bold text-base-500 uppercase tracking-widest">Trust Index</div>
+                    <div class="text-xl font-black text-white">Secure</div>
+                </div>
+            </div>
+        </div>
+        <div class="bg-base-900/50 backdrop-blur-xl border border-base-700/50 p-6 rounded-3xl shadow-xl">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-brand-500/10 flex items-center justify-center text-brand-400 border border-brand-500/20">
+                    <span class="material-symbols-outlined">history</span>
+                </div>
+                <div>
+                    <div class="text-[10px] font-bold text-base-500 uppercase tracking-widest">Total Events</div>
+                    <div class="text-xl font-black text-white">{{ logs|length }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="bg-base-900/50 backdrop-blur-xl border border-base-700/50 p-6 rounded-3xl shadow-xl">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
+                    <span class="material-symbols-outlined">analytics</span>
+                </div>
+                <div>
+                    <div class="text-[10px] font-bold text-base-500 uppercase tracking-widest">Status</div>
+                    <div class="text-xl font-black text-white">Monitoring</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logs Vessel -->
+    <div class="bg-base-900/50 backdrop-blur-xl border border-base-700/50 rounded-3xl overflow-hidden shadow-2xl">
+        <div class="table-responsive">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-base-800/50 border-bottom border-base-700/50">
+                        <th class="px-6 py-5 text-[10px] font-bold text-base-400 uppercase tracking-widest">Chronology</th>
+                        <th class="px-6 py-5 text-[10px] font-bold text-base-400 uppercase tracking-widest">Operator</th>
+                        <th class="px-6 py-5 text-[10px] font-bold text-base-400 uppercase tracking-widest">Action Node</th>
+                        <th class="px-6 py-5 text-[10px] font-bold text-base-400 uppercase tracking-widest">Payload Details</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-base-700/30">
+                    {% if not logs %}
+                    <tr>
+                        <td colspan="4" class="px-6 py-20 text-center">
+                            <div class="flex flex-col items-center gap-3">
+                                <span class="material-symbols-outlined text-[48px] text-base-700">inventory_2</span>
+                                <p class="text-sm font-bold text-base-500 uppercase tracking-widest">No spectral traces found in logs</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    {% for log in logs %}
+                    <tr class="group hover:bg-white/[0.02] transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex flex-col">
+                                <span class="text-xs font-mono text-base-400 font-bold tracking-tight">
+                                    {{ log.timestamp.split(' ')[0] if log.timestamp else '----' }}
+                                </span>
+                                <span class="text-[10px] font-mono text-base-600">
+                                    {{ log.timestamp.split(' ')[1] if log.timestamp and ' ' in log.timestamp else '' }}
+                                </span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-base-800 border border-base-700 flex items-center justify-center text-[12px] font-black text-brand-400 shadow-inner">
+                                    {{ log.admin_name[0]|upper }}
+                                </div>
+                                <span class="text-sm font-bold text-base-100">{{ log.admin_name }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% set action_color = 'brand' %}
+                            {% if 'DELETE' in log.action %} {% set action_color = 'rose' %}
+                            {% elif 'UPDATE' in log.action or 'EDIT' in log.action %} {% set action_color = 'amber' %}
+                            {% elif 'ADD' in log.action or 'CREATE' in log.action %} {% set action_color = 'emerald' %}
+                            {% endif %}
+                            
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border bg-{{ action_color }}-500/10 border-{{ action_color }}-500/20 text-{{ action_color }}-400">
+                                {{ log.action }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <p class="text-xs text-base-300 font-medium leading-relaxed max-w-sm truncate group-hover:whitespace-normal group-hover:overflow-visible transition-all">
+                                {{ log.details }}
+                            </p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        <!-- Footer Info -->
+        <div class="px-6 py-4 bg-black/20 border-t border-base-700/50 flex justify-between items-center">
+            <span class="text-[9px] font-bold text-base-600 uppercase tracking-[2px]">Core Audit Stream v2.5</span>
+            <div class="flex gap-4">
+                 <button class="text-[10px] font-bold text-base-500 hover:text-white transition-colors uppercase tracking-widest flex items-center gap-1">
+                     <span class="material-symbols-outlined text-[14px]">download</span> Export CSV
+                 </button>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

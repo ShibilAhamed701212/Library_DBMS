@@ -19,7 +19,7 @@ from flask import (
     request, flash, url_for, jsonify
 )
 
-from backend.repository.db_access import fetch_one, fetch_all
+from backend.repository.db_access import fetch_one, fetch_all, execute_query
 from backend.utils.decorators import admin_required
 from backend.services.user_service import view_users, add_user
 from backend.services.book_service import view_books_paginated, view_books
@@ -1415,3 +1415,154 @@ def api_get_user_borrowed_books(user_id):
     )
     
     return jsonify(borrowed_books)
+
+
+# =====================================================
+# ACCOUNT REQUEST MANAGEMENT
+# =====================================================
+
+@admin_bp.route("/admin/account-requests")
+@admin_required
+def admin_account_requests():
+    """View pending account requests from public users."""
+    try:
+        execute_query("""
+            CREATE TABLE IF NOT EXISTS account_requests (
+                request_id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                email VARCHAR(100) NOT NULL,
+                reason TEXT,
+                status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+    except Exception:
+        pass
+
+    requests = fetch_all(
+        "SELECT * FROM account_requests ORDER BY FIELD(status, 'pending', 'approved', 'rejected'), created_at DESC"
+    ) or []
+
+    return render_template("admin/account_requests.html", requests=requests)
+
+
+@admin_bp.route("/admin/account-requests/approve/<int:req_id>", methods=["POST"])
+@admin_required
+def admin_approve_request(req_id):
+    """Approves an account request, creates user, and shows temp password."""
+    import random
+    import string
+
+    req = fetch_one("SELECT * FROM account_requests WHERE request_id = %s", (req_id,))
+    if not req:
+        flash("Request not found.", "error")
+        return redirect("/admin/account-requests")
+
+    if req['status'] != 'pending':
+        flash("This request has already been processed.", "error")
+        return redirect("/admin/account-requests")
+
+    # Check if email already in use
+    existing = fetch_one("SELECT user_id FROM users WHERE email = %s", (req['email'],))
+    if existing:
+        execute_query("UPDATE account_requests SET status = 'approved' WHERE request_id = %s", (req_id,))
+        flash(f"User with email {req['email']} already exists.", "error")
+        return redirect("/admin/account-requests")
+
+    # Generate temp password
+    temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+
+    # Hash password
+    from backend.utils.security import hash_password
+    hashed = hash_password(temp_password)
+
+    # Create user
+    execute_query(
+        """INSERT INTO users (name, email, password_hash, role, must_change_password)
+           VALUES (%s, %s, %s, 'member', TRUE)""",
+        (req['name'], req['email'], hashed)
+    )
+
+    # Update request status
+    execute_query("UPDATE account_requests SET status = 'approved' WHERE request_id = %s", (req_id,))
+
+    # Send welcome email with temp password
+    email_sent = False
+    try:
+        from backend.services.email_service import send_email
+        library_name = "LibManage"
+        try:
+            settings = fetch_one("SELECT library_name FROM system_settings LIMIT 1")
+            if settings:
+                library_name = settings.get('library_name', library_name)
+        except Exception:
+            pass
+
+        subject = f"🎉 Welcome to {library_name} — Your Account is Ready!"
+        body = f"""Hi {req['name']},
+
+Great news! Your library account has been approved.
+
+Here are your login credentials:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📧 Email: {req['email']}
+🔑 Temporary Password: {temp_password}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔗 Login here: https://alita-advantageous-isabella.ngrok-free.dev/login
+
+⚠️ IMPORTANT: You will be asked to change your password on first login.
+
+Happy reading!
+
+Best regards,
+{library_name} Team
+"""
+        email_sent = send_email(req['email'], subject, body)
+    except Exception as e:
+        print(f"❌ Failed to send email: {e}")
+        email_sent = False
+
+    # Also add in-app notification
+    try:
+        from backend.services.notification_service import add_notification
+        new_user = fetch_one("SELECT user_id FROM users WHERE email = %s", (req['email'],))
+        if new_user:
+            add_notification(new_user['user_id'], f"Welcome to the library! Your temporary password is: {temp_password}")
+    except Exception:
+        pass
+
+    # Log the action
+    try:
+        from backend.services.audit_service import log_action
+        log_action(session.get('user_id'), "APPROVE_ACCOUNT", f"Approved request for {req['name']} ({req['email']})")
+    except Exception:
+        pass
+
+    if email_sent:
+        flash(f"✅ Account created for {req['name']}! Temp password emailed to {req['email']}", "success")
+    else:
+        flash(f"✅ Account created for {req['name']}! Temporary password: {temp_password} (email could not be sent)", "success")
+    return redirect("/admin/account-requests")
+
+
+@admin_bp.route("/admin/account-requests/reject/<int:req_id>", methods=["POST"])
+@admin_required
+def admin_reject_request(req_id):
+    """Rejects an account request."""
+    req = fetch_one("SELECT * FROM account_requests WHERE request_id = %s", (req_id,))
+    if not req:
+        flash("Request not found.", "error")
+        return redirect("/admin/account-requests")
+
+    execute_query("UPDATE account_requests SET status = 'rejected' WHERE request_id = %s", (req_id,))
+
+    try:
+        from backend.services.audit_service import log_action
+        log_action(session.get('user_id'), "REJECT_ACCOUNT", f"Rejected request for {req['name']} ({req['email']})")
+    except Exception:
+        pass
+
+    flash(f"Request from {req['name']} has been rejected.", "success")
+    return redirect("/admin/account-requests")

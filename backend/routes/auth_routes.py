@@ -47,7 +47,7 @@ auth_bp = Blueprint("auth", __name__)
 # LOGIN ROUTE
 # =====================================================
 
-@auth_bp.route("/", methods=["GET", "POST"])
+@auth_bp.route("/login", methods=["GET", "POST"])
 def login():
     """
     Login page handler.
@@ -85,6 +85,7 @@ def login():
         session["role"] = user["role"]
         session["name"] = user["name"]  # Store name for Dashboard Header
         session["profile_pic"] = user.get("profile_pic")
+        session["tier"] = user.get("tier", "Silver")
 
         # -----------------------------
         # FORCE PASSWORD CHANGE
@@ -129,7 +130,7 @@ def logout():
     flash("ℹ️ Logged out successfully", "info")
 
     # Redirect to login page
-    return redirect("/")
+    return redirect("/login")
 
 
 # =====================================================

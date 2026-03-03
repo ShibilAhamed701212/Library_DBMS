@@ -1,246 +1,128 @@
 {% extends "layout.html" %}
+{% set active_page = 'admin_suggestions' %}
+{% block title %}Knowledge Beacons (Suggestions){% endblock %}
 
-{% block title %}Book Suggestions{% endblock %}
-{% block header_title %}Member Book Suggestions{% endblock %}
-{% block header_subtitle %}Review and manage book suggestions from library members.{% endblock %}
-
-{% block head %}
-<style>
-    .suggestion-card {
-        background: var(--card-bg);
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        border-left: 4px solid #2563eb;
-        transition: all 0.25s ease;
-    }
-
-    .suggestion-card:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        transform: translateY(-2px);
-    }
-
-    .suggestion-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: start;
-        margin-bottom: 1rem;
-    }
-
-    .suggestion-title {
-        font-size: 1.2rem;
-        font-weight: 700;
-        color: var(--text-main);
-        margin: 0 0 0.25rem 0;
-    }
-
-    .suggestion-author {
-        color: var(--text-sub);
-        font-size: 0.875rem;
-        margin: 0;
-    }
-
-    .suggestion-meta {
-        display: flex;
-        gap: 1rem;
-        flex-wrap: wrap;
-        margin-bottom: 1rem;
-        font-size: 0.875rem;
-    }
-
-    .meta-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .meta-label {
-        color: var(--text-sub);
-        font-weight: 600;
-    }
-
-    .meta-value {
-        color: var(--text-main);
-    }
-
-    .suggestion-reason {
-        background: rgba(37, 99, 235, 0.05);
-        border-left: 3px solid #2563eb;
-        padding: 0.75rem 1rem;
-        border-radius: 6px;
-        margin-bottom: 1rem;
-        font-size: 0.875rem;
-        line-height: 1.5;
-        color: var(--text-main);
-    }
-
-    .suggestion-actions {
-        display: flex;
-        gap: 0.75rem;
-        align-items: center;
-    }
-
-    .status-badge {
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-    }
-
-    .status-pending {
-        background: #fef08a;
-        color: #854d0e;
-    }
-
-    .status-approved {
-        background: #d1fae5;
-        color: #065f46;
-    }
-
-    .status-rejected {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-
-    .filter-section {
-        display: flex;
-        gap: 1rem;
-        margin-bottom: 2rem;
-        padding: 1rem;
-        background: var(--card-bg);
-        border-radius: 12px;
-        flex-wrap: wrap;
-    }
-
-    .filter-group {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .filter-group label {
-        font-weight: 600;
-        color: var(--text-main);
-        font-size: 0.875rem;
-    }
-
-    .filter-group select {
-        padding: 0.5rem 1rem;
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        background: white;
-        color: var(--text-main);
-        font-size: 0.875rem;
-        cursor: pointer;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 3rem;
-        color: var(--text-sub);
-    }
-
-    .empty-state-icon {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-        opacity: 0.5;
-    }
-</style>
-{% endblock %}
+{% block header_title %}Knowledge Beacons{% endblock %}
+{% block header_subtitle %}Review book suggestions submitted by members.{% endblock %}
 
 {% block content %}
-<!-- Filter Section -->
-<div class="filter-section">
-    <form method="GET" action="/admin/suggestions" style="display: flex; gap: 1rem; width: 100%;">
-        <div class="filter-group">
-            <label for="statusFilter">Filter by Status:</label>
-            <select id="statusFilter" name="status" onchange="this.form.submit()">
-                <option value="">All Suggestions</option>
-                <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>Pending</option>
-                <option value="approved" {% if request.args.get('status') == 'approved' %}selected{% endif %}>Approved</option>
-                <option value="rejected" {% if request.args.get('status') == 'rejected' %}selected{% endif %}>Rejected</option>
-            </select>
-        </div>
-    </form>
-</div>
+<div class="w-full max-w-7xl mx-auto space-y-6 pb-10">
 
-<!-- Suggestions List -->
-{% if suggestions %}
-    {% for s in suggestions %}
-    <div class="suggestion-card">
-        <div class="suggestion-header">
-            <div>
-                <h3 class="suggestion-title">{{ s.title }}</h3>
-                <p class="suggestion-author">by {{ s.author }}</p>
-            </div>
-            <span class="status-badge status-{{ s.status }}">
-                {{ s.status }}
-            </span>
+    <!-- Header & Filters -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-black text-white tracking-tight">Acquisition Signals</h1>
+            <p class="text-sm font-medium text-base-400 mt-1">Intercepted <span class="font-bold text-white">{{ suggestions|length }}</span> community requests</p>
         </div>
-
-        <div class="suggestion-meta">
-            <div class="meta-item">
-                <span class="meta-label">👤 Suggested by:</span>
-                <span class="meta-value">{{ s.user_name }}</span>
-            </div>
-            <div class="meta-item">
-                <span class="meta-label">📧 Email:</span>
-                <span class="meta-value">{{ s.email }}</span>
-            </div>
-            <div class="meta-item">
-                <span class="meta-label">📁 Category:</span>
-                <span class="meta-value">{{ s.category if s.category else 'Not specified' }}</span>
-            </div>
-            <div class="meta-item">
-                <span class="meta-label">📅 Date:</span>
-                <span class="meta-value">{{ s.suggestion_date }}</span>
-            </div>
+        
+        <div class="flex items-center gap-3">
+            <form method="GET" action="/admin/suggestions" class="relative group">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-base-400 text-[18px] pointer-events-none group-focus-within:text-brand-400 transition-colors">filter_list</span>
+                <select name="status" onchange="this.form.submit()" class="pl-10 pr-8 py-2.5 bg-base-800 border border-base-700 hover:border-base-600 focus:border-brand-500 rounded-xl text-sm font-bold text-base-100 appearance-none cursor-pointer transition-all shadow-sm outline-none w-full min-w-[180px]">
+                    <option value="" {% if not request.args.get('status') %}selected{% endif %}>All Frequencies</option>
+                    <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>Pending Signals</option>
+                    <option value="approved" {% if request.args.get('status') == 'approved' %}selected{% endif %}>Authorized</option>
+                    <option value="rejected" {% if request.args.get('status') == 'rejected' %}selected{% endif %}>Terminated</option>
+                </select>
+                <!-- Custom Arrow -->
+                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-base-500 text-[18px] pointer-events-none group-hover:text-base-300">expand_more</span>
+            </form>
         </div>
+    </div>
 
-        {% if s.reason %}
-        <div class="suggestion-reason">
-            <strong>Why they recommend it:</strong><br>
-            {{ s.reason }}
-        </div>
-        {% endif %}
+    {% if suggestions %}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 stagger-in mt-6">
+        {% for s in suggestions %}
+        <div class="glass-card rounded-[24px] border border-base-700/50 p-6 md:p-8 relative overflow-hidden group transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_15px_30px_rgba(0,0,0,0.5)] {% if s.status == 'pending' %}hover:border-amber-500/30{% elif s.status == 'approved' %}hover:border-emerald-500/30{% else %}hover:border-rose-500/30{% endif %}">
+            
+            <!-- Side Status Bar -->
+            <div class="absolute left-0 top-0 bottom-0 w-1.5 transition-colors
+                {% if s.status == 'pending' %}bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]
+                {% elif s.status == 'approved' %}bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]
+                {% else %}bg-rose-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]
+                {% endif %}">
+            </div>
 
-        <!-- Action Buttons -->
-        <div class="suggestion-actions">
-            {% if s.status == 'pending' %}
-                <form method="POST" action="/admin/suggestion/approve/{{ s.suggestion_id }}" style="display: inline;">
-                    <button type="submit" class="btn btn-primary btn-sm">✓ Approve</button>
-                </form>
-                <form method="POST" action="/admin/suggestion/reject/{{ s.suggestion_id }}" style="display: inline;">
-                    <button type="submit" class="btn btn-danger btn-sm">✗ Reject</button>
-                </form>
-            {% else %}
-                <span style="color: var(--text-sub); font-size: 0.875rem;">
-                    {% if s.status == 'approved' %}
-                        ✅ This suggestion has been approved
+            <div class="flex items-start justify-between mb-6 pl-2">
+                <div>
+                    <h3 class="text-xl font-black text-white leading-tight mb-1">{{ s.title }}</h3>
+                    <p class="text-sm font-semibold text-base-400">by {{ s.author }}</p>
+                </div>
+                <div class="shrink-0 ml-4">
+                    {% if s.status == 'pending' %}
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-lg text-[10px] font-black tracking-widest uppercase shadow-sm">
+                            <span class="material-symbols-outlined text-[14px]">hourglass_empty</span> Pending
+                        </span>
+                    {% elif s.status == 'approved' %}
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-lg text-[10px] font-black tracking-widest uppercase shadow-sm">
+                            <span class="material-symbols-outlined text-[14px]">check_circle</span> Authorized
+                        </span>
                     {% else %}
-                        ❌ This suggestion was rejected
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-lg text-[10px] font-black tracking-widest uppercase shadow-sm">
+                            <span class="material-symbols-outlined text-[14px]">cancel</span> Terminated
+                        </span>
                     {% endif %}
+                </div>
+            </div>
+
+            <!-- Meta Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 pl-2">
+                <div>
+                    <span class="block text-[9px] font-black text-base-500 uppercase tracking-widest mb-1">Source Node</span>
+                    <span class="text-sm font-bold text-white">{{ s.user_name }}</span>
+                </div>
+                <div>
+                    <span class="block text-[9px] font-black text-base-500 uppercase tracking-widest mb-1">Digital Trace</span>
+                    <span class="text-sm font-medium text-base-300 truncate block w-full" title="{{ s.email }}">{{ s.email }}</span>
+                </div>
+                <div>
+                    <span class="block text-[9px] font-black text-base-500 uppercase tracking-widest mb-1">Category</span>
+                    <span class="text-sm font-bold text-brand-400">{{ s.category or 'General' }}</span>
+                </div>
+                <div>
+                    <span class="block text-[9px] font-black text-base-500 uppercase tracking-widest mb-1">Timestamp</span>
+                    <span class="text-sm font-medium text-base-400">{{ s.suggestion_date }}</span>
+                </div>
+            </div>
+
+            {% if s.reason %}
+            <div class="bg-base-900/50 border border-base-800 rounded-xl p-4 ml-2 mb-6">
+                <span class="block text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[12px]">psychology</span> Target Rationale
                 </span>
+                <p class="text-sm text-base-300 leading-relaxed font-medium">
+                    "{{ s.reason }}"
+                </p>
+            </div>
             {% endif %}
+
+            {% if s.status == 'pending' %}
+            <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-base-800 ml-2">
+                <form method="POST" action="/admin/suggestion/approve/{{ s.suggestion_id }}" class="flex-grow m-0">
+                    <button type="submit" class="w-full flex items-center justify-center gap-2 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold shadow-[0_4px_15px_rgba(16,185,129,0.3)] transition-all">
+                        <span class="material-symbols-outlined text-[18px]">done</span> Authorize Integration
+                    </button>
+                </form>
+                <form method="POST" action="/admin/suggestion/reject/{{ s.suggestion_id }}" class="m-0 sm:w-1/3">
+                    <button type="submit" class="w-full flex items-center justify-center gap-2 py-3 bg-base-800 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-root-700/50 hover:border-rose-500/30 rounded-xl text-sm font-bold transition-colors">
+                        <span class="material-symbols-outlined text-[18px]">close</span> Dismiss
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
-{% else %}
-    <div class="empty-state">
-        <div class="empty-state-icon">💭</div>
-        <h3>No Suggestions</h3>
-        <p>There are no book suggestions at this time. Members can submit suggestions from their dashboard.</p>
+    {% else %}
+    <div class="glass-card flex flex-col items-center justify-center p-20 text-center border-base-700 rounded-3xl mt-6 fade-in">
+        <div class="w-24 h-24 rounded-full bg-base-800 border border-base-700 flex items-center justify-center mb-6">
+            <span class="material-symbols-outlined text-[48px] text-base-500">sensors_off</span>
+        </div>
+        <h3 class="text-2xl font-black text-white mb-2">Spectrum Silence</h3>
+        <p class="text-base-400 text-sm font-medium max-w-sm">No active suggestions detected in this frequency range.</p>
     </div>
-{% endif %}
+    {% endif %}
 
-<script>
-    // Prevent form submission on status filter change - it's already submitted via onchange
-    document.getElementById('statusFilter')?.addEventListener('change', function(e) {
-        e.preventDefault();
-    });
-</script>
-
+</div>
 {% endblock %}

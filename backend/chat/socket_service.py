@@ -38,17 +38,17 @@ def service_delete_message(user_id, message_id):
     return True
 # -----------------------------------------------------------
 
-print("✅ Loaded backend.chat.socket_service event handlers (Discord Arch)", flush=True)
+print("[OK] Loaded backend.chat.socket_service event handlers (Discord Arch)", flush=True)
 
 @socketio.on('connect')
 def handle_connect():
     user_id = session.get('user_id')
     if user_id:
-        print(f"🔌 User {session.get('name')} (ID: {user_id}) connected.", flush=True)
+        print(f"[SOCKET] User {session.get('name')} (ID: {user_id}) connected.", flush=True)
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    print(f"🔌 User disconnected: {request.sid}")
+    print(f"[SOCKET] User disconnected: {request.sid}")
 
 @socketio.on('join_channel')
 def handle_join_channel(data):
@@ -59,7 +59,7 @@ def handle_join_channel(data):
     
     if channel_id is None: return
 
-    print(f"🚪 Socket Join Channel: {channel_id}, User {user_id}", flush=True)
+    print(f"[CHANNEL] Socket Join Channel: {channel_id}, User {user_id}", flush=True)
 
     # Verify Channel Exists
     channel = fetch_one("SELECT * FROM channels WHERE channel_id = %s", (channel_id,))
@@ -97,7 +97,7 @@ def handle_join_channel(data):
         
     except Exception as e:
         import traceback
-        print(f"❌ Error fetching history: {e}")
+        print(f"[ERROR] Error fetching history: {e}")
         traceback.print_exc()
         emit('error', {'message': "Failed to load history"})
 

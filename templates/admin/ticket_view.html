@@ -1,54 +1,117 @@
-
 {% extends "layout.html" %}
+{% set active_page = 'admin_support' %}
+{% block title %}Diagnostic Link REF-{{ '{:04d}'.format(ticket.ticket_id) }}{% endblock %}
 
-{% block title %}Ticket #{{ ticket.ticket_id }}{% endblock %}
-{% block header_title %}Ticket #{{ ticket.ticket_id }}{% endblock %}
-{% block header_subtitle %}{{ ticket.subject }} (User: {{ ticket.user_name }}){% endblock %}
+{% block header_title %}Query REF-{{ '{:04d}'.format(ticket.ticket_id) }}{% endblock %}
+{% block header_subtitle %}{{ ticket.subject }} • From Node {{ ticket.user_name }}{% endblock %}
 
 {% block content %}
-<div style="max-width: 800px; margin: 0 auto;">
-    <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
-        <div>
-            <span class="badge {{ 'badge-success' if ticket.status == 'closed' else 'badge-warning' }}" style="font-size: 1rem;">
-                Status: {{ ticket.status|upper }}
-            </span>
-        </div>
-        <a href="/admin/support" class="btn btn-primary btn-sm">⬅ Back to List</a>
-    </div>
+<div class="w-full max-w-4xl mx-auto pb-10 space-y-6 lg:space-y-8">
     
-    <div class="glass-card" style="margin-bottom: 2rem; max-height: 500px; overflow-y: auto;">
-        {% for reply in replies %}
-        <div style="margin-bottom: 1.5rem; display: flex; flex-direction: column; align-items: {{ 'flex-end' if reply.sender_id == session['user_id'] else 'flex-start' }};">
-            <div style="max-width: 80%; padding: 1rem; border-radius: 12px; background: {{ 'var(--primary)' if reply.sender_id == session['user_id'] else 'var(--card-bg)' }}; color: {{ 'white' if reply.sender_id == session['user_id'] else 'var(--text-main)' }}; border: {{ 'none' if reply.sender_id == session['user_id'] else '1px solid var(--border)' }};">
-                <p style="margin: 0; white-space: pre-wrap;">{{ reply.message }}</p>
+    <!-- Top Action Bar -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <a href="/admin/support" class="inline-flex items-center gap-2 text-base-400 hover:text-white transition-colors text-sm font-bold">
+            <span class="material-symbols-outlined text-[18px]">arrow_back</span> Return to Log
+        </a>
+        
+        <div class="flex items-center gap-3">
+            {% if ticket.status == 'closed' %}
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-base-800 border border-base-700 text-base-400 rounded-lg text-xs font-black tracking-widest uppercase shadow-sm">
+                    <span class="material-symbols-outlined text-[14px] opacity-70">lock</span> Thread Sealed
+                </span>
+            {% else %}
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-lg text-xs font-black tracking-widest uppercase shadow-sm">
+                    <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span></span>
+                    Active Diagnostic
+                </span>
+                
+                <form action="" method="POST" onsubmit="return confirm('Seal this diagnostic thread permanently?');" class="inline-block">
+                    <input type="hidden" name="action" value="close">
+                    <button type="submit" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 hover:border-rose-500/30 rounded-lg text-[11px] font-black tracking-widest uppercase transition-all shadow-sm group">
+                        <span class="material-symbols-outlined text-[14px] group-hover:scale-110 transition-transform">close</span> Seal Thread
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Chat/Thread Container -->
+    <div class="glass-card rounded-[24px] border border-base-700 overflow-hidden flex flex-col min-h-[500px] lg:h-[calc(100vh-280px)]">
+        
+        <div class="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar custom-scroll">
+            {% for reply in replies %}
+            <div class="flex {% if reply.sender_id == session['user_id'] %}justify-end{% else %}justify-start{% endif %}">
+                <div class="flex flex-col {% if reply.sender_id == session['user_id'] %}items-end{% else %}items-start{% endif %} max-w-[85%]">
+                    
+                    <div class="px-5 py-3.5 rounded-2xl {% if reply.sender_id == session['user_id'] %}bg-brand-600 text-white shadow-[0_4px_15px_rgba(37,99,235,0.2)] rounded-tr-sm{% else %}bg-base-800 border border-base-700 text-base-100 rounded-tl-sm{% endif %}">
+                        <p class="text-[13px] md:text-[14px] leading-relaxed whitespace-pre-wrap">{{ reply.message }}</p>
+                    </div>
+                    
+                    <div class="flex items-center gap-2 mt-2 px-1 text-[10px] font-bold text-base-500 uppercase tracking-widest">
+                        {% if reply.sender_id != session['user_id'] %}
+                            <span class="text-emerald-400 flex items-center gap-1"><span class="material-symbols-outlined text-[12px] opacity-80">account_circle</span> {{ reply.sender_name }} • Node User</span>
+                        {% else %}
+                            <span>{{ reply.sender_name }} • Architecht</span>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-            <span style="font-size: 0.75rem; color: var(--text-sub); margin-top: 0.25rem;">
-                {{ reply.sender_name }} ({{ reply.sender_role|capitalize }}) • {{ reply.created_at }}
+            {% endfor %}
+        </div>
+
+        {% if ticket.status == 'open' %}
+        <div class="p-4 border-t border-base-700 bg-base-900 mx-1 mb-1 rounded-b-[20px]">
+            <form action="" method="POST" class="relative">
+                <input type="hidden" name="action" value="reply">
+                <!-- Textarea -->
+                <textarea name="message" rows="2" required placeholder="Inject protocol response..." class="w-full bg-base-800 border border-base-700 rounded-xl pl-4 pr-16 py-3.5 text-sm text-base-100 placeholder-base-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-medium resize-none overflow-hidden custom-scroll"></textarea>
+                
+                <!-- Send Button Inside -->
+                <button type="submit" class="absolute right-2 top-2 bottom-2 aspect-square flex items-center justify-center bg-brand-600 hover:bg-brand-500 text-white rounded-lg transition-colors shadow-sm focus:outline-none">
+                    <span class="material-symbols-outlined text-[18px]">send</span>
+                </button>
+            </form>
+        </div>
+        {% else %}
+        <div class="p-4 border-t border-base-700 bg-base-800/30 text-center py-6">
+            <span class="inline-flex items-center gap-2 px-4 py-2 bg-base-900 border border-base-700 text-base-400 rounded-xl text-xs font-bold shadow-inner">
+                <span class="material-symbols-outlined text-[16px]">lock</span> Architecture secure. Thread sealed.
             </span>
         </div>
-        {% endfor %}
+        {% endif %}
     </div>
-    
-    {% if ticket.status == 'open' %}
-    <div class="glass-card">
-        <form action="" method="POST" style="margin-bottom: 2rem;">
-            <input type="hidden" name="action" value="reply">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Reply</label>
-            <textarea name="message" rows="3" required class="form-control" style="width: 100%; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text-main); font-family: inherit; margin-bottom: 1rem;"></textarea>
-            <button type="submit" class="btn btn-primary">Send Reply 🚀</button>
-        </form>
-        
-        <hr style="border: 0; border-top: 1px solid var(--border); margin-bottom: 1rem;">
-        
-        <form action="" method="POST" onsubmit="return confirm('Close this ticket?');">
-            <input type="hidden" name="action" value="close">
-            <button type="submit" class="btn btn-danger w-100">Close Ticket 🔒</button>
-        </form>
-    </div>
-    {% else %}
-    <div class="glass-card" style="text-align: center; color: var(--text-sub);">
-        🔒 This ticket is closed.
-    </div>
-    {% endif %}
+
 </div>
+
+<script>
+    // Auto scale textarea
+    const tx = document.getElementsByTagName("textarea");
+    for (let i = 0; i < tx.length; i++) {
+        tx[i].setAttribute("style", "height:" + (tx[i].scrollHeight) + "px;overflow-y:hidden;");
+        tx[i].addEventListener("input", OnInput, false);
+    }
+    function OnInput() {
+        this.style.height = "auto";
+        this.style.height = (this.scrollHeight) + "px";
+        if(this.scrollHeight > 150) {
+            this.style.overflowY = 'auto';
+        } else {
+            this.style.overflowY = 'hidden';
+        }
+    }
+
+    // Scroll chat to bottom on load
+    document.addEventListener("DOMContentLoaded", function() {
+        const chatBox = document.querySelector('.overflow-y-auto');
+        if(chatBox) {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    });
+</script>
+<style>
+.custom-scroll::-webkit-scrollbar { width: 6px; }
+.custom-scroll::-webkit-scrollbar-track { background: transparent; }
+.custom-scroll::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.5); border-radius: 10px; }
+.custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(51, 65, 85, 0.8); }
+</style>
 {% endblock %}

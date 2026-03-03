@@ -53,15 +53,17 @@ class IngestionService:
              # Skipping strict fetch for speed, frontend will just show "Replied to message"
              pass
 
+        import datetime
         payload = {
             'message_id': msg_obj['message_id'],
             'content': content,
             'channel_id': channel_id,
-            'sender_id': user_id,
-            'sender_type': 'other',
+            'sender_id': user_id if sender_type != 'anon' else None,
+            'sender_type': sender_type,
             'user_profile': user_profile,
+            'anon_id': msg_obj.get('anon_id') if sender_type == 'anon' else None,
             'nonce': generate_id(),
-            'created_at': 'Just now',
+            'created_at': datetime.datetime.utcnow().isoformat() + 'Z',
             'attachment': attachment,
             'reply_to_id': reply_to_id,
             # 'reply_to': { 'content': ... } # If we fetched it

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ system_settings.library_name if system_settings else 'Library' }} | Book Collection</title>
+    <meta name="description" content="Browse our curated book collection. Login or request an account to borrow books.">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: { 50:'#eff6ff', 100:'#dbeafe', 400:'#60a5fa', 500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8' },
+                        base: { 100:'#e2e8f0', 300:'#94a3b8', 400:'#64748b', 500:'#475569', 600:'#334155', 700:'#1e293b', 800:'#0f172a', 900:'#020617' }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #020617; color: #e2e8f0; }
+        
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+        }
+        
+        .book-cover {
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease;
+        }
+        .book-cover:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+        
+        .fade-in { animation: fadeInUp 0.6s ease forwards; opacity: 0; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .stagger-in > *:nth-child(1) { animation-delay: 0.05s; }
+        .stagger-in > *:nth-child(2) { animation-delay: 0.1s; }
+        .stagger-in > *:nth-child(3) { animation-delay: 0.15s; }
+        .stagger-in > *:nth-child(4) { animation-delay: 0.2s; }
+        .stagger-in > *:nth-child(5) { animation-delay: 0.25s; }
+        .stagger-in > *:nth-child(6) { animation-delay: 0.3s; }
+        .stagger-in > *:nth-child(7) { animation-delay: 0.35s; }
+        .stagger-in > *:nth-child(8) { animation-delay: 0.4s; }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .hero-gradient {
+            background: linear-gradient(135deg, rgba(37,99,235,0.15) 0%, transparent 40%, rgba(139,92,246,0.1) 100%);
+        }
+        
+        .search-glow:focus-within {
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.15), 0 4px 20px rgba(37,99,235,0.1);
+        }
+        
+        .tab-active {
+            background: #2563eb;
+            color: white;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <!-- Flash Messages -->
+    <div class="fixed top-4 left-0 right-0 z-[200] flex flex-col items-center gap-2 pointer-events-none px-4">
+        {% with messages = get_flashed_messages(with_categories=true) %} 
+            {% if messages %} 
+                {% for category, msg in messages %}
+                <div class="pointer-events-auto px-5 py-3 rounded-xl text-sm font-semibold shadow-lg 
+                    {% if category == 'error' %}bg-rose-500/20 text-rose-300 border border-rose-500/30
+                    {% else %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30{% endif %} 
+                    flex items-center justify-between min-w-[300px] mb-2 backdrop-blur-md fade-msg">
+                    <span>{{ msg }}</span>
+                    <button onclick="this.parentElement.remove()" class="ml-4 opacity-70 hover:opacity-100"><span class="material-symbols-outlined text-[18px]">close</span></button>
+                </div>
+                {% endfor %} 
+            {% endif %} 
+        {% endwith %}
+    </div>
+
+    <!-- HEADER / NAVBAR -->
+    <header class="fixed top-0 left-0 right-0 z-50 glass-panel border-b border-base-700/50">
+        <div class="max-w-[1600px] mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center text-white font-black text-lg shadow-[0_4px_15px_rgba(37,99,235,0.3)]">
+                    {{ (system_settings.library_name or 'L')[0] if system_settings else 'L' }}
+                </div>
+                <div>
+                    <h1 class="font-black text-base text-white tracking-tight">{{ system_settings.library_name if system_settings else 'Library' }}</h1>
+                    <p class="text-[10px] text-brand-400 font-bold uppercase tracking-widest">Digital Collection</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="/login" class="flex items-center gap-2 px-6 py-2.5 bg-brand-600 hover:bg-brand-500 text-white text-sm font-bold rounded-xl shadow-[0_4px_15px_rgba(37,99,235,0.3)] transition-all">
+                    <span class="material-symbols-outlined text-[18px]">login</span>
+                    Sign In
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex min-h-screen pt-[72px]">
+        
+        <!-- LEFT: Book Collection (Scrollable) -->
+        <main class="flex-1 overflow-y-auto p-6 lg:p-10">
+            
+            <!-- Hero Section -->
+            <div class="hero-gradient rounded-3xl p-8 md:p-12 mb-10 border border-base-700/30 fade-in">
+                <div class="max-w-2xl">
+                    <h2 class="text-3xl md:text-4xl font-black text-white leading-tight mb-3">
+                        Explore Our Collection
+                    </h2>
+                    <p class="text-base-300 text-sm md:text-base font-medium leading-relaxed mb-6">
+                        Browse {{ total }} titles available in our library. Sign in to borrow books, write reviews, and join the community.
+                    </p>
+                    
+                    <!-- Search Bar -->
+                    <div class="relative max-w-lg search-glow rounded-xl transition-all">
+                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-base-400 text-[20px]">search</span>
+                        <input type="text" id="publicSearch" placeholder="Search by title, author, or category..." 
+                            class="w-full bg-base-800 border border-base-700 text-white pl-12 pr-4 py-3.5 rounded-xl focus:border-brand-500 focus:outline-none text-sm placeholder-base-400 transition-all font-medium"
+                            oninput="filterBooks(this.value)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Pills -->
+            <div class="flex gap-2 mb-8 overflow-x-auto no-scrollbar pb-2">
+                <button onclick="filterCategory('all')" class="category-pill tab-active px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap" data-cat="all">
+                    All Books
+                </button>
+                {% set categories = books|map(attribute='category')|unique|reject('none')|list %}
+                {% for cat in categories %}
+                <button onclick="filterCategory('{{ cat }}')" class="category-pill px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-base-800 text-base-400 hover:bg-base-700 hover:text-white transition-all whitespace-nowrap border border-base-700/50" data-cat="{{ cat }}">
+                    {{ cat }}
+                </button>
+                {% endfor %}
+            </div>
+
+            <!-- Book Grid -->
+            <div id="bookGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 stagger-in">
+                {% for b in books %}
+                <div class="book-item fade-in group" data-title="{{ b.title|lower }}" data-author="{{ (b.author_name or '')|lower }}" data-category="{{ b.category or '' }}">
+                    <div class="book-cover rounded-2xl overflow-hidden border border-base-700/50 bg-base-800 cursor-pointer" onclick="showBookDetail('{{ b.title|e }}', '{{ (b.author_name or 'Unknown')|e }}', '{{ b.category or 'General' }}', {{ b.available_copies }}, {{ b.total_copies }})">
+                        <!-- Cover Image -->
+                        <div class="relative aspect-[2/3] overflow-hidden bg-base-800">
+                            <img src="https://covers.openlibrary.org/b/title/{{ b.title|urlencode }}-L.jpg" 
+                                 class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                                 alt="{{ b.title }}"
+                                 onerror="this.src='https://placehold.co/400x600/0f172a/3b82f6?text={{ b.title[0]|upper }}';">
+                            
+                            <!-- Availability Badge -->
+                            <div class="absolute top-2 right-2 z-10">
+                                {% if b.available_copies > 0 %}
+                                <span class="px-2.5 py-1 text-[9px] font-black uppercase tracking-wider bg-emerald-500/90 text-white rounded-full shadow-lg backdrop-blur-sm">Available</span>
+                                {% else %}
+                                <span class="px-2.5 py-1 text-[9px] font-black uppercase tracking-wider bg-rose-500/90 text-white rounded-full shadow-lg backdrop-blur-sm">Borrowed</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Book Info -->
+                    <div class="mt-3 px-1">
+                        <h3 class="text-sm font-bold text-white leading-tight line-clamp-2 mb-1">{{ b.title }}</h3>
+                        <p class="text-xs text-base-400 font-medium truncate">{{ b.author_name or 'Unknown Author' }}</p>
+                        {% if b.category %}
+                        <span class="inline-block mt-2 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-brand-600/15 text-brand-400 rounded-full border border-brand-500/20">{{ b.category }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if not books %}
+            <div class="flex flex-col items-center justify-center py-20 text-center">
+                <span class="material-symbols-outlined text-[64px] text-base-600 mb-4">menu_book</span>
+                <h3 class="text-xl font-bold text-white mb-2">No books available yet</h3>
+                <p class="text-base-400 text-sm">The library collection is being set up. Check back soon!</p>
+            </div>
+            {% endif %}
+        </main>
+    </div>
+
+    <!-- Book Detail Modal -->
+    <div id="bookDetailModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+        <div class="bg-base-900 border border-base-700 rounded-3xl w-full max-w-md shadow-[0_20px_50px_rgba(0,0,0,0.8)] overflow-hidden">
+            <div class="p-6 border-b border-base-700/50 flex justify-between items-start">
+                <div>
+                    <h3 id="detailTitle" class="text-xl font-black text-white leading-tight"></h3>
+                    <p id="detailAuthor" class="text-sm text-base-400 font-medium mt-1"></p>
+                </div>
+                <button onclick="closeBookDetail()" class="w-8 h-8 flex items-center justify-center rounded-full bg-base-800 hover:bg-base-700 text-base-400 transition-colors shrink-0">
+                    <span class="material-symbols-outlined text-[18px]">close</span>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="flex gap-4">
+                    <div class="flex-1 p-4 bg-base-800 rounded-xl border border-base-700/50 text-center">
+                        <p class="text-[10px] font-bold text-base-400 uppercase tracking-widest mb-1">Category</p>
+                        <p id="detailCategory" class="text-sm font-bold text-brand-400"></p>
+                    </div>
+                    <div class="flex-1 p-4 bg-base-800 rounded-xl border border-base-700/50 text-center">
+                        <p class="text-[10px] font-bold text-base-400 uppercase tracking-widest mb-1">Available</p>
+                        <p id="detailAvailability" class="text-sm font-bold"></p>
+                    </div>
+                </div>
+                <div class="p-4 bg-brand-600/10 rounded-xl border border-brand-500/20">
+                    <p class="text-xs text-brand-300 font-medium text-center">
+                        <span class="material-symbols-outlined text-[14px] align-middle mr-1">info</span>
+                        Sign in or request an account to borrow this book
+                    </p>
+                </div>
+                <a href="/login" class="w-full flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 rounded-xl shadow-[0_4px_15px_rgba(37,99,235,0.3)] transition-all text-sm">
+                    <span class="material-symbols-outlined text-[16px]">login</span>
+                    Sign In to Borrow
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Search filter
+        function filterBooks(query) {
+            const q = query.toLowerCase();
+            document.querySelectorAll('.book-item').forEach(item => {
+                const title = item.dataset.title || '';
+                const author = item.dataset.author || '';
+                const cat = (item.dataset.category || '').toLowerCase();
+                item.style.display = (title.includes(q) || author.includes(q) || cat.includes(q)) ? '' : 'none';
+            });
+        }
+
+        // Category filter
+        function filterCategory(cat) {
+            document.querySelectorAll('.category-pill').forEach(btn => {
+                btn.classList.remove('tab-active', 'bg-brand-600', 'text-white');
+                btn.classList.add('bg-base-800', 'text-base-400');
+            });
+            event.target.classList.add('tab-active');
+            event.target.classList.remove('bg-base-800', 'text-base-400');
+
+            document.querySelectorAll('.book-item').forEach(item => {
+                item.style.display = (cat === 'all' || item.dataset.category === cat) ? '' : 'none';
+            });
+        }
+
+        // Book detail modal
+        function showBookDetail(title, author, category, available, total) {
+            document.getElementById('detailTitle').textContent = title;
+            document.getElementById('detailAuthor').textContent = 'by ' + author;
+            document.getElementById('detailCategory').textContent = category;
+            const avail = document.getElementById('detailAvailability');
+            avail.textContent = available + ' / ' + total;
+            avail.className = 'text-sm font-bold ' + (available > 0 ? 'text-emerald-400' : 'text-rose-400');
+            document.getElementById('bookDetailModal').classList.remove('hidden');
+        }
+        function closeBookDetail() { document.getElementById('bookDetailModal').classList.add('hidden'); }
+
+
+
+
+        // Auto-dismiss flashes
+        setTimeout(() => {
+            document.querySelectorAll('.fade-msg').forEach(msg => {
+                msg.style.opacity = '0';
+                setTimeout(() => msg.remove(), 300);
+            });
+        }, 5000);
+    </script>
+</body>
+</html>

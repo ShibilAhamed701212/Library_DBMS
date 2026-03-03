@@ -1,68 +1,141 @@
-
 {% extends "layout.html" %}
+{% set active_page = 'member_support' %}
+{% block title %}Help & Support{% endblock %}
 
-{% block title %}Support Tickets{% endblock %}
-{% block header_title %}Support Tickets{% endblock %}
-{% block header_subtitle %}Get help from our support team.{% endblock %}
+{% block header_title %}Support Desk{% endblock %}
+{% block header_subtitle %}Request assistance from the collective administrators.{% endblock %}
 
 {% block content %}
-<button class="btn btn-primary" style="margin-bottom: 2rem;" onclick="document.getElementById('newTicketModal').style.display='flex'">
-    ➕ New Ticket
-</button>
+<div class="w-full max-w-5xl mx-auto pb-10 space-y-8">
+    
+    <!-- Hero / Action Row -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-black text-white tracking-tight">Active Queries</h1>
+            <p class="text-sm font-medium text-base-400 mt-1">Manage ongoing and resolved correspondence.</p>
+        </div>
+        <button onclick="openModal('newTicketModal')" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-sm font-bold shadow-[0_4px_15px_rgba(37,99,235,0.3)] transition-all shrink-0">
+            <span class="material-symbols-outlined text-[18px]">add_circle</span> Initialize Link
+        </button>
+    </div>
 
-<div class="glass-card" style="padding: 0; overflow: hidden;">
-    <table style="width: 100%; border-collapse: collapse;">
-        <thead style="background: rgba(0,0,0,0.03); border-bottom: 1px solid var(--border);">
-            <tr>
-                <th style="padding: 1rem; text-align: left;">ID</th>
-                <th style="padding: 1rem; text-align: left;">Subject</th>
-                <th style="padding: 1rem; text-align: center;">Status</th>
-                <th style="padding: 1rem; text-align: right;">Date</th>
-                <th style="padding: 1rem;">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% if not tickets %}
-            <tr><td colspan="5" style="padding: 2rem; text-align: center; color: var(--text-sub);">No tickets yet.</td></tr>
-            {% else %}
-            {% for t in tickets %}
-            <tr style="border-bottom: 1px solid var(--border);">
-                <td style="padding: 1rem;">#{{ t.ticket_id }}</td>
-                <td style="padding: 1rem; font-weight: 500;">{{ t.subject }}</td>
-                <td style="padding: 1rem; text-align: center;">
-                    <span class="badge {{ 'badge-success' if t.status == 'closed' else 'badge-primary' }}">
-                        {{ t.status|upper }}
-                    </span>
-                </td>
-                <td style="padding: 1rem; text-align: right; color: var(--text-sub);">{{ t.created_at }}</td>
-                <td style="padding: 1rem;">
-                    <a href="/member/support/{{ t.ticket_id }}" class="btn btn-primary btn-sm">View</a>
-                </td>
-            </tr>
-            {% endfor %}
-            {% endif %}
-        </tbody>
-    </table>
+    <!-- Tickets Table -->
+    <div class="glass-card rounded-[24px] border border-base-700/50 overflow-hidden relative fade-in">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-base-900/50 text-[10px] font-bold tracking-widest uppercase text-base-500 border-b border-base-700/50">
+                    <tr>
+                        <th class="px-6 py-4">Reference ID</th>
+                        <th class="px-6 py-4">Subject Vector</th>
+                        <th class="px-6 py-4 text-center">Status</th>
+                        <th class="px-6 py-4 text-right">Timestamp</th>
+                        <th class="px-6 py-4 text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-base-800/50">
+                    {% if not tickets %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-16 text-center">
+                            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-base-800 border border-base-700 mb-4">
+                                <span class="material-symbols-outlined text-[32px] text-base-500">done_all</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-white mb-1">No Active Queries</h3>
+                            <p class="text-sm text-base-400">Your communication logs are currently empty.</p>
+                        </td>
+                    </tr>
+                    {% else %}
+                    {% for t in tickets %}
+                    <tr class="hover:bg-base-800/30 transition-colors group">
+                        <td class="px-6 py-4">
+                            <span class="text-xs font-mono font-bold text-base-500">REF-{{ '{:04d}'.format(t.ticket_id) }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-sm font-bold text-white line-clamp-1">{{ t.subject }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            {% if t.status == 'closed' %}
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-base-800 border border-base-700 text-base-400 rounded-md text-[9px] font-black tracking-widest uppercase shadow-sm">
+                                    <span class="material-symbols-outlined text-[12px] opacity-70">lock</span> Resolved
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-md text-[9px] font-black tracking-widest uppercase shadow-sm">
+                                    <span class="relative flex h-1.5 w-1.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span><span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span></span>
+                                    Active
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <span class="text-xs font-medium text-base-400">{{ t.created_at.strftime('%b %d, %H:%M') if t.created_at else t.created_at }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <a href="/member/support/{{ t.ticket_id }}" class="inline-flex items-center justify-center px-3 py-1.5 bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 rounded-lg text-xs font-bold transition-colors">
+                                Access Link
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
 </div>
 
-<!-- Modal -->
-<div id="newTicketModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-    <div class="glass-card" style="width: 90%; max-width: 500px; padding: 2rem;">
-        <h2 style="margin-top: 0;">New Support Ticket</h2>
-        <form action="/member/support" method="POST">
-            <div style="margin-bottom: 1rem;">
-                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Subject</label>
-                <input type="text" name="subject" required class="form-control" style="width: 100%; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text-main);">
+<!-- New Ticket Modal -->
+<div id="newTicketModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 opacity-0 transition-opacity duration-300">
+    <div class="bg-base-900 border border-base-700 rounded-3xl w-full max-w-lg shadow-[0_20px_50px_rgba(0,0,0,0.8)] transform scale-95 transition-transform duration-300 overflow-hidden flex flex-col">
+        
+        <div class="p-6 border-b border-base-800 flex justify-between items-center bg-base-800/30">
+            <div>
+                <h2 class="text-xl font-black text-white">Initialize Comms Link</h2>
+                <p class="text-xs font-medium text-base-400">Establish a secure diagnostic thread.</p>
             </div>
-            <div style="margin-bottom: 1rem;">
-                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Message</label>
-                <textarea name="message" rows="5" required class="form-control" style="width: 100%; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text-main); font-family: inherit;"></textarea>
+            <button onclick="closeModal('newTicketModal')" class="w-8 h-8 flex items-center justify-center rounded-full bg-base-800 hover:bg-base-700 text-base-400 transition-colors">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+        </div>
+
+        <form action="/member/support" method="POST" class="p-6 space-y-6">
+            <div>
+                <label class="block text-[10px] font-bold text-base-400 uppercase tracking-widest mb-2 ml-1">Subject Vector</label>
+                <input type="text" name="subject" required placeholder="Brief description of the issue..." class="w-full bg-base-800 border border-base-700 rounded-xl px-4 py-3 text-sm text-base-100 placeholder-base-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-medium">
             </div>
-            <div style="display: flex; gap: 1rem;">
-                <button type="submit" class="btn btn-primary" style="flex: 1;">Create Ticket</button>
-                <button type="button" class="btn btn-danger" style="flex: 1;" onclick="document.getElementById('newTicketModal').style.display='none'">Cancel</button>
+
+            <div>
+                <label class="block text-[10px] font-bold text-base-400 uppercase tracking-widest mb-2 ml-1">Transmission Data</label>
+                <textarea name="message" rows="5" required placeholder="Provide full diagnostic telemetry..." class="w-full bg-base-800 border border-base-700 rounded-xl px-4 py-3 text-sm text-base-100 placeholder-base-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-medium resize-none leading-relaxed"></textarea>
+            </div>
+            
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="closeModal('newTicketModal')" class="flex-1 py-3.5 bg-base-800 hover:bg-base-700 text-white rounded-xl text-sm font-bold transition-colors border border-base-700">Abort</button>
+                <button type="submit" class="w-2/3 py-3.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-sm font-bold shadow-[0_4px_15px_rgba(37,99,235,0.3)] transition-all flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">send</span> Transmit
+                </button>
             </div>
         </form>
     </div>
 </div>
+
+<script>
+    function openModal(id) {
+        const modal = document.getElementById(id);
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.firstElementChild.classList.remove('scale-95');
+        }, 10);
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal(id) {
+        const modal = document.getElementById(id);
+        modal.classList.add('opacity-0');
+        modal.firstElementChild.classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+        document.body.style.overflow = 'auto';
+    }
+</script>
 {% endblock %}

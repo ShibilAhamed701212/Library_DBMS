@@ -1,147 +1,262 @@
 {% extends "layout.html" %}
 
-{% block title %}Admin Overview{% endblock %}
-{% block header_title %}Dashboard Overview{% endblock %}
-{% block header_subtitle %}Quick look at your library status{% endblock %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block header_title %}Command Center{% endblock %}
+{% block header_subtitle %}Real-time synchronization of the library's physical and digital knowledge nodes.{% endblock %}
+
+{% block head %}
+<style>
+    /* Premium Stats */
+    .stats-hub {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 24px;
+        margin-bottom: 2.5rem;
+    }
+
+    .neural-stat-card {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 24px;
+        padding: 30px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .neural-stat-card:hover {
+        background: rgba(255, 255, 255, 0.06);
+        transform: translateY(-5px);
+        border-color: var(--primary);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .stat-orb {
+        width: 65px;
+        height: 65px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+    }
+
+    .stat-orb span {
+        position: relative;
+        z-index: 10;
+    }
+
+    .stat-orb::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: inherit;
+        filter: blur(15px);
+        opacity: 0.3;
+    }
+
+    .orb-purple { background: linear-gradient(135deg, #a855f7, #6366f1); color: white; }
+    .orb-green { background: linear-gradient(135deg, #10b981, #3b82f6); color: white; }
+    .orb-amber { background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; }
+    .orb-cyan { background: linear-gradient(135deg, #06b6d4, #3b82f6); color: white; }
+
+    .stat-info { display: flex; flex-direction: column; }
+    .stat-val { font-size: 2rem; font-weight: 800; color: white; line-height: 1; font-family: 'Outfit', sans-serif; }
+    .stat-tag { font-size: 0.75rem; color: var(--text-sub); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
+
+    /* Analytics Hub */
+    .analytics-hub {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 24px;
+        margin-bottom: 2.5rem;
+    }
+
+    @media (max-width: 1200px) { .analytics-hub { grid-template-columns: 1fr; } }
+
+    .chart-vessel {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 24px;
+        padding: 25px;
+        height: 450px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .vessel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+    }
+
+    .vessel-title {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: white;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .vessel-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 10px var(--primary); }
+
+    /* Activity Table */
+    .activity-vessel {
+        background: rgba(255, 255, 255, 0.02);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 24px;
+        overflow: hidden;
+    }
+
+    .premium-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .premium-table th {
+        padding: 20px 25px;
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-sub);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .premium-table td {
+        padding: 18px 25px;
+        color: var(--text-main);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        font-size: 0.9rem;
+    }
+
+    .premium-table tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .log-id { font-family: 'Inter', monospace; color: var(--primary); font-weight: 700; font-size: 0.8rem; }
+</style>
+{% endblock %}
 
 {% block content %}
-<!-- Premium Stats Grid -->
-<div class="stats-grid-auto fade-in">
-    <!-- Users Card -->
-    <div class="glass-card stat-card-premium">
-        <div class="icon-box icon-box-purple">
-            <i class="fas fa-users"></i>
+<!-- Stats Synchronization -->
+<div class="stats-hub fade-in">
+    <div class="neural-stat-card">
+        <div class="stat-orb orb-purple"><span class="material-symbols-outlined text-[32px]">group</span></div>
+        <div class="stat-info">
+            <span class="stat-val">{{ quick_stats.total_users }}</span>
+            <span class="stat-tag">Active Identities</span>
         </div>
-        <div>
-            <span class="stat-label-sm">Total Users</span>
-            <span class="stat-value-lg">{{ quick_stats.total_users }}</span>
+    </div>
+    
+    <div class="neural-stat-card">
+        <div class="stat-orb orb-green"><span class="material-symbols-outlined text-[32px]">menu_book</span></div>
+        <div class="stat-info">
+            <span class="stat-val">{{ quick_stats.total_books }}</span>
+            <span class="stat-tag">Knowledge Nodes</span>
         </div>
     </div>
 
-    <!-- Books Card -->
-    <div class="glass-card stat-card-premium">
-        <div class="icon-box icon-box-green">
-            <i class="fas fa-book"></i>
-        </div>
-        <div>
-            <span class="stat-label-sm">Total Books</span>
-            <span class="stat-value-lg">{{ quick_stats.total_books }}</span>
+    <div class="neural-stat-card">
+        <div class="stat-orb orb-amber"><span class="material-symbols-outlined text-[32px]">sync_alt</span></div>
+        <div class="stat-info">
+            <span class="stat-val">{{ quick_stats.total_issues }}</span>
+            <span class="stat-tag">Active Streams</span>
         </div>
     </div>
 
-    <!-- Issues Card -->
-    <div class="glass-card stat-card-premium">
-        <div class="icon-box icon-box-amber">
-            <i class="fas fa-clipboard-list"></i>
-        </div>
-        <div>
-            <span class="stat-label-sm">Active Issues</span>
-            <span class="stat-value-lg">{{ quick_stats.total_issues }}</span>
-        </div>
-    </div>
-
-    <!-- Fines Card -->
-    <div class="glass-card stat-card-premium">
-        <div class="icon-box icon-box-red">
-            <i class="fas fa-coins"></i>
-        </div>
-        <div>
-            <span class="stat-label-sm">Total Fines</span>
-            <span class="stat-value-lg">{{ system_settings.currency_symbol }}{{ quick_stats.total_fines }}</span>
+    <div class="neural-stat-card">
+        <div class="stat-orb orb-cyan"><span class="material-symbols-outlined text-[32px]">payments</span></div>
+        <div class="stat-info">
+            <span class="stat-val">{{ system_settings.currency_symbol }}{{ quick_stats.total_fines }}</span>
+            <span class="stat-tag">Resource Penalties</span>
         </div>
     </div>
 </div>
 
-<!-- Analytics Charts -->
-<div class="charts-grid-auto fade-in fade-in-delay-2">
-    <!-- Monthly Trends -->
-    <div class="glass-card chart-card">
-        <div class="chart-card-header">
-            <h3 class="chart-card-title">
-                <span class="chart-dot chart-dot-purple"></span>
-                Monthly Trends
-            </h3>
-            <span class="badge-sm badge-purple">Borrowing</span>
+<!-- Analytics Hub -->
+<div class="analytics-hub fade-in fade-in-delay-1">
+    <div class="chart-vessel">
+        <div class="vessel-header">
+            <h3 class="vessel-title"><span class="vessel-dot"></span> Access Patterns</h3>
+            <div class="badge-cyber badge-purple">Flow Analysis</div>
         </div>
-        <div class="chart-card-body">
+        <div style="flex: 1; position: relative;">
             <canvas id="monthlyChart"></canvas>
         </div>
     </div>
 
-    <!-- Category Distribution -->
-    <div class="glass-card chart-card">
-        <div class="chart-card-header">
-            <h3 class="chart-card-title">
-                <span class="chart-dot chart-dot-green"></span>
-                Top Categories
-            </h3>
-            <span class="badge-sm badge-green">Inventory</span>
+    <div class="chart-vessel">
+        <div class="vessel-header">
+            <h3 class="vessel-title"><span class="vessel-dot" style="background: #10b981; box-shadow: 0 0 10px #10b981;"></span> Category Distribution</h3>
+            <div class="badge-cyber badge-green">Density</div>
         </div>
-        <div class="chart-card-body">
+        <div style="flex: 1; position: relative; display: flex; align-items: center; justify-content: center;">
             <canvas id="categoryChart"></canvas>
-        </div>
-    </div>
-
-    <!-- User Demographics -->
-    <div class="glass-card chart-card">
-        <div class="chart-card-header">
-            <h3 class="chart-card-title">
-                <span class="chart-dot chart-dot-amber"></span>
-                User Demographics
-            </h3>
-            <span class="badge-sm badge-amber">Members</span>
-        </div>
-        <div class="chart-card-body" style="display: flex; justify-content: center; align-items: center;">
-            <canvas id="userChart" style="max-height: 280px;"></canvas>
         </div>
     </div>
 </div>
 
-<!-- Recent Activity -->
-<section class="page-section fade-in fade-in-delay-3">
-    <div class="section-header-row">
+<!-- Recent Event Stream -->
+<section class="mt-8 fade-in fade-in-delay-2">
+    <div class="flex justify-between items-end mb-5 px-1">
         <div>
-            <h2 class="section-heading">Recent Activity</h2>
-            <p class="section-subheading">Latest check-outs and returns</p>
+            <h2 class="text-2xl font-black text-white" style="font-family: 'Outfit', sans-serif;">Access Logs</h2>
+            <p class="text-sm font-medium text-base-400 mt-1">Real-time event stream from the library ecosystem.</p>
         </div>
-        <a href="/admin/issues" class="btn btn-pill btn-outline-primary btn-sm">View All Activity</a>
+        <a href="/admin/issues" class="px-5 py-2.5 rounded-xl bg-brand-500/10 text-brand-400 hover:bg-brand-500 hover:text-white transition-all font-bold text-sm shadow-sm border border-brand-500/20 flex items-center gap-2">
+            View All <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+        </a>
     </div>
 
-    <div class="glass-card" style="padding: 0; overflow: hidden;">
+    <div class="activity-vessel">
         <div class="table-responsive">
-            <table class="table-premium">
+            <table class="premium-table">
                 <thead>
                     <tr>
-                        <th>Issue ID</th>
-                        <th>User</th>
-                        <th>Book</th>
-                        <th>Issue Date</th>
-                        <th style="text-align: right;">Action</th>
+                        <th>Stream ID</th>
+                        <th>Subject</th>
+                        <th>Resource Node</th>
+                        <th>Timestamp</th>
+                        <th style="text-align: right;">Nexus</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for i in recent_issues %}
-                    <tr>
-                        <td class="text-primary-bold">#{{ i.issue_id }}</td>
+                    <tr class="group cursor-pointer hover:bg-base-800/30 transition-colors" onclick="window.location.href='/admin/issues'">
+                        <td class="log-id font-mono text-brand-400 font-bold">LOG_{{ i.issue_id }}</td>
                         <td>
-                            <div class="user-cell">
-                                <div class="user-avatar-sm">
-                                    <i class="fas fa-user"></i>
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-xl bg-base-800 border border-base-700 flex items-center justify-center text-brand-400 font-black shadow-inner">
+                                    {{ i.user_name[0] }}
                                 </div>
-                                <span class="text-medium">{{ i.user_name }}</span>
+                                <span class="font-bold text-base-100">{{ i.user_name }}</span>
                             </div>
                         </td>
-                        <td>{{ i.book_title }}</td>
-                        <td style="color: var(--text-sub);">{{ i.issue_date }}</td>
-                        <td style="text-align: right;">
-                            <a href="/admin/issues" class="btn btn-sm" style="padding: 0; color: var(--text-sub);"><i class="fas fa-chevron-right"></i></a>
+                        <td class="text-base-300 font-medium">{{ i.book_title }}</td>
+                        <td class="text-base-500 text-sm font-medium">{{ i.issue_date }}</td>
+                        <td class="text-right">
+                             <span class="material-symbols-outlined text-base-500 group-hover:text-brand-400 transition-colors">chevron_right</span>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" class="empty-state">
-                            <div class="empty-state-icon">💤</div>
-                            No recent activity found.
+                        <td colspan="5" style="text-align: center; padding: 100px; color: var(--text-sub);">
+                            <div style="font-size: 2rem; margin-bottom: 10px;">📉</div>
+                            No active data streams detected.
                         </td>
                     </tr>
                     {% endfor %}
@@ -150,85 +265,98 @@
         </div>
     </div>
 </section>
+
 {% endblock %}
 
 {% block scripts %}
+<script id="overview-chart-data" type="application/json">
+{
+    "monthly": {{ monthly_stats | default([]) | tojson | safe }},
+    "categories": {{ category_stats | default([]) | tojson | safe }}
+}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Chart.js default styling
-    const chartColors = {
-        primary: '#4f46e5',
-        primaryLight: 'rgba(79, 70, 229, 0.1)',
-        palette: ['#4f46e5', '#059669', '#d97706', '#dc2626', '#2563eb', '#db2777', '#0d9488', '#6366f1', '#e67e22', '#16a085']
-    };
+    (function() {
+        const themeColor = '#3b82f6'; // Lumina Brand Blue
+        
+        Chart.defaults.color = 'rgba(255, 255, 255, 0.5)';
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15, 23, 42, 0.9)';
+        Chart.defaults.plugins.tooltip.padding = 15;
+        Chart.defaults.plugins.tooltip.cornerRadius = 12;
 
-    const commonOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        devicePixelRatio: 2,
-        plugins: {
-            legend: {
-                position: 'bottom',
-                labels: {
-                    usePointStyle: true,
-                    pointStyle: 'circle',
-                    padding: 20,
-                    font: { family: 'Inter', size: 12 }
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: '#fff', usePointStyle: true, padding: 20 }
+                }
+            },
+            scales: {
+                y: { display: false },
+                x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.3)' } }
+            }
+        };
+
+        // Extract raw data from Jinja safely
+        const rawStats = JSON.parse(document.getElementById('overview-chart-data').textContent);
+        
+        // Monthly Trends
+        const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+        const gradient = monthlyCtx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, themeColor + '33');
+        gradient.addColorStop(1, 'transparent');
+
+        // Extracted Stats Data
+        const monthlyLabels = rawStats.monthly.map(s => s.month);
+        const monthlyData = rawStats.monthly.map(s => s.count);
+        
+        new Chart(monthlyCtx, {
+            type: 'line',
+            data: {
+                labels: monthlyLabels.length ? monthlyLabels : ['No Activity'],
+                datasets: [{
+                    label: 'Access Events',
+                    data: monthlyData.length ? monthlyData : [0],
+                    borderColor: themeColor,
+                    backgroundColor: gradient,
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 4,
+                    pointRadius: 0,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: commonOptions
+        });
+
+        // Category Density
+        const categoryLabels = rawStats.categories.map(s => s.category);
+        const categoryData = rawStats.categories.map(s => s.total_issues);
+        
+        new Chart(document.getElementById('categoryChart'), {
+            type: 'doughnut',
+            data: {
+                labels: categoryLabels.length ? categoryLabels : ['Uncategorized'],
+                datasets: [{
+                    data: categoryData.length ? categoryData : [1],
+                    backgroundColor: [themeColor, '#a855f7', '#10b981', '#f59e0b', '#ef4444'],
+                    borderWidth: 0,
+                    hoverOffset: 20
+                }]
+            },
+            options: {
+                ...commonOptions,
+                cutout: '80%',
+                scales: {
+                    x: { display: false },
+                    y: { display: false }
                 }
             }
-        }
-    };
-
-    // 1. Monthly Trends Chart
-    new Chart(document.getElementById('monthlyChart').getContext('2d'), {
-        type: 'line',
-        data: {
-            labels: [{% for s in monthly_stats %}"{{ s.month }}",{% endfor %}],
-            datasets: [{
-                label: 'Books Issued',
-                data: [{% for s in monthly_stats %}{{ s.count }},{% endfor %}],
-                borderColor: chartColors.primary,
-                backgroundColor: chartColors.primaryLight,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 4,
-                pointBackgroundColor: chartColors.primary
-            }]
-        },
-        options: {
-            ...commonOptions,
-            scales: {
-                y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } }
-            }
-        }
-    });
-
-    // 2. Category Distribution Chart
-    new Chart(document.getElementById('categoryChart').getContext('2d'), {
-        type: 'doughnut',
-        data: {
-            labels: [{% for s in category_stats %}"{{ s.category }}",{% endfor %}],
-            datasets: [{
-                data: [{% for s in category_stats %}{{ s.total_issues }},{% endfor %}],
-                backgroundColor: chartColors.palette,
-                borderWidth: 2
-            }]
-        },
-        options: commonOptions
-    });
-
-    // 3. User Demographics Chart
-    new Chart(document.getElementById('userChart').getContext('2d'), {
-        type: 'pie',
-        data: {
-            labels: [{% for s in user_stats %}"{{ s.role|capitalize }}",{% endfor %}],
-            datasets: [{
-                data: [{% for s in user_stats %}{{ s.count }},{% endfor %}],
-                backgroundColor: chartColors.palette.slice(0, 3),
-                borderWidth: 2
-            }]
-        },
-        options: commonOptions
-    });
+        });
+    })();
 </script>
 {% endblock %}

@@ -45,11 +45,13 @@ def get_channel_messages(channel_id, limit=50):
         else:
             msg['attachment'] = None
             
+            
         # Anonymity Check
-        if msg['sender_type'] == 'anon':
+        if str(msg['sender_type']).lower() == 'anon' or msg['sender_type'] is None:
             msg['sender_name'] = 'Anonymous Member'
             msg['sender_pic'] = 'default.jpg'
             msg['sender_id'] = None # Hide real ID
+            msg['sender_type'] = 'anon'
             
     return messages
 

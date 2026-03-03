@@ -66,7 +66,8 @@ def authenticate_user(email: str, password: str):
             must_change_password,   -- Flag for first-login password change
             profile_pic,
             bio,
-            is_public
+            is_public,
+            tier
         FROM users
         WHERE email = %s
         """,

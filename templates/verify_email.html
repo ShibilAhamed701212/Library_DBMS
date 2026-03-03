@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Verify Email | Library</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: { 50:'#eff6ff', 100:'#dbeafe', 400:'#60a5fa', 500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8' }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; color: #0F172A; }
+        .otp-input {
+            width: 52px; height: 60px;
+            text-align: center; font-size: 24px; font-weight: 800;
+            border: 2px solid #e2e8f0; border-radius: 12px;
+            background: #f8fafc; color: #0f172a;
+            transition: all 0.2s;
+        }
+        .otp-input:focus {
+            border-color: #2563eb; outline: none;
+            box-shadow: 0 0 0 4px rgba(37,99,235,0.1);
+            background: white;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 selection:bg-brand-500 selection:text-white relative overflow-hidden">
+    
+    <!-- Background -->
+    <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-brand-400/20 rounded-full blur-3xl mix-blend-multiply pointer-events-none"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-400/20 rounded-full blur-3xl mix-blend-multiply pointer-events-none"></div>
+
+    <!-- Flash Messages -->
+    <div class="absolute top-4 left-0 right-0 z-50 fixed flex flex-col items-center gap-2 pointer-events-none px-4">
+        {% with messages = get_flashed_messages(with_categories=true) %} 
+            {% if messages %} 
+                {% for category, msg in messages %}
+                <div class="pointer-events-auto px-5 py-3 rounded-xl text-sm font-semibold shadow-lg {% if category == 'error' %}bg-rose-50 text-rose-600 border border-rose-200{% else %}bg-emerald-50 text-emerald-600 border border-emerald-200{% endif %} flex items-center justify-between min-w-[300px] mb-2 transform transition-all duration-300 fade-msg">
+                    <span>{{ msg }}</span>
+                    <button onclick="this.parentElement.remove()" class="ml-4 opacity-70 hover:opacity-100"><span class="material-symbols-outlined text-[18px]">close</span></button>
+                </div>
+                {% endfor %} 
+            {% endif %} 
+        {% endwith %}
+    </div>
+
+    <div class="w-full max-w-md bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-slate-100 overflow-hidden relative z-10">
+        
+        <div class="p-10 text-center">
+            <!-- Mail Icon -->
+            <div class="w-20 h-20 rounded-full bg-brand-50 mx-auto mb-6 flex items-center justify-center">
+                <span class="material-symbols-outlined text-brand-600 text-[40px]">mark_email_read</span>
+            </div>
+
+            <h2 class="text-2xl font-bold text-slate-900 mb-2">Verify Your Email</h2>
+            <p class="text-sm text-slate-500 font-medium mb-1">We've sent a 6-digit code to</p>
+            <p class="text-sm font-bold text-brand-600 mb-8">{{ email }}</p>
+
+            <form method="POST" action="/verify-email" id="otpForm">
+                <!-- Hidden full OTP field -->
+                <input type="hidden" name="otp" id="otpHidden">
+
+                <!-- OTP Boxes -->
+                <div class="flex justify-center gap-3 mb-8">
+                    <input type="text" maxlength="1" class="otp-input" data-idx="0" inputmode="numeric" autofocus>
+                    <input type="text" maxlength="1" class="otp-input" data-idx="1" inputmode="numeric">
+                    <input type="text" maxlength="1" class="otp-input" data-idx="2" inputmode="numeric">
+                    <input type="text" maxlength="1" class="otp-input" data-idx="3" inputmode="numeric">
+                    <input type="text" maxlength="1" class="otp-input" data-idx="4" inputmode="numeric">
+                    <input type="text" maxlength="1" class="otp-input" data-idx="5" inputmode="numeric">
+                </div>
+
+                <button type="submit" class="w-full flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-xl shadow-[0_8px_20px_rgba(37,99,235,0.25)] transition-all transform hover:-translate-y-0.5 active:translate-y-0">
+                    <span class="material-symbols-outlined text-[18px]">verified</span>
+                    <span>Verify & Submit</span>
+                </button>
+            </form>
+
+            <div class="mt-6 p-4 bg-amber-50 rounded-xl border border-amber-100">
+                <div class="flex gap-3 items-start">
+                    <span class="material-symbols-outlined text-amber-500 text-[18px] mt-0.5 shrink-0">info</span>
+                    <p class="text-xs text-amber-700 font-medium text-left leading-relaxed">
+                        Check your inbox and spam folder. The code is valid until you close this page.
+                    </p>
+                </div>
+            </div>
+
+            <div class="mt-6 flex items-center justify-center gap-4">
+                <a href="/login" class="text-sm text-slate-400 font-semibold hover:text-brand-600 transition-colors flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[14px]">arrow_back</span> Back to Login
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const inputs = document.querySelectorAll('.otp-input');
+        const form = document.getElementById('otpForm');
+        const hidden = document.getElementById('otpHidden');
+
+        inputs.forEach((inp, i) => {
+            inp.addEventListener('input', (e) => {
+                const val = e.target.value;
+                if (val && i < inputs.length - 1) {
+                    inputs[i + 1].focus();
+                }
+                // Auto-submit when all filled
+                const otp = Array.from(inputs).map(x => x.value).join('');
+                if (otp.length === 6) {
+                    hidden.value = otp;
+                }
+            });
+
+            inp.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !inp.value && i > 0) {
+                    inputs[i - 1].focus();
+                }
+            });
+
+            // Handle paste
+            inp.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const paste = (e.clipboardData || window.clipboardData).getData('text').trim();
+                if (/^\d{6}$/.test(paste)) {
+                    paste.split('').forEach((ch, j) => {
+                        if (inputs[j]) inputs[j].value = ch;
+                    });
+                    inputs[5].focus();
+                    hidden.value = paste;
+                }
+            });
+        });
+
+        form.addEventListener('submit', (e) => {
+            const otp = Array.from(inputs).map(x => x.value).join('');
+            hidden.value = otp;
+            if (otp.length !== 6) {
+                e.preventDefault();
+                alert('Please enter the full 6-digit code.');
+            }
+        });
+
+        // Auto-dismiss flashes
+        setTimeout(() => {
+            document.querySelectorAll('.fade-msg').forEach(msg => {
+                msg.style.opacity = '0';
+                msg.style.transform = 'translateY(-10px)';
+                setTimeout(() => msg.remove(), 300);
+            });
+        }, 5000);
+    </script>
+</body>
+</html>

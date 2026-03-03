@@ -206,6 +206,28 @@ def route_get_friends():
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
+@chat_bp.route('/social/requests', methods=['GET'])
+@member_required
+def get_pending():
+    from backend.services.social_service import get_pending_requests
+    try:
+        reqs = get_pending_requests(session['user_id'])
+        return jsonify({'success': True, 'requests': reqs})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@chat_bp.route('/social/requests/<int:req_id>/respond', methods=['POST'])
+@member_required
+def respond_request(req_id):
+    from backend.services.social_service import respond_to_friend_request
+    data = request.json
+    status = data.get('status')
+    try:
+        respond_to_friend_request(req_id, session['user_id'], status)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
 @chat_bp.route('/me', methods=['GET'])
 @member_required
 def route_get_me():
@@ -234,6 +256,42 @@ def route_update_channel(channel_id):
     from backend.repository.db_access import execute
     execute("UPDATE channels SET name = %s WHERE channel_id = %s", (name, channel_id))
     return jsonify({'success': True})
+
+@chat_bp.route('/upload', methods=['POST'])
+@member_required
+def upload_chat_file():
+    """Handle chat file/image uploads."""
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    
+    import os
+    import uuid
+    from werkzeug.utils import secure_filename
+    
+    ext = os.path.splitext(secure_filename(file.filename))[1].lower()
+    allowed_exts = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.txt', '.csv', '.doc', '.docx']
+    
+    if ext not in allowed_exts:
+        return jsonify({'error': 'Invalid file type.'}), 400
+        
+    unique_name = f"chat_{uuid.uuid4().hex[:8]}{ext}"
+    save_dir = os.path.join(current_app.static_folder, 'uploads', 'chat_files')
+    os.makedirs(save_dir, exist_ok=True)
+    file_path = os.path.join(save_dir, unique_name)
+    file.save(file_path)
+    
+    file_url = f"uploads/chat_files/{unique_name}"
+    
+    return jsonify({
+        'success': True, 
+        'url': file_url, 
+        'filename': file.filename, 
+        'ext': ext,
+        'is_image': ext in ['.jpg', '.jpeg', '.png', '.gif']
+    })
 
 @chat_bp.route('/channels/<int:channel_id>', methods=['DELETE'])
 @member_required
@@ -323,7 +381,10 @@ def route_get_channel_members(channel_id):
     # Get channel info
     channel = fetch_one("SELECT * FROM channels WHERE channel_id = %s", (channel_id,))
     if not channel:
-        return jsonify({'error': 'Channel not found'}), 404
+        if channel_id == 1:
+            channel = {'channel_id': 1, 'name': 'Global Community', 'created_by': None, 'is_private': False, 'guild_id': None}
+        else:
+            return jsonify({'error': 'Channel not found'}), 404
     
     channel_creator = channel.get('created_by')
     members = []
@@ -333,18 +394,12 @@ def route_get_channel_members(channel_id):
     
     # For private channels, get from dm_participants
     if channel.get('is_private') or channel.get('guild_id') is None:
-        # Special Case: Global Chat (ID 1) - Include ALL Admins (Library Admins)
+        # Special Case: Global Chat (ID 1) - Include ALL Users
         if channel_id == 1:
             participants = fetch_all("""
                 SELECT u.user_id, u.name, u.profile_pic, u.role, NULL as channel_role
                 FROM users u
-                WHERE u.role = 'admin'
-                UNION
-                SELECT u.user_id, u.name, u.profile_pic, u.role, dp.role as channel_role
-                FROM dm_participants dp
-                JOIN users u ON dp.user_id = u.user_id
-                WHERE dp.channel_id = %s
-            """, (channel_id,))
+            """)
         else:
             # Regular Groups/DMs: Only participants
             participants = fetch_all("""
@@ -414,7 +469,10 @@ def route_update_member_role(channel_id, target_user_id):
     
     channel = fetch_one("SELECT * FROM channels WHERE channel_id = %s", (channel_id,))
     if not channel:
-        return jsonify({'error': 'Channel not found'}), 404
+        if channel_id == 1:
+            channel = {'channel_id': 1, 'name': 'Global Community', 'created_by': None, 'is_private': False, 'guild_id': None}
+        else:
+            return jsonify({'error': 'Channel not found'}), 404
         
     # Is requester authorized?
     is_owner = (channel.get('created_by') == user_id)
@@ -461,7 +519,10 @@ def route_get_channel_settings(channel_id):
     """, (channel_id,))
     
     if not channel:
-        return jsonify({'error': 'Channel not found'}), 404
+        if channel_id == 1:
+            channel = {'channel_id': 1, 'name': 'Global Community', 'owner_name': 'System', 'is_private': False, 'type': 'public', 'topic': 'Main global network'}
+        else:
+            return jsonify({'error': 'Channel not found'}), 404
 
     # 2. Get caller's role
     current_user_id = session.get('user_id')
@@ -495,7 +556,12 @@ def route_update_channel_settings(channel_id):
     
     channel = fetch_one("SELECT * FROM channels WHERE channel_id = %s", (channel_id,))
     if not channel:
-        return jsonify({'error': 'Channel not found'}), 404
+        if channel_id == 1:
+            from backend.repository.db_access import execute
+            execute("INSERT IGNORE INTO channels (channel_id, name, type) VALUES (1, 'Global Community', 'public')")
+            channel = {'channel_id': 1, 'name': 'Global Community', 'created_by': None, 'is_private': False, 'guild_id': None}
+        else:
+            return jsonify({'error': 'Channel not found'}), 404
         
     # --- RESTRICTION: Admin Only ---
     current_user_id = session.get('user_id')
@@ -733,8 +799,10 @@ def route_get_rules(channel_id):
     from backend.repository.db_access import fetch_one
     channel = fetch_one("SELECT rules, guild_id, created_by FROM channels WHERE channel_id = %s", (channel_id,))
     if not channel:
-        return jsonify({'error': 'Channel not found'}), 404
-        
+        if channel_id == 1:
+            channel = {'rules': "1. Be respectful.\\n2. No spamming.\\n3. Keep it family friendly.", 'guild_id': None, 'created_by': None}
+        else:
+            return jsonify({'error': 'Channel not found'}), 404
     rules = channel.get('rules') or "No rules set for this channel."
     
     # If global chat, maybe return hardcoded rules if empty?
@@ -772,7 +840,13 @@ def route_update_rules(channel_id):
     
     channel = fetch_one("SELECT created_by FROM channels WHERE channel_id = %s", (channel_id,))
     if not channel:
-        return jsonify({'error': 'Channel not found'}), 404
+        if channel_id == 1:
+            channel = {'created_by': None}
+            # Ensures channel exists so we can update rules
+            from backend.repository.db_access import execute
+            execute("INSERT IGNORE INTO channels (channel_id, name, type) VALUES (1, 'Global Community', 'public')")
+        else:
+            return jsonify({'error': 'Channel not found'}), 404
         
     # Check permissions
     if user_role != 'admin' and channel.get('created_by') != user_id:
@@ -800,7 +874,10 @@ def route_get_logs(channel_id):
     
     channel = fetch_one("SELECT created_by FROM channels WHERE channel_id = %s", (channel_id,))
     if not channel:
-        return jsonify({'error': 'Channel not found'}), 404
+        if channel_id == 1:
+            channel = {'created_by': None}
+        else:
+            return jsonify({'error': 'Channel not found'}), 404
     
     # Permission: Admins, Channel Owners, or maybe Channel Admins
     # For now: Global Admin or Channel Creator

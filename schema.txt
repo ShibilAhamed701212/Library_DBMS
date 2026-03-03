@@ -1,0 +1,1 @@
+['book_id', 'title', 'author', 'category', 'description', 'total_copies', 'available_copies', 'pdf_src', 'cover_url', 'author_id', 'series_id', 'series_order']

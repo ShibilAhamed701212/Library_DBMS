@@ -1,390 +1,174 @@
 {% extends "layout.html" %}
+{% set active_page = 'member_overview' %}
 
-{% block title %}My Dashboard{% endblock %}
-{% block header_title %}My Library Overview 
-    {% if reading_goal %}
-        {% set tier = reading_goal.tier if reading_goal.tier else 'Silver' %}
-        
-        <!-- Expanding Tier Badge -->
-        <div class="expanding-pill tier-pill">
-            <div class="pill-badge" style="
-                {% if tier == 'Platinum' %}
-                    background: linear-gradient(135deg, #e5e7eb, #94a3b8); color: #1e293b; border: 1px solid #cbd5e1;
-                {% elif tier == 'Gold' %}
-                    background: linear-gradient(135deg, #fde68a, #f59e0b); color: #78350f; border: 1px solid #fbbf24;
-                {% else %}
-                    background: linear-gradient(135deg, #f3f4f6, #d1d5db); color: #374151; border: 1px solid #9ca3af;
-                {% endif %}
-            ">
-                {% if tier == 'Platinum' %}💎 Platinum{% elif tier == 'Gold' %}🥇 Gold{% else %}🥈 Silver{% endif %}
-            </div>
-            
-            <div class="pill-details">
-                {% if tier == 'Platinum' %}
-                    <span>📚 10 Books</span><span class="separator">•</span><span>⏳ 30 Days</span>
-                {% elif tier == 'Gold' %}
-                    <span>📚 6 Books</span><span class="separator">•</span><span>⏳ 21 Days</span>
-                {% else %}
-                    <span>📚 3 Books</span><span class="separator">•</span><span>⏳ 14 Days</span>
-                {% endif %}
-            </div>
-        </div>
-    {% endif %}
-    
-    {% if game_stats %}
-    <!-- Expanding Level Badge -->
-    <div class="expanding-pill level-pill" style="margin-left: 8px;">
-        <div class="pill-badge" style="background: linear-gradient(135deg, #6366f1, #a855f7); color: white;">
-            ✨ Level {{ game_stats.level }}
-        </div>
-        <div class="pill-details">
-            {% set total_needed = (game_stats.level * (game_stats.level + 1) / 2) * 100 %}
-            {% set prev_level_xp = ((game_stats.level - 1) * game_stats.level / 2) * 100 %}
-            {% set next_xp_target = total_needed %}
-            
-            <span>XP: {{ game_stats.xp }}</span>
-            <span class="separator">•</span>
-            <span>Next: {{ next_xp_target|int }}</span>
-        </div>
-    </div>
-    {% endif %}
-    
-    <!-- Expanding Badge CSS -->
-
-{% endblock %}
-{% block header_subtitle %}
-    Track your active borrowings and membership privileges.
-    {% if game_stats %}
-    <div style="margin-top: 10px; width: 250px;">
-        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-sub); margin-bottom: 4px;">
-            <span>XP: {{ game_stats.xp }}</span>
-            <span>Next Level at {{ (game_stats.level * (game_stats.level + 1) / 2) * 100 }} XP</span>
-        </div>
-        <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
-            {% set total_needed = (game_stats.level * (game_stats.level + 1) / 2) * 100 %}
-            {% set prev_level_xp = ((game_stats.level - 1) * game_stats.level / 2) * 100 %}
-            {% set progress = ((game_stats.xp - prev_level_xp) / (total_needed - prev_level_xp) * 100) if (total_needed - prev_level_xp) > 0 else 0 %}
-            <div style="height: 100%; width: {{ progress }}%; background: #6366f1; box-shadow: 0 0 10px #6366f1;"></div>
-        </div>
-    </div>
-    {% endif %}
-{% endblock %}
+{% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<!-- Member Stats -->
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-icon">📖</div>
-        <div class="stat-info">
-            <span class="stat-label">My Issued Books</span>
-            <span class="stat-value">{{ issues|length }}</span>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon">💰</div>
-        <div class="stat-info">
-            <span class="stat-label">Total Fines</span>
-            <span class="stat-value">{{ system_settings.currency_symbol }}{{ issues|sum(attribute='fine') }}</span>
-        </div>
-    </div>
-    <div class="stat-card" style="background: linear-gradient(135deg, #4e73df 0%, #224abe 100%); color: white;">
-        <div class="stat-icon">🏆</div>
-        <div class="stat-info">
-            <span class="stat-label" style="color: rgba(255,255,255,0.8);">My Achievements</span>
-            <span class="stat-value" style="color: white;">{{ game_stats.badges|length if game_stats else 0 }} Badges</span>
-        </div>
-    </div>
-</div>
+<div class="px-2 md:px-4 w-full max-w-5xl mx-auto space-y-6">
 
-<!-- Trophy Room -->
-<!-- Trophy Room -->
-{% if game_stats and game_stats.badges %}
-<section class="dashboard-section">
-    <div class="section-header" style="justify-content: flex-start; align-items: center; gap: 10px;">
-        <h2>🏆 My Trophy Room</h2>
-        <a href="/member/achievements" class="btn btn-sm btn-outline-secondary" style="margin-left: auto;">View Details</a>
+    <!-- WELCOME OVERVIEW -->
+    <div class="mb-4">
+        <p class="text-sm font-medium text-base-400">Welcome back,</p>
+        <h1 class="text-3xl font-bold text-white">{{ session.get('name', 'Alex Morgan') }}</h1>
     </div>
-    
-    <a href="/member/achievements" style="text-decoration: none; color: inherit; display: block;">
-        <div class="glass-card hover-scale" style="padding: 1rem; display: flex; gap: 1rem; flex-wrap: wrap; cursor: pointer; transition: transform 0.2s ease;">
-            {% for badge in game_stats.badges[:5] %}
-            <div style="text-align: center; width: 100px;">
-                <div style="font-size: 2rem; margin-bottom: 0.2rem;">{{ badge.icon }}</div>
-                <div style="font-weight: 600; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ badge.name }}</div>
+
+    <!-- STATS CARDS -->
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+        <!-- Total Books (Takes 2 cols on mobile if we want exactly like image, or just standard grid) -->
+        <div class="glass-card p-4 md:p-5 flex flex-col justify-between relative overflow-hidden group col-span-2 md:col-span-1 border-t-2 border-t-brand-500/20">
+            <div class="flex justify-between items-start mb-4">
+                <p class="text-xs md:text-sm font-medium text-base-400">Total Books</p>
+                <div class="w-8 h-8 rounded-lg bg-brand-600/20 text-brand-500 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[18px]">library_books</span>
+                </div>
             </div>
-            {% endfor %}
-            {% if game_stats.badges|length > 5 %}
-            <div style="display: flex; align-items: center; justify-content: center; width: 80px; font-weight: bold; color: var(--text-sub);">
-                +{{ game_stats.badges|length - 5 }} More
-            </div>
-            {% endif %}
-        </div>
-    </a>
-</section>
-{% endif %}
-
-
-
-<!-- Goals and Privacy -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
-    <!-- PERSONAL GOAL -->
-    <section class="dashboard-section" style="margin-top: 0;">
-        <div class="section-header">
-            <h2>🎯 Reading Goal</h2>
-            <a href="/member/goals" class="btn btn-outline-secondary btn-sm">View Full Details</a>
-        </div>
-        <div class="section-content glass-card" style="padding: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
             <div>
-                {% if reading_goal %}
-                <h3 style="margin: 0; margin-bottom: 0.5rem; font-size: 1.1rem;">{{ reading_goal.current_books }} / {{ reading_goal.goal_books }} Books</h3>
-                <p style="color: var(--text-sub); font-size: 0.9rem; margin: 0;">
-                    {% set progress = (reading_goal.current_books / reading_goal.goal_books * 100) if reading_goal.goal_books > 0 else 0 %}
-                    You're {{ progress|int }}% of the way there!
-                </p>
-                {% else %}
-                <p style="color: var(--text-sub);">No goal set for this year.</p>
-                {% endif %}
-            </div>
-            <a href="/member/goals" class="btn btn-primary">Update Goal</a>
-        </div>
-    </section>
-
-
-</div>
-
-<!-- Quick Actions -->
-<div class="quick-actions" style="margin: 1.5rem 0;">
-    <a href="{{ url_for('member.member_suggest_book') }}" class="btn btn-primary">
-        <i class="fas fa-lightbulb me-2"></i>Suggest a Book
-    </a>
-    <a href="{{ url_for('member.member_catalog_view') }}" class="btn btn-outline-secondary">
-        <i class="fas fa-book me-2"></i>Browse Books
-    </a>
-</div>
-
-<!-- Smart Recommendations -->
-<section class="dashboard-section mb-4">
-    <div class="section-header">
-        <h2><i class="fas fa-magic me-2" style="color: #6366f1;"></i>Recommended for You</h2>
-    </div>
-    <div class="recommendations-container" style="display: flex; gap: 1rem; overflow-x: auto; padding: 3rem 2rem; scroll-behavior: smooth;">
-        {% for rec in recommendations %}
-        <div class="glass-card recommendation-card" style="min-width: 220px; width: 220px; position: relative; transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); transform-origin: center center; z-index: 1;">
-            
-            <!-- COVER IMAGE OR FALLBACK -->
-            {% if rec.cover_url %}
-            <div style="
-                height: 320px; 
-                background-image: url('{{ rec.cover_url }}');
-                background-size: cover;
-                background-position: center;
-                border-radius: 12px;
-                margin-bottom: 1rem;
-                position: relative;
-                overflow: hidden;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            ">
-                <!-- Hover Overlay Gradient -->
-                <div class="card-overlay"></div>
-            </div>
-            {% else %}
-            <!-- Fallback Gradient -->
-            <div style="
-                height: 320px; 
-                background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1)); 
-                display: flex; 
-                align-items: center; 
-                justify-content: center;
-                border-radius: 12px;
-                margin-bottom: 1rem;
-                position: relative;
-                overflow: hidden;
-            ">
-                <div style="font-size: 4rem;">
-                    {% if rec.category == 'Fiction' %}🏰
-                    {% elif rec.category == 'Science' %}🧬
-                    {% elif rec.category == 'Biography' %}👤
-                    {% elif rec.category == 'Technology' %}💻
-                    {% else %}📚{% endif %}
-                </div>
-                <div class="card-overlay"></div>
-            </div>
-            {% endif %}
-
-            <div class="rec-info">
-                <div style="font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ rec.title }}">
-                    {{ rec.title }}
-                </div>
-                <div style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 0.5rem;">
-                    {{ rec.author }}
-                </div>
-                
-                <div class="rec-details" style="display: none; opacity: 0; transition: opacity 0.3s ease;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: #fbbf24; margin-bottom: 0.5rem;">
-                        <span>⭐ {{ "%.1f"|format(rec.avg_rating|float) }} Match</span>
-                        <span style="color: var(--text-sub);">• {{ rec.category }}</span>
-                    </div>
-                    
-                    {% if rec.description %}
-                    <div style="font-size: 0.75rem; color: var(--text-sub); margin-bottom: 0.75rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">
-                        {{ rec.description }}
-                    </div>
-                    {% endif %}
-                
-                    <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-                        <form action="/member/request" method="POST" style="flex: 1;">
-                            <input type="hidden" name="book_id" value="{{ rec.book_id }}">
-                            <button type="submit" class="btn btn-primary btn-sm" style="width: 100%; font-size: 0.7rem;">+ My List</button>
-                        </form>
-                        {% if rec.pdf_src %}
-                        <a href="/member/book/read/{{ rec.book_id }}" class="btn btn-outline-light btn-sm" style="flex: 1; display: flex; align-items: center; justify-content: center; font-size: 0.7rem;">
-                            ▶ Read
-                        </a>
-                        {% endif %}
-                    </div>
+                <h3 class="text-3xl font-bold text-white mb-2">{{ total_books if total_books else '12,450' }}</h3>
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-500">
+                        <span class="material-symbols-outlined text-[12px] mr-0.5">trending_up</span> 5%
+                    </span>
+                    <span class="text-[10px] text-base-400">vs last month</span>
                 </div>
             </div>
         </div>
-        {% endfor %}
-    </div>
-</section>
 
-
-
-<!-- Recent Activity -->
-<section class="dashboard-section mb-4">
-    <div class="section-header">
-        <h2><i class="fas fa-bolt me-2" style="color: var(--primary);"></i>Recent Activity</h2>
-    </div>
-    <div class="glass-card" style="padding: 1.5rem;">
-        {% if not activities %}
-        <p style="color: var(--text-sub); text-align: center; margin: 0;">No recent activities found.</p>
-        {% else %}
-        <div class="activity-timeline">
-            {% for act in activities %}
-            <div class="activity-item" style="display: flex; gap: 1rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
-                <div class="activity-type-icon" style="font-size: 1.25rem;">
-                    {% if act.activity_type == 'BORROW' %}📖
-                    {% elif act.activity_type == 'RETURN' %}✅
-                    {% elif act.activity_type == 'BADGE' %}🏆
-                    {% elif act.activity_type == 'REVIEW' %}⭐
-                    {% elif act.activity_type == 'WISHLIST' %}❤️
-                    {% else %}🔹{% endif %}
-                </div>
-                <div>
-                    <div style="font-weight: 600;">{{ act.description }}</div>
-                    <div style="font-size: 0.8rem; color: var(--text-sub);">{{ act.created_at }}</div>
+        <!-- Borrowed -->
+        <div class="glass-card p-4 flex flex-col justify-between relative overflow-hidden group">
+            <div class="flex justify-between items-start mb-4">
+                <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-500 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[16px]">book</span>
                 </div>
             </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-    </div>
-</section>
-
-<!-- Active Borrowings -->
-
-
-<section class="dashboard-section">
-    <div class="section-header d-flex justify-content-between align-items-center">
-        <h2><i class="fas fa-book-reader me-2"></i>Active Borrowings</h2>
-        <span class="badge bg-primary">{{ active_issues|length }} Active</span>
-    </div>
-    <div class="section-content">
-        {% set active_issues = issues | selectattr('return_date', 'none') | list %}
-        {% if active_issues %}
-        <div class="table-container glass-card">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Book Title</th>
-                        <th>Issue Date</th>
-                        <th>Fine ({{ system_settings.currency_symbol }})</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for i in active_issues %}
-                    <tr>
-                        <td style="font-weight: 600;">{{ i.title }}</td>
-                        <td>{{ i.issue_date }}</td>
-                        <td style="color: {{ 'var(--danger)' if i.fine > 0 else 'var(--text-main)' }};">{{ system_settings.currency_symbol }}{{ i.fine }}</td>
-                        <td>
-                            {% if i.fine > 0 %}
-                            <span class="badge badge-danger">Overdue</span>
-                            {% else %}
-                            <span class="badge badge-pending">Active</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <div class="glass-card" style="text-align: center; color: var(--text-sub); padding: 2rem;">
-            <p>You have no active borrowings.</p>
-            <a href="/member/catalog" class="btn btn-primary" style="margin-top: 1rem;">Borrow a Book</a>
-        </div>
-        {% endif %}
-    </div>
-</section>
-
-<!-- Borrowing History -->
-<section class="dashboard-section mt-5">
-    <div class="section-header d-flex justify-content-between align-items-center">
-        <h2><i class="fas fa-history me-2"></i>Borrowing History</h2>
-        <span class="badge bg-secondary">{{ (issues|length) - (active_issues|length) }} Past</span>
-    </div>
-    <div class="section-content">
-        {% set history_issues = issues | selectattr('return_date', 'ne', none) | list %}
-        {% if history_issues %}
-        <div class="table-container glass-card">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Book Title</th>
-                        <th>Issue Date</th>
-                        <th>Return Date</th>
-                        <th>Fine Paid</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for i in history_issues %}
-                    <tr>
-                        <td style="font-weight: 400; color: var(--text-sub);">{{ i.title }}</td>
-                        <td>{{ i.issue_date }}</td>
-                        <td>{{ i.return_date }}</td>
-                        <td>{{ system_settings.currency_symbol }}{{ i.fine }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <p style="color: var(--text-sub); opacity: 0.7;">No past borrowing records found.</p>
-        {% endif %}
-    </div>
-</section>
-
-<!-- Account Settings -->
-<section class="dashboard-section mt-5">
-    <div class="section-header">
-        <h2><i class="fas fa-cog me-2" style="color: #e74a3b;"></i>Account Settings</h2>
-    </div>
-    <div class="section-content glass-card" style="border-color: rgba(220, 53, 69, 0.2);">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
-                <h3 style="margin-bottom: 0.5rem;">Delete Account</h3>
-                <p style="color: var(--text-sub); font-size: 0.9rem;">Once you delete your account, there is no going back. Please be certain.</p>
+                <p class="text-[11px] font-medium text-base-400 mb-0.5">Borrowed</p>
+                <h3 class="text-2xl font-bold text-white mb-1">{{ active_issues | length if active_issues else '854' }}</h3>
+                <span class="text-[10px] font-bold text-emerald-500">+12%</span>
             </div>
-            <form action="/member/delete-account" method="POST" onsubmit="return confirm('⚠️ FINAL WARNING: Are you sure you want to PERMANENTLY delete your account? All your history will be lost.')">
-                <button type="submit" class="btn btn-danger" style="background: var(--danger); border: none;">Delete My Account</button>
-            </form>
+        </div>
+
+        <!-- Fines / Members (Image shows Members, but for user replacing with Fines makes sense. Let's stick to Image exact) -->
+        <div class="glass-card p-4 flex flex-col justify-between relative overflow-hidden group">
+            <div class="flex justify-between items-start mb-4">
+                <div class="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[16px]">group</span>
+                </div>
+            </div>
+            <div>
+                <p class="text-[11px] font-medium text-base-400 mb-0.5">Members</p>
+                <h3 class="text-2xl font-bold text-white mb-1">2,100</h3>
+                <span class="text-[10px] font-bold text-emerald-500">+2%</span>
+            </div>
         </div>
     </div>
-</section>
-</section>
 
+    <!-- IN-PAGE SEARCH -->
+    <div class="relative w-full shadow-sm mt-2">
+        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-base-400 text-[20px]">search</span>
+        <input type="text" placeholder="Search for books, authors..." 
+            class="w-full bg-base-900 border border-brand-500/30 text-base-100 pl-12 pr-12 py-3.5 rounded-xl focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 text-sm placeholder-base-400 transition-all shadow-[0_0_15px_rgba(59,130,246,0.1)]">
+        <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-base-400 text-[20px] cursor-pointer hover:text-white transition-colors">tune</span>
+    </div>
 
+    <!-- NEW ARRIVALS CARDS -->
+    <div class="mt-4">
+        <div class="flex items-center justify-between mb-3 px-1">
+            <h2 class="text-lg font-bold text-white tracking-tight">New Arrivals</h2>
+            <a href="/member/catalog" class="text-xs font-bold text-brand-500 hover:text-brand-400 transition-colors">View All</a>
+        </div>
+        
+        <div class="flex overflow-x-auto pb-4 gap-4 no-scrollbar snap-x">
+            <!-- Book 1 -->
+            <div class="shrink-0 w-36 snap-center group cursor-pointer">
+                <div class="h-48 rounded-xl bg-[#2A5256] overflow-hidden shadow-lg relative flex justify-center items-center">
+                    <div class="absolute bottom-2 left-2 z-20">
+                        <span class="px-2 py-0.5 bg-brand-600 text-[9px] font-bold text-white rounded">Sci-Fi</span>
+                    </div>
+                    <!-- Minimalist Book Cover Mock -->
+                    <div class="w-3/4 h-3/4 border-2 border-emerald-400/20 shadow-2xl flex flex-col justify-center items-center text-center p-2" style="background: linear-gradient(135deg, #3A696E 0%, #204144 100%);">
+                        <p class="text-[10px] text-emerald-200/50 uppercase tracking-widest mb-2 font-light hidden">Title</p>
+                        <h3 class="text-emerald-100 font-bold text-xs leading-tight tracking-wider">MINIMAL<br>OVER</h3>
+                    </div>
+                </div>
+                <div class="mt-2.5">
+                    <h4 class="text-[13px] font-bold text-base-100 leading-tight">The Quantum</h4>
+                    <p class="text-[11px] font-medium text-base-400 mt-0.5">A. Einstein</p>
+                </div>
+            </div>
+
+            <!-- Book 2 -->
+            <div class="shrink-0 w-36 snap-center group cursor-pointer">
+                <div class="h-48 rounded-xl bg-[#4A9983] overflow-hidden shadow-lg relative flex justify-center items-center">
+                    <div class="absolute bottom-2 left-2 z-20">
+                        <span class="px-2 py-0.5 bg-amber-500 text-[9px] font-bold text-white rounded">History</span>
+                    </div>
+                    <div class="w-3/4 h-3/4 bg-[#e8e9eb] border-l-4 border-l-[#d1d3d6] shadow-2xl flex flex-col justify-center items-center text-center p-2 relative">
+                        <span class="material-symbols-outlined text-green-700/30 text-4xl absolute">psychiatry</span>
+                        <h3 class="text-slate-800 font-bold text-[8px] leading-tight z-10 uppercase tracking-widest mt-auto mb-2 opacity-50">Biology</h3>
+                    </div>
+                </div>
+                <div class="mt-2.5">
+                    <h4 class="text-[13px] font-bold text-base-100 leading-tight">Ancient Rome</h4>
+                    <p class="text-[11px] font-medium text-base-400 mt-0.5">M. Beard</p>
+                </div>
+            </div>
+
+            <!-- Book 3 -->
+            <div class="shrink-0 w-36 snap-center group cursor-pointer">
+                <div class="h-48 rounded-xl bg-[#1E5C45] overflow-hidden shadow-lg relative flex justify-center items-center">
+                    <div class="absolute bottom-2 left-2 z-20">
+                        <span class="px-2 py-0.5 bg-rose-500 text-[9px] font-bold text-white rounded">Design</span>
+                    </div>
+                     <div class="w-3/4 h-3/4 border-2 border-green-400/20 shadow-2xl flex flex-col justify-center items-center text-center p-2" style="background: linear-gradient(135deg, #184A37 0%, #153F2F 100%);">
+                        <h3 class="text-[#F6D097] font-serif font-bold text-[10px] leading-tight uppercase relative">BOOK TWO <br><span class="text-[5px] block mt-4 border-t border-[#F6D097]/30 pt-1">The Series</span></h3>
+                    </div>
+                </div>
+                <div class="mt-2.5">
+                    <h4 class="text-[13px] font-bold text-base-100 leading-tight">UI Patterns</h4>
+                    <p class="text-[11px] font-medium text-base-400 mt-0.5">D. Norman</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- YOUR ACTIVITY LIST -->
+    <div class="mt-2 pb-6">
+        <h2 class="text-lg font-bold text-white tracking-tight mb-3 px-1">Your Activity</h2>
+        
+        <div class="space-y-3">
+            <div class="glass-card p-3 rounded-xl flex items-center gap-4 hover:bg-base-700/30 transition-colors cursor-pointer border border-transparent hover:border-base-700">
+                <div class="w-12 h-12 rounded-xl bg-brand-800/40 text-brand-400 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-[22px]">menu_book</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h4 class="text-sm font-bold text-base-100 truncate">Borrowed "Dune"</h4>
+                    <p class="text-[11px] text-base-400 font-medium">Due in 14 days</p>
+                </div>
+                <span class="text-[10px] text-base-400 font-medium shrink-0">2h ago</span>
+            </div>
+
+            <div class="glass-card p-3 rounded-xl flex items-center gap-4 hover:bg-base-700/30 transition-colors cursor-pointer border border-transparent hover:border-base-700">
+                <div class="w-12 h-12 rounded-xl bg-emerald-800/20 text-emerald-400 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-[22px]">assignment_return</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h4 class="text-sm font-bold text-base-100 truncate">Returned "1984"</h4>
+                    <p class="text-[11px] text-base-400 font-medium">On time</p>
+                </div>
+                <span class="text-[10px] text-base-400 font-medium shrink-0">Yesterday</span>
+            </div>
+
+            <div class="glass-card p-3 rounded-xl flex items-center gap-4 hover:bg-base-700/30 transition-colors cursor-pointer border border-transparent hover:border-base-700">
+                <div class="w-12 h-12 rounded-xl bg-purple-800/20 text-purple-400 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-[22px] fill-current">favorite</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h4 class="text-sm font-bold text-base-100 truncate">Liked "Design Systems"</h4>
+                    <p class="text-[11px] text-base-400 font-medium">Added to favorites</p>
+                </div>
+                <span class="text-[10px] text-base-400 font-medium shrink-0">2d ago</span>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

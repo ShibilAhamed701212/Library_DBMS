@@ -41,7 +41,7 @@ def add_user(name: str, email: str, role: str, password: str = "Lib@123"):
     )
 
     if existing_user:
-        return "❌ User with this email already exists"
+        return "User with this email already exists"
 
     # Hash password securely
     password_hash = hash_password(password)
@@ -57,7 +57,7 @@ def add_user(name: str, email: str, role: str, password: str = "Lib@123"):
         (name, email, password_hash, role)
     )
 
-    return "✅ User added successfully"
+    return "User added successfully"
 
 
 def view_users():
@@ -68,13 +68,14 @@ def view_users():
     return fetch_all(
         """
         SELECT
-            user_id,
-            name,
-            email,
-            role,
-            created_at
-        FROM users
-        ORDER BY user_id ASC
+            u.user_id,
+            u.name,
+            u.email,
+            u.role,
+            u.created_at,
+            (SELECT COUNT(*) FROM issues i WHERE i.user_id = u.user_id AND i.return_date IS NULL) as books_held
+        FROM users u
+        ORDER BY u.user_id ASC
         """
     )
 
@@ -90,9 +91,9 @@ def delete_user(user_id: int):
     )
 
     if affected == 0:
-        return "❌ User not found"
+        return "User not found"
 
-    return "🗑️ User deleted successfully"
+    return "User deleted successfully"
 
 
 def is_admin(user_id: int) -> bool:

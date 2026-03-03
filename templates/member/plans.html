@@ -1,0 +1,372 @@
+{% extends "layout.html" %}
+{% set active_page = 'member_plans' %}
+{% block title %}Membership Plans{% endblock %}
+
+{% block header_title %}Membership Plans{% endblock %}
+{% block header_subtitle %}Choose the plan that fits your reading habits.{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-6xl mx-auto space-y-10 pb-10">
+
+    <!-- Current Plan Badge -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-3xl md:text-4xl font-black text-white tracking-tight">Upgrade Your Plan</h1>
+            <p class="text-sm md:text-base font-medium text-base-400 mt-2">
+                You are currently on the 
+                <span class="font-bold 
+                    {% if current_tier == 'Platinum' %}text-violet-400
+                    {% elif current_tier == 'Gold' %}text-amber-400
+                    {% else %}text-base-300{% endif %}">
+                    {{ current_tier }}
+                </span> plan.
+            </p>
+        </div>
+        <div class="flex items-center gap-2 px-5 py-3 rounded-xl border
+            {% if current_tier == 'Platinum' %}bg-violet-500/10 border-violet-500/30 text-violet-400
+            {% elif current_tier == 'Gold' %}bg-amber-500/10 border-amber-500/30 text-amber-400
+            {% else %}bg-base-800 border-base-700 text-base-300{% endif %}">
+            <span class="material-symbols-outlined text-[20px]">
+                {% if current_tier == 'Platinum' %}diamond{% elif current_tier == 'Gold' %}workspace_premium{% else %}credit_card{% endif %}
+            </span>
+            <span class="text-sm font-bold">{{ current_tier }} Member</span>
+        </div>
+    </div>
+
+    <!-- Pricing Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+
+        <!-- Silver Plan -->
+        <div class="relative flex flex-col rounded-[24px] border overflow-hidden transition-all duration-300 hover:-translate-y-1
+            {% if current_tier == 'Silver' %}border-brand-500/50 bg-gradient-to-b from-base-800 to-base-900 shadow-[0_10px_40px_rgba(37,99,235,0.15)]
+            {% else %}border-base-700/50 bg-base-800/50 hover:border-base-600{% endif %}">
+            
+            {% if current_tier == 'Silver' %}
+            <div class="absolute top-4 right-4 px-3 py-1 bg-brand-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full">Current</div>
+            {% endif %}
+            
+            <div class="p-8 pb-0">
+                <div class="w-12 h-12 rounded-2xl bg-base-700 flex items-center justify-center mb-5">
+                    <span class="material-symbols-outlined text-base-300 text-[24px]">credit_card</span>
+                </div>
+                <h3 class="text-xl font-black text-white mb-1">Silver</h3>
+                <p class="text-xs text-base-400 font-medium mb-6">Perfect for casual readers</p>
+                <div class="flex items-baseline gap-1 mb-6">
+                    <span class="text-4xl font-black text-white">Free</span>
+                </div>
+            </div>
+            
+            <div class="p-8 pt-0 flex-grow flex flex-col">
+                <ul class="space-y-3 mb-8 flex-grow">
+                    <li class="flex items-center gap-3 text-sm text-base-300">
+                        <span class="material-symbols-outlined text-emerald-400 text-[18px]">check_circle</span>
+                        Borrow up to <strong class="text-white ml-1">3 books</strong>
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-base-300">
+                        <span class="material-symbols-outlined text-emerald-400 text-[18px]">check_circle</span>
+                        <strong class="text-white">14-day</strong>&nbsp;loan period
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-base-300">
+                        <span class="material-symbols-outlined text-emerald-400 text-[18px]">check_circle</span>
+                        Community chat access
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-base-400">
+                        <span class="material-symbols-outlined text-base-600 text-[18px]">cancel</span>
+                        Priority reservations
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-base-400">
+                        <span class="material-symbols-outlined text-base-600 text-[18px]">cancel</span>
+                        Extended renewals
+                    </li>
+                </ul>
+                
+                {% if current_tier == 'Silver' %}
+                <button disabled class="w-full py-3.5 bg-base-700 text-base-400 text-sm font-bold rounded-xl cursor-not-allowed">
+                    Current Plan
+                </button>
+                {% else %}
+                <form action="/member/plans/change" method="POST">
+                    <input type="hidden" name="tier" value="Silver">
+                    <button type="submit" class="w-full py-3.5 bg-base-700 hover:bg-base-600 text-white text-sm font-bold rounded-xl transition-colors">
+                        Downgrade
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Gold Plan (Popular) -->
+        <div class="relative flex flex-col rounded-[24px] border overflow-hidden transition-all duration-300 hover:-translate-y-1
+            {% if current_tier == 'Gold' %}border-amber-500/50 bg-gradient-to-b from-amber-900/20 to-base-900 shadow-[0_10px_40px_rgba(245,158,11,0.15)]
+            {% else %}border-amber-500/30 bg-gradient-to-b from-amber-900/10 to-base-900 hover:border-amber-500/50 shadow-[0_10px_30px_rgba(0,0,0,0.3)]{% endif %}">
+            
+            {% if current_tier == 'Gold' %}
+            <div class="absolute top-4 right-4 px-3 py-1 bg-amber-500 text-black text-[10px] font-black uppercase tracking-widest rounded-full">Current</div>
+            {% else %}
+            <div class="absolute top-4 right-4 px-3 py-1 bg-amber-500 text-black text-[10px] font-black uppercase tracking-widest rounded-full">Popular</div>
+            {% endif %}
+            
+            <div class="p-8 pb-0">
+                <div class="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center mb-5">
+                    <span class="material-symbols-outlined text-amber-400 text-[24px]">workspace_premium</span>
+                </div>
+                <h3 class="text-xl font-black text-white mb-1">Gold</h3>
+                <p class="text-xs text-amber-400/80 font-medium mb-6">For dedicated book lovers</p>
+                <div class="flex items-baseline gap-1 mb-6">
+                    <span class="text-4xl font-black text-white">₹199</span>
+                    <span class="text-sm text-base-400 font-medium">/month</span>
+                </div>
+            </div>
+            
+            <div class="p-8 pt-0 flex-grow flex flex-col">
+                <ul class="space-y-3 mb-8 flex-grow">
+                    <li class="flex items-center gap-3 text-sm text-base-300">
+                        <span class="material-symbols-outlined text-emerald-400 text-[18px]">check_circle</span>
+                        Borrow up to <strong class="text-white ml-1">6 books</strong>
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-base-300">
+                        <span class="material-symbols-outlined text-emerald-400 text-[18px]">check_circle</span>
+                        <strong class="text-white">21-day</strong>&nbsp;loan period
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-base-300">
+                        <span class="material-symbols-outlined text-emerald-400 text-[18px]">check_circle</span>
+                        Community chat access
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-base-300">
+                        <span class="material-symbols-outlined text-emerald-400 text-[18px]">check_circle</span>
+                        Priority reservations
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-base-400">
+                        <span class="material-symbols-outlined text-base-600 text-[18px]">cancel</span>
+                        Extended renewals
+                    </li>
+                </ul>
+                
+                {% if current_tier == 'Gold' %}
+                <button disabled class="w-full py-3.5 bg-amber-500/20 text-amber-400 text-sm font-bold rounded-xl cursor-not-allowed border border-amber-500/30">
+                    Current Plan
+                </button>
+                {% elif current_tier == 'Platinum' %}
+                <form action="/member/plans/change" method="POST">
+                    <input type="hidden" name="tier" value="Gold">
+                    <button type="submit" class="w-full py-3.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 text-sm font-bold rounded-xl transition-colors border border-amber-500/30">
+                        Downgrade to Gold
+                    </button>
+                </form>
+                {% else %}
+                <form action="/member/plans/checkout" method="POST">
+                    <input type="hidden" name="tier" value="Gold">
+                    <input type="hidden" name="amount" value="199">
+                    <button type="submit" class="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold rounded-xl transition-colors shadow-[0_4px_15px_rgba(245,158,11,0.3)]">
+                        Upgrade to Gold
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Platinum Plan -->
+        <div class="relative flex flex-col rounded-[24px] border overflow-hidden transition-all duration-300 hover:-translate-y-1
+            {% if current_tier == 'Platinum' %}border-violet-500/50 bg-gradient-to-b from-violet-900/20 to-base-900 shadow-[0_10px_40px_rgba(139,92,246,0.15)]
+            {% else %}border-violet-500/30 bg-gradient-to-b from-violet-900/10 to-base-900 hover:border-violet-500/50 shadow-[0_10px_30px_rgba(0,0,0,0.3)]{% endif %}">
+            
+            {% if current_tier == 'Platinum' %}
+            <div class="absolute top-4 right-4 px-3 py-1 bg-violet-500 text-white text-[10px] font-black uppercase tracking-widest rounded-full">Current</div>
+            {% endif %}
+            
+            <div class="p-8 pb-0">
+                <div class="w-12 h-12 rounded-2xl bg-violet-500/20 flex items-center justify-center mb-5">
+                    <span class="material-symbols-outlined text-violet-400 text-[24px]">diamond</span>
+                </div>
+                <h3 class="text-xl font-black text-white mb-1">Platinum</h3>
+                <p class="text-xs text-violet-400/80 font-medium mb-6">Unlimited reading experience</p>
+                <div class="flex items-baseline gap-1 mb-6">
+                    <span class="text-4xl font-black text-white">₹499</span>
+                    <span class="text-sm text-base-400 font-medium">/month</span>
+                </div>
+            </div>
+            
+            <div class="p-8 pt-0 flex-grow flex flex-col">
+                <ul class="space-y-3 mb-8 flex-grow">
+                    <li class="flex items-center gap-3 text-sm text-base-300">
+                        <span class="material-symbols-outlined text-emerald-400 text-[18px]">check_circle</span>
+                        Borrow up to <strong class="text-white ml-1">10 books</strong>
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-base-300">
+                        <span class="material-symbols-outlined text-emerald-400 text-[18px]">check_circle</span>
+                        <strong class="text-white">30-day</strong>&nbsp;loan period
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-base-300">
+                        <span class="material-symbols-outlined text-emerald-400 text-[18px]">check_circle</span>
+                        Community chat access
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-base-300">
+                        <span class="material-symbols-outlined text-emerald-400 text-[18px]">check_circle</span>
+                        Priority reservations
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-base-300">
+                        <span class="material-symbols-outlined text-emerald-400 text-[18px]">check_circle</span>
+                        Extended renewals
+                    </li>
+                </ul>
+                
+                {% if current_tier == 'Platinum' %}
+                <button disabled class="w-full py-3.5 bg-violet-500/20 text-violet-400 text-sm font-bold rounded-xl cursor-not-allowed border border-violet-500/30">
+                    Current Plan
+                </button>
+                {% else %}
+                <form action="/member/plans/checkout" method="POST">
+                    <input type="hidden" name="tier" value="Platinum">
+                    <input type="hidden" name="amount" value="499">
+                    <button type="submit" class="w-full py-3.5 bg-violet-500 hover:bg-violet-400 text-white text-sm font-bold rounded-xl transition-colors shadow-[0_4px_15px_rgba(139,92,246,0.3)]">
+                        Upgrade to Platinum
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment History -->
+    <div class="space-y-5">
+        <h2 class="text-xl font-black text-white flex items-center gap-2">
+            <span class="material-symbols-outlined text-brand-400 text-[24px]">receipt_long</span>
+            Payment History
+        </h2>
+        
+        {% if payments %}
+        <div class="bg-base-800/50 border border-base-700/50 rounded-2xl overflow-hidden">
+            <table class="w-full">
+                <thead class="bg-base-900/50 text-[10px] font-bold tracking-widest uppercase text-base-500 border-b border-base-700/50">
+                    <tr>
+                        <th class="px-6 py-4 text-left">Date</th>
+                        <th class="px-6 py-4 text-left">Plan</th>
+                        <th class="px-6 py-4 text-left">Amount</th>
+                        <th class="px-6 py-4 text-left">Method</th>
+                        <th class="px-6 py-4 text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-base-700/30">
+                    {% for p in payments %}
+                    <tr class="hover:bg-base-800/50 transition-colors">
+                        <td class="px-6 py-4 text-sm text-base-300 font-medium">{{ p.payment_date.strftime('%b %d, %Y') if p.payment_date else 'N/A' }}</td>
+                        <td class="px-6 py-4">
+                            <span class="text-sm font-bold
+                                {% if p.tier == 'Platinum' %}text-violet-400
+                                {% elif p.tier == 'Gold' %}text-amber-400
+                                {% else %}text-base-300{% endif %}">
+                                {{ p.tier }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-white font-bold">₹{{ p.amount }}</td>
+                        <td class="px-6 py-4 text-sm text-base-400">{{ p.payment_method or 'N/A' }}</td>
+                        <td class="px-6 py-4 text-center">
+                            {% if p.status == 'Completed' %}
+                            <span class="px-3 py-1 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 rounded-full border border-emerald-500/20">Completed</span>
+                            {% elif p.status == 'Pending' %}
+                            <span class="px-3 py-1 text-[10px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400 rounded-full border border-amber-500/20">Pending</span>
+                            {% else %}
+                            <span class="px-3 py-1 text-[10px] font-bold uppercase tracking-wider bg-rose-500/15 text-rose-400 rounded-full border border-rose-500/20">Failed</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="glass-card flex flex-col items-center justify-center p-12 text-center border-base-700 rounded-2xl">
+            <div class="w-16 h-16 rounded-full bg-base-800 border border-base-700 flex items-center justify-center mb-4">
+                <span class="material-symbols-outlined text-[32px] text-base-400">payments</span>
+            </div>
+            <h3 class="text-lg font-bold text-white mb-1">No payment history</h3>
+            <p class="text-base-400 text-sm max-w-sm">Upgrade your membership plan to see your payment records here.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Checkout Modal -->
+<div id="checkoutModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 opacity-0 transition-opacity duration-300">
+    <div class="bg-base-900 border border-base-700 rounded-3xl w-full max-w-md shadow-[0_20px_50px_rgba(0,0,0,0.8)] transform scale-95 transition-transform duration-300 overflow-hidden">
+        
+        <div class="bg-gradient-to-r from-brand-600 to-indigo-600 p-6 relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+            <div class="relative z-10">
+                <h3 class="text-xl font-black text-white leading-tight">Complete Payment</h3>
+                <p class="text-white/80 text-sm font-medium mt-1">Secure checkout</p>
+            </div>
+        </div>
+        
+        <form id="paymentForm" action="/member/plans/pay" method="POST" class="p-6 space-y-5">
+            <input type="hidden" name="tier" id="checkoutTier">
+            <input type="hidden" name="amount" id="checkoutAmount">
+            
+            <div class="flex justify-between items-center p-4 bg-base-800 rounded-xl border border-base-700">
+                <span class="text-sm text-base-400">Plan</span>
+                <span id="checkoutPlanName" class="text-sm font-bold text-white"></span>
+            </div>
+            
+            <div class="flex justify-between items-center p-4 bg-base-800 rounded-xl border border-base-700">
+                <span class="text-sm text-base-400">Amount</span>
+                <span id="checkoutAmountDisplay" class="text-lg font-black text-white"></span>
+            </div>
+            
+            <div>
+                <label class="block text-xs font-bold tracking-widest text-base-400 uppercase mb-2">Payment Method</label>
+                <select name="payment_method" required class="w-full bg-base-800 border border-base-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all">
+                    <option value="">Select method</option>
+                    <option value="UPI">UPI</option>
+                    <option value="Credit Card">Credit Card</option>
+                    <option value="Debit Card">Debit Card</option>
+                    <option value="Net Banking">Net Banking</option>
+                    <option value="Cash">Cash (At Library)</option>
+                </select>
+            </div>
+            
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="closeCheckoutModal()" class="flex-1 py-3.5 bg-base-800 hover:bg-base-700 text-white text-sm font-bold rounded-xl transition-colors border border-base-700">
+                    Cancel
+                </button>
+                <button type="submit" class="flex-1 py-3.5 bg-brand-600 hover:bg-brand-500 text-white text-sm font-bold rounded-xl shadow-[0_4px_15px_rgba(37,99,235,0.3)] transition-all">
+                    Pay Now
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Intercept checkout form submissions to show modal
+    document.querySelectorAll('form[action="/member/plans/checkout"]').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const tier = this.querySelector('[name="tier"]').value;
+            const amount = this.querySelector('[name="amount"]').value;
+            
+            document.getElementById('checkoutTier').value = tier;
+            document.getElementById('checkoutAmount').value = amount;
+            document.getElementById('checkoutPlanName').textContent = tier + ' Plan';
+            document.getElementById('checkoutAmountDisplay').textContent = '₹' + amount + '/month';
+            
+            const modal = document.getElementById('checkoutModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('div > div').classList.remove('scale-95');
+            }, 10);
+            document.body.style.overflow = 'hidden';
+        });
+    });
+    
+    function closeCheckoutModal() {
+        const modal = document.getElementById('checkoutModal');
+        modal.classList.add('opacity-0');
+        modal.querySelector('div > div').classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }, 300);
+    }
+</script>
+{% endblock %}

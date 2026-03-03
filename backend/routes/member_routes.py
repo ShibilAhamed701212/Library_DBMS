@@ -165,8 +165,8 @@ def member_dashboard():
     """
     user_id = session["user_id"]
 
-    # FETCH CURRENT ISSUES
-    issues = fetch_all(
+    # FETCH ALL ISSUES FOR THIS USER
+    all_issues = fetch_all(
         """
         SELECT b.title, i.issue_date, i.return_date, i.fine
         FROM issues i
@@ -177,6 +177,10 @@ def member_dashboard():
         (user_id,)
     )
 
+    # Calculate active stats in Python
+    active_issues = [i for i in all_issues if i['return_date'] is None]
+    total_fine = sum(i['fine'] or 0 for i in all_issues)
+    
     # FETCH ACTIVITIES
     from backend.services.activity_service import get_user_activities
     activities = get_user_activities(user_id)
@@ -196,7 +200,9 @@ def member_dashboard():
     return render_template(
         "member/overview.html",
         active_page="member_overview",
-        issues=issues,
+        issues=all_issues,
+        active_issues=active_issues,
+        total_fine=total_fine,
         activities=activities,
         recommendations=recommendations,
         reading_goal=reading_goal,
@@ -563,7 +569,7 @@ def member_delete_my_account():
         # Clear session after deletion
         session.clear()
         flash("Your account has been permanently deleted.")
-        return redirect("/")
+        return redirect("/login")
     else:
         flash(result, "error")
         return redirect("/member/dashboard")
@@ -636,6 +642,12 @@ def member_api_leaderboard():
     from backend.services.social_service import get_leaderboard
     leaderboard = get_leaderboard(limit=50)
     return jsonify(leaderboard)
+
+@member_bp.route("/leaderboard")
+@member_required
+def member_leaderboard_page():
+    """Renders the dedicated leaderboard page."""
+    return render_template("member/leaderboard.html", active_page="member_leaderboard")
 
 
 @member_bp.route("/profile/<int:user_id>")
@@ -960,8 +972,151 @@ def search_users_json():
     
     return jsonify({"users": users})
 
+@member_bp.route("/api/community/add_friend", methods=["POST"])
+@member_required
+def add_friend_route():
+    """Sends a friend request to another user."""
+    from backend.services.social_service import send_friend_request
+
+    data = request.get_json() or {}
+    target_id = data.get("target_id")
+
+    if not target_id:
+        return jsonify({"error": "No target user specified"}), 400
+
+    try:
+        send_friend_request(session["user_id"], target_id)
+        return jsonify({"success": True, "message": "Friend request sent!"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
 @member_bp.app_template_filter('datetimeformat')
 def datetimeformat(value, format='%Y-%m-%d %H:%M'):
     if value is None:
         return ""
     return value.strftime(format)
+
+
+# =====================================================
+# MEMBERSHIP PLANS & PAYMENTS
+# =====================================================
+
+def ensure_payments_table():
+    """Create the payments table if it doesn't exist."""
+    try:
+        execute_query("""
+            CREATE TABLE IF NOT EXISTS payments (
+                payment_id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                tier VARCHAR(20) NOT NULL,
+                amount DECIMAL(10, 2) NOT NULL,
+                payment_method VARCHAR(50),
+                status ENUM('Completed', 'Pending', 'Failed') DEFAULT 'Completed',
+                payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT fk_payments_user
+                    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+            )
+        """)
+    except Exception:
+        pass
+
+
+@member_bp.route('/plans')
+@member_required
+def plans_page():
+    """Displays the membership plans page with pricing cards."""
+    ensure_payments_table()
+    user_id = session['user_id']
+
+    from backend.services.membership_service import get_user_tier
+    current_tier = get_user_tier(user_id)
+
+    payments = fetch_all(
+        "SELECT * FROM payments WHERE user_id = %s ORDER BY payment_date DESC LIMIT 20",
+        (user_id,)
+    )
+
+    return render_template(
+        'member/plans.html',
+        current_tier=current_tier,
+        payments=payments or []
+    )
+
+
+@member_bp.route('/plans/pay', methods=['POST'])
+@member_required
+def plans_pay():
+    """Processes a payment and upgrades the user's membership tier."""
+    ensure_payments_table()
+    user_id = session['user_id']
+    tier = request.form.get('tier')
+    amount = request.form.get('amount', 0)
+    payment_method = request.form.get('payment_method', 'N/A')
+
+    valid_tiers = {'Gold': 199, 'Platinum': 499}
+    if tier not in valid_tiers:
+        flash('Invalid plan selected.', 'error')
+        return redirect('/member/plans')
+
+    try:
+        # Record the payment
+        execute_query(
+            """INSERT INTO payments (user_id, tier, amount, payment_method, status)
+               VALUES (%s, %s, %s, %s, 'Completed')""",
+            (user_id, tier, valid_tiers[tier], payment_method)
+        )
+
+        # Upgrade the user's tier
+        from backend.services.membership_service import update_user_tier
+        update_user_tier(user_id, tier)
+        session['tier'] = tier
+
+        # Add notification
+        try:
+            from backend.services.notification_service import add_notification
+            add_notification(user_id, f"🎉 Upgraded to {tier} plan! Enjoy your new benefits.")
+        except Exception:
+            pass
+
+        flash(f'Successfully upgraded to {tier}! Enjoy your new benefits.', 'success')
+    except Exception as e:
+        flash(f'Payment failed: {str(e)}', 'error')
+
+    return redirect('/member/plans')
+
+
+@member_bp.route('/plans/change', methods=['POST'])
+@member_required
+def plans_change():
+    """Handles plan downgrade (free tier change)."""
+    user_id = session['user_id']
+    tier = request.form.get('tier')
+
+    if tier != 'Silver':
+        flash('Invalid downgrade target.', 'error')
+        return redirect('/member/plans')
+
+    try:
+        from backend.services.membership_service import update_user_tier
+        update_user_tier(user_id, 'Silver')
+        session['tier'] = 'Silver'
+
+        # Record as a $0 transaction for history
+        ensure_payments_table()
+        execute_query(
+            """INSERT INTO payments (user_id, tier, amount, payment_method, status)
+               VALUES (%s, 'Silver', 0, 'Downgrade', 'Completed')""",
+            (user_id,)
+        )
+
+        try:
+            from backend.services.notification_service import add_notification
+            add_notification(user_id, "Your plan has been changed to Silver (Free).")
+        except Exception:
+            pass
+
+        flash('Your plan has been changed to Silver (Free).', 'success')
+    except Exception as e:
+        flash(f'Failed to change plan: {str(e)}', 'error')
+
+    return redirect('/member/plans')

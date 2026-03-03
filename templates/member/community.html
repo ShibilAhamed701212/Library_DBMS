@@ -1,3132 +1,966 @@
 {% extends "layout.html" %}
-
+{% set active_page = 'member_community' %}
 {% block title %}Community Hub{% endblock %}
-{% block header_title %}Community Hub 2.0{% endblock %}
-{% block header_subtitle %}Connect with the Community{% endblock %}
 
-{% block head %}
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<!-- Bootstrap 5 for Modals -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<style>
-:root {
-    --glass-bg: rgba(255, 255, 255, 0.05);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-    --primary-glow: rgba(124, 58, 237, 0.4);
-    --text-main: #f8fafc;
-    --text-muted: #94a3b8;
-    --chat-sidebar-width: 320px;
-    --accent: #c084fc;
-}
-
-[data-theme="light"] {
-    --glass-bg: rgba(0, 0, 0, 0.05);
-    --glass-border: rgba(0, 0, 0, 0.1);
-    --text-main: #1e293b;
-    --text-muted: #64748b;
-    --primary-glow: rgba(79, 70, 229, 0.2);
-}
-
-/* Light Mode Overrides for Specific Elements */
-[data-theme="light"] .search-box input {
-    color: #1e293b !important;
-}
-[data-theme="light"] .chat-item:hover {
-    background: rgba(0, 0, 0, 0.05) !important;
-}
-[data-theme="light"] .msg-other {
-    background: white !important;
-    border-color: rgba(0,0,0,0.1);
-    color: #1e293b !important;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-}
-[data-theme="light"] .glass-input-wrapper input {
-    color: #1e293b !important;
-}
-[data-theme="light"] .glass-input-wrapper {
-    background: white !important;
-    border-color: rgba(0,0,0,0.1);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
-
-body {
-    background: radial-gradient(circle at top left, #1e1b4b, #0f172a);
-    color: var(--text-main);
-    font-family: 'Outfit', sans-serif;
-    margin: 0;
-}
-
-/* Custom Scrollbar Globally */
-* {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-}
-*::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-*::-webkit-scrollbar-track {
-    background: transparent;
-}
-*::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.2);
-    border-radius: 10px;
-}
-*::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(255, 255, 255, 0.4);
-}
-
-.main-content {
-    padding: 20px var(--space-lg) !important;
-}
-
-.messenger-container {
-    flex: 1;
-    display: flex;
-    height: 100%; 
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    border: 1px solid var(--glass-border);
-    border-radius: 24px;
-    overflow: hidden;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-}
-
-.community-layout {
-    display: flex;
-    gap: 16px;
-    height: calc(100vh - 200px);
-    margin: 20px auto;
-    max-width: 1400px;
-    align-items: stretch;
-}
-
-/* Sidebar Navigation Bar */
-.activity-bar {
-    width: 72px;
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    border: 1px solid var(--glass-border);
-    border-radius: 24px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 24px 0;
-    gap: 20px;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-}
-
-.nav-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 24px;
-    background: rgba(255, 255, 255, 0.05);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.4rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border: 1px solid transparent;
-}
-
-.nav-icon:hover {
-    border-radius: 16px;
-    background: var(--primary-gradient);
-    transform: scale(1.1);
-}
-
-.nav-icon.active {
-    border-radius: 16px;
-    background: var(--primary-gradient);
-    box-shadow: 0 0 15px var(--primary-glow);
-}
-
-/* Sidebar */
-.messenger-sidebar {
-    width: var(--chat-sidebar-width);
-    border-right: 1px solid var(--glass-border);
-    display: flex;
-    flex-direction: column;
-    background: rgba(0, 0, 0, 0.1);
-}
-
-/* Database Stats */
-.db-stat-card {
-    background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-/* FORCED VISIBILITY: Ensure text stays readable on this dark page */
-.header-title h1, 
-.header-title p, 
-.header-user-name,
-#mobileBackBtn,
-.identity-user div,
-.identity-bar button,
-#activeChatName,
-#chatSettingsPanel h4 {
-    color: white !important;
-}
-.header-user-role,
-.anon-switch span {
-    color: rgba(255, 255, 255, 0.7) !important;
-}
-.notif-btn {
-    color: white !important;
-}
-.notif-btn:hover {
-    background: rgba(255, 255, 255, 0.1) !important;
-}
-
-.sidebar-header {
-    padding: 24px;
-    border-bottom: 1px solid var(--glass-border);
-}
-
-.search-box {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--glass-border);
-    border-radius: 12px;
-    padding: 10px 16px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.search-box input {
-    background: transparent;
-    border: none;
-    color: white;
-    outline: none;
-    width: 100%;
-    font-size: 0.9rem;
-}
-
-.chat-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 12px;
-}
-
-.chat-item {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px;
-    border-radius: 16px;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    margin-bottom: 4px;
-}
-
-.chat-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateX(6px);
-    box-shadow: -4px 0 0 0 var(--accent);
-}
-
-.chat-item.active {
-    background: var(--primary-gradient);
-    box-shadow: 0 10px 15px -3px rgba(124, 58, 237, 0.3);
-}
-
-.chat-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
-    object-fit: cover;
-    border: 2px solid var(--glass-border);
-}
-
-.chat-info {
-    flex: 1;
-}
-
-.chat-name {
-    font-weight: 600;
-    font-size: 1rem;
-    margin-bottom: 2px;
-}
-
-.chat-preview {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-}
-
-/* Main Chat Area */
-.chat-window {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-}
-
-.chat-top-bar {
-    padding: 20px 32px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid var(--glass-border);
-    background: rgba(255, 255, 255, 0.02);
-}
-
-.active-chat-info {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.messages-area {
-    flex: 1;
-    overflow-y: auto;
-    padding: 32px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-/* Message Bubbles */
-.msg-bubble {
-    max-width: 70%;
-    padding: 14px 20px;
-    border-radius: 20px;
-    font-size: 0.95rem;
-    line-height: 1.5;
-    position: relative;
-    animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.msg-other {
-    align-self: flex-start;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--glass-border);
-    border-bottom-left-radius: 4px;
-}
-
-.msg-me {
-    align-self: flex-end;
-    background: var(--primary-gradient);
-    color: white;
-    border-bottom-right-radius: 4px;
-}
-
-.msg-meta {
-    font-size: 0.7rem;
-    margin-top: 6px;
-    opacity: 0.6;
-}
-
-/* Input Box */
-.input-area {
-    padding: 24px 32px;
-    background: rgba(0, 0, 0, 0.1);
-}
-
-.glass-input-wrapper {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--glass-border);
-    border-radius: 20px;
-    padding: 8px 12px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.glass-input-wrapper input {
-    background: transparent;
-    border: none;
-    color: white;
-    flex: 1;
-    padding: 10px;
-    outline: none;
-    font-size: 1rem;
-}
-
-.btn-send {
-    background: var(--primary-gradient);
-    border: none;
-    width: 42px;
-    height: 42px;
-    border-radius: 14px;
-    color: white;
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-
-.btn-send:hover {
-    transform: scale(1.1) rotate(-5deg);
-    box-shadow: 0 0 20px rgba(124, 58, 237, 0.5);
-}
-
-/* User Identity Bar (Bottom Left) */
-.identity-bar {
-    padding: 20px;
-    border-top: 1px solid var(--glass-border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.identity-user {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.identity-user img {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-}
-
-/* --- Anonymous Toggle Switch --- */
-.anon-switch {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.75rem;
-    color: var(--text-muted);
-}
-
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 40px;
-  height: 20px;
-}
-
-.switch input { opacity: 0; width: 0; height: 0; }
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-color: #334155;
-  transition: .4s;
-  border-radius: 20px;
-}
-
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 14px; width: 14px;
-  left: 3px; bottom: 3px;
-  background-color: white;
-  transition: .4s;
-  border-radius: 50%;
-}
-
-input:checked + .slider {
-  background: var(--primary-gradient);
-}
-
-input:checked + .slider:before {
-  transform: translateX(20px);
-}
-
-.glass-modal-content {
-    background: rgba(15, 23, 42, 0.95) !important;
-    backdrop-filter: blur(40px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    border-radius: 28px;
-    box-shadow: 0 0 100px rgba(0,0,0,1);
-    color: white !important;
-    position: relative;
-    z-index: 10001; /* Extremely high */
-    pointer-events: auto !important;
-}
-
-.modal {
-    z-index: 10000 !important;
-}
-
-.modal-backdrop {
-    z-index: 9999 !important;
-}
-
-.glass-modal-content .form-label {
-    color: #ffffff !important; 
-    font-weight: 700 !important;
-    letter-spacing: 1.5px;
-    font-size: 0.85rem !important;
-    margin-bottom: 12px;
-    display: block;
-}
-
-.glass-modal-content .form-control, 
-.glass-modal-content .form-select {
-    background: rgba(255, 255, 255, 0.15) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    color: white !important;
-    border-radius: 14px;
-    padding: 12px 16px;
-}
-
-.glass-modal-content .form-control::placeholder {
-    color: rgba(255, 255, 255, 0.6) !important;
-}
-
-.btn-close-custom {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 1.5rem;
-    line-height: 1;
-    cursor: pointer;
-    opacity: 0.7;
-    transition: opacity 0.2s;
-}
-
-
-@media (max-width: 1024px) {
-    .community-layout {
-        flex-direction: column;
-        height: auto;
-        gap: 12px;
-        margin: 10px;
-    }
-    .activity-bar {
-        width: 100%;
-        height: auto;
-        flex-direction: row;
-        justify-content: center;
-        padding: 12px;
-        gap: 16px;
-        border-radius: 16px;
-    }
-    .messenger-container {
-        height: 600px;
-    }
-}
-
-/* Embedded Mode Styles */
-/* Embedded Mode Styles (Admin Hub Integration) */
-{% if embedded %}
-/* Hide the layout header (Title & User Profile) */
-.main-content > header {
-    display: none !important;
-}
-
-/* Reset Layout Containers */
-.app-container, .main-content {
-    padding: 0 !important;
-    margin: 0 !important;
-    height: 100vh !important;
-    width: 100% !important;
-    max-width: none !important;
-    overflow: hidden !important;
-    display: block !important;
-}
-
-body {
-    background: transparent !important;
-    overflow: hidden !important;
-}
-
-/* Full Size Community Layout */
-.community-layout {
-    margin: 0 !important;
-    height: 100vh !important;
-    width: 100% !important;
-    max-width: none !important;
-    gap: 0 !important;
-    border: none !important;
-}
-
-/* Remove Card Styles for Seamless Fit */
-.messenger-container {
-    border-radius: 0 !important;
-    border: none !important;
-    box-shadow: none !important;
-    height: 100vh !important;
-}
-
-.activity-bar {
-    border-radius: 0 !important;
-    margin: 0 !important;
-    height: 100vh !important;
-    border-top: none !important;
-    border-bottom: none !important;
-    border-left: none !important;
-    box-shadow: none !important;
-}
-{% endif %}
-
-/* Custom Tab Pills */
-.tab-pill {
-    padding: 10px 0;
-    cursor: pointer;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    border-bottom: 2px solid transparent;
-    transition: all 0.2s;
-    flex: 1;
-    text-align: center;
-}
-
-.tab-pill:hover {
-    color: white;
-}
-
-.tab-pill.active {
-    color: #c084fc; /* Accent */
-    border-bottom: 2px solid #c084fc;
-}
-
-/* Chat Settings Panel */
-.chat-settings-panel {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 320px;
-    height: 100%;
-    background: rgba(15, 23, 42, 0.98);
-    backdrop-filter: blur(40px);
-    border-left: 1px solid var(--glass-border);
-    z-index: 100;
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
-    animation: slideIn 0.3s ease;
-}
-
-.settings-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--glass-border);
-    margin-bottom: 20px;
-}
-
-.settings-section {
-    margin-bottom: 24px;
-}
-
-.settings-label {
-    display: block;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 12px;
-}
-
-.theme-options {
-    display: flex;
-    gap: 10px;
-}
-
-.theme-option {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    cursor: pointer;
-    border: 2px solid transparent;
-    transition: all 0.2s;
-}
-
-.theme-option:hover {
-    transform: scale(1.1);
-}
-
-.theme-option.active {
-    border-color: white;
-    box-shadow: 0 0 15px rgba(255,255,255,0.3);
-}
-
-.members-list {
-    max-height: 200px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.member-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 12px;
-    font-size: 0.9rem;
-}
-
-.member-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 10px;
-    object-fit: cover;
-}
-
-.member-role {
-    margin-left: auto;
-    font-size: 0.7rem;
-    padding: 4px 8px;
-    background: var(--primary-gradient);
-    border-radius: 6px;
-}
-
-/* Mobile Chat Toggle Logic */
-/* Mobile Chat Toggle & Layout Logic */
-@media (max-width: 768px) {
-    /* 1. Force Full Viewport Height Integration with Member Layout */
-    .main-content {
-        padding: 0 !important;
-        margin: 0 !important;
-        margin-top: 70px !important; /* Account for mobile-top-bar */
-        height: calc(100vh - 70px) !important;
-        overflow: hidden !important; /* Prevent body scroll, keep it internal */
-        width: 100vw !important;
-        max-width: 100vw !important;
-    }
-
-    .community-layout {
-        margin: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
-        gap: 0 !important;
-        flex-direction: column;
-    }
-
-    /* 2. Flatten Containers for App-like Feel */
-    .messenger-container {
-        height: 100% !important;
-        width: 100% !important;
-        border-radius: 0 !important;
-        border: none !important;
-        border-top: 1px solid var(--glass-border);
-        box-shadow: none !important;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    /* 3. Hide Activity Bar (Use Tabs Instead if needed, or sidebar Header) */
-    .activity-bar {
-        display: none !important;
-    }
-
-    /* 4. Sliding Sidebar/Chat Logic */
-    .messenger-sidebar {
-        width: 100%;
-        position: absolute;
-        top: 0; left: 0;
-        z-index: 20;
-        height: 100%;
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        background: #0f172a; /* Solid background to cover chat */
-    }
-    
-    .chat-window {
-        width: 100%;
-        position: absolute;
-        top: 0; left: 0;
-        z-index: 10;
-        height: 100%;
-        transform: translateX(100%); /* Hidden by default */
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        background: #0f172a;
-        display: flex;
-        flex-direction: column;
-    }
-    
-    /* Active State (When Chat Open) */
-    .messenger-container.chat-active .messenger-sidebar {
-        transform: translateX(-20%); /* Slight parallax or push */
-        opacity: 0; 
-        pointer-events: none;
-    }
-    .messenger-container.chat-active .chat-window {
-        transform: translateX(0);
-        z-index: 30;
-    }
-    
-    /* 5. UI Adjustments */
-    #mobileBackBtn {
-        display: flex !important;
-    }
-    
-    .input-area {
-        padding: 10px 16px;
-        padding-bottom: max(10px, env(safe-area-inset-bottom));
-        background: #1e293b; 
-    }
-    
-    .messages-area {
-        padding: 16px;
-    }
-}
-</style>
-{% endblock %}
+{% block header_title %}Community Hub{% endblock %}
+{% block header_subtitle %}Connect with other members in the community.{% endblock %}
 
 {% block content %}
-<div class="community-layout">
-    <!-- Navigation Bar -->
-    <div class="activity-bar">
-        <div class="nav-icon active" onclick="switchTab('public')" id="tab-public" title="Public Hub">🌐</div>
-        <div class="nav-icon" onclick="switchTab('personal')" id="tab-personal" title="Personal Chats">👤</div>
-        <div class="nav-icon" onclick="switchTab('group')" id="tab-group" title="Private Groups">👥</div>
-        <div class="nav-icon" onclick="showLeaderboard()" id="tab-leaderboard" title="Leaderboard">🏆</div>
-    </div>
-
-    <div class="messenger-container">
-        <!-- Sidebar -->
-        <div class="messenger-sidebar">
-        <div class="sidebar-header">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
-                <h2 style="font-size: 1.5rem; font-weight: 700; margin:0; background: var(--primary-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Messages</h2>
-                <div style="display:flex; gap:12px;">
-                    <button class="btn btn-sm btn-outline-light d-flex align-items-center justify-content-center" style="border-radius:10px; width:32px; height:32px; font-weight:700;" onclick="showNewChatModal()" title="New DM">👤</button>
-                    <button class="btn btn-sm btn-outline-light d-flex align-items-center justify-content-center" style="border-radius:10px; width:32px; height:32px; font-weight:700;" onclick="showCreateGroupModal()" title="Create Group">+</button>
-                </div>
-            </div>
-            <div class="search-box">
-                <span>🔍</span>
-                <input type="text" placeholder="Search conversations..." id="chatSearch">
-            </div>
-        </div>
-
-        <div class="chat-list" id="chatListContainer">
-            <!-- Dynamic Items -->
-            <div id="dynamicChatList"></div>
-        </div>
-
-        <!-- Identity Area -->
-        <div class="identity-bar">
-            <div class="identity-user">
-                <img src="{{ url_for('static', filename=session.get('profile_pic') or 'default.jpg') }}" id="myAvatar">
-                <div>
-                    <div style="font-weight: 600; font-size: 0.9rem;">{{ session.get('name') }} <span style="font-size: 0.65rem; opacity: 0.5; font-weight: 400; margin-left: 2px;">#{{ 1000000000 + (session.get('user_id')|int) }}</span></div>
-                    <div class="anon-switch">
-                        <span>Go Anonymous</span>
-                        <label class="switch">
-                            <input type="checkbox" id="anonToggle" onchange="toggleAnonymous()">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-            <button style="background:none; border:none; cursor:pointer; font-size:1.2rem;" onclick="showSettingsModal()">⚙️</button>
-        </div>
-    </div>
-
-    <!-- Main Window -->
-    <div class="chat-window">
-        <div class="chat-top-bar">
-            <button id="mobileBackBtn" onclick="hideMobileChat()" class="btn btn-sm btn-outline-light" style="display:none; border-radius:50%; width:32px; height:32px; align-items:center; justify-content:center; margin-right:10px; border:none; background:rgba(255,255,255,0.1);">
-                <i class="fas fa-arrow-left"></i>
+<div class="w-full max-w-[1400px] mx-auto flex flex-col md:flex-row gap-4 lg:gap-6 fade-in h-full flex-1 overflow-hidden {{ 'p-4' if fullscreen else 'pb-6 mt-4 md:mt-0' }}">
+    
+    <!-- Sidebar: Nav + Channels -->
+    <div class="flex shrink-0 w-full md:w-[320px] lg:w-[360px] h-full gap-4">
+        
+        <!-- Left Nav Rail (Vertical Icons) -->
+        <div class="hidden md:flex flex-col items-center py-6 gap-6 w-20 bg-base-900 border border-base-700/50 rounded-3xl shadow-sm shrink-0">
+            <button class="nav-node group relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 before:absolute before:inset-0 before:rounded-2xl before:transition-all hover:before:bg-brand-500/10 active-icon" id="btn-public" onclick="switchMainTab('public')" title="Global Chat">
+                <span class="material-symbols-outlined text-[24px] relative z-10 text-brand-400">public</span>
             </button>
-            <div class="active-chat-info">
-                <div id="activeChatIcon" style="background: var(--primary-gradient); width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">🌐</div>
-                <div>
-                    <h3 style="margin:0; font-size:1.1rem; font-weight:700;" id="activeChatName">Global Hub</h3>
-                    <div style="font-size:0.75rem; color:var(--accent)" id="activeChatStatus">Live Community</div>
-                </div>
-            </div>
-            <div style="display:flex; gap:16px;">
-                <button class="btn btn-sm btn-outline-light" style="border-radius:10px;" onclick="showLogsModal()">📋 Logs</button>
-                <button class="btn btn-sm btn-outline-light" style="border-radius:10px;" onclick="showRulesModal()">🛡️ Rules</button>
-                <button class="btn btn-sm btn-outline-light" style="border-radius:10px;" onclick="toggleSettingsPanel()" id="chatSettingsBtn">⚙️ Settings</button>
-            </div>
+            <button class="nav-node group relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 before:absolute before:inset-0 before:rounded-2xl before:transition-all hover:before:bg-base-700/50" id="btn-personal" onclick="switchMainTab('personal')" title="Direct Messages">
+                <span class="material-symbols-outlined text-[24px] relative z-10 text-base-400 group-hover:text-base-100">forum</span>
+            </button>
+            <button class="nav-node group relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 before:absolute before:inset-0 before:rounded-2xl before:transition-all hover:before:bg-base-700/50" id="btn-group" onclick="switchMainTab('group')" title="Groups">
+                <span class="material-symbols-outlined text-[24px] relative z-10 text-base-400 group-hover:text-base-100">groups</span>
+            </button>
+            
+            <div class="flex-1"></div>
         </div>
 
-        <!-- Settings Panel (Slides from right) -->
-        <div id="chatSettingsPanel" class="chat-settings-panel" style="display:none;">
-            <div class="settings-header">
-                <h4 style="margin:0; font-weight:700;">Chat Settings</h4>
-                <button onclick="toggleSettingsPanel()" style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;">✕</button>
-            </div>
-            
-            <!-- Scrollable Content Wrapper -->
-            <div class="settings-scroll-area" style="flex:1; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; -ms-overflow-style:none;">
-            
-            <div class="settings-section">
-                <h4 style="margin-top:12px; font-weight:700; margin-bottom:4px;" id="settingsName">Group Name</h4>
-                
-                <!-- Topic (Editable for Admins) -->
-                <div style="margin-bottom:8px;">
-                    <input type="text" id="settingsTopicInput" placeholder="Set a topic..." 
-                           style="width:100%; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); 
-                                  border-radius:8px; padding:8px 12px; color:white; font-size:0.85rem; display:none;"
-                           maxlength="100">
-                    <p style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom:0; cursor:pointer;" 
-                       id="settingsTopic" onclick="editTopic()">Group Topic</p>
+        <!-- Chat List Sidebar -->
+        <div class="flex-1 min-h-0 flex flex-col bg-base-800/30 border border-base-700 rounded-3xl overflow-hidden glass-card shadow-lg relative z-10">
+            <!-- Header & Search -->
+            <div class="px-5 py-5 border-b border-base-700/50 bg-base-900/50 backdrop-blur-md shrink-0 rounded-t-3xl">
+                <div class="flex items-center justify-between mb-4 w-full">
+                    <h3 class="font-black text-white text-lg tracking-tight flex items-center gap-2">
+                        <span class="material-symbols-outlined text-brand-400 text-[20px]" id="channelIcon">hub</span>
+                        <span id="channelListTitle">Channels</span>
+                    </h3>
+                    <button onclick="openCreateModal()" class="w-8 h-8 rounded-lg bg-base-800 hover:bg-brand-500 text-base-400 hover:text-white transition-all flex items-center justify-center shadow-sm">
+                        <span class="material-symbols-outlined text-[18px]">add</span>
+                    </button>
                 </div>
-                
-                <div style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">
-                    Admin: <span id="settingsOwnerName" style="color:white;">Unknown</span>
+                <div class="relative flex items-center bg-base-900 border border-base-700 rounded-xl px-3 py-2.5 transition-all focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500 shadow-inner">
+                    <span class="material-symbols-outlined text-base-500 text-[18px]">search</span>
+                    <input type="text" placeholder="Search..." id="channelSearch" class="w-full bg-transparent border-none text-sm text-base-100 placeholder-base-500 focus:outline-none focus:ring-0 ml-2">
                 </div>
             </div>
-            
-            <!-- Group Photo -->
-            <div class="settings-section">
-                <label class="settings-label">Group Photo</label>
-                <div style="display:flex; align-items:center; gap:16px;">
-                    <img id="groupPhotoPreview" src="/static/default.jpg" style="width:64px; height:64px; border-radius:16px; object-fit:cover; border:2px solid var(--glass-border);">
-                    <div>
-                        <input type="file" id="groupPhotoInput" style="display:none;" accept="image/*" onchange="previewGroupPhoto(this)">
-                        <button class="btn btn-sm btn-primary" style="border-radius:10px;" onclick="document.getElementById('groupPhotoInput').click()">Change Photo</button>
+
+            <!-- Channels Scroll -->
+            <div class="flex-1 overflow-y-auto p-3 space-y-1 custom-scroll" id="channelList">
+                <div class="channel-item flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer text-base-400 animate-pulse bg-base-800/20">
+                    <span class="font-mono text-base-500 font-bold opacity-60">#</span> Initializing...
+                </div>
+            </div>
+
+            <!-- User Status Footer -->
+            <div class="p-4 border-t border-base-700/50 bg-base-900/80 flex items-center gap-3 shrink-0 backdrop-blur-md rounded-b-3xl relative z-20">
+                {% set profile_pic = session.get('profile_pic', 'default.jpg') %}
+                {% if profile_pic and profile_pic != 'default.jpg' %}
+                <div class="w-10 h-10 rounded-full border border-base-700 overflow-hidden relative shadow-sm shrink-0">
+                    <img src="{{ url_for('static', filename=profile_pic) }}" id="myAvatar" class="w-full h-full object-cover transition-all duration-300 {{ 'grayscale sepia-[.3] hue-rotate-180 brightness-50' if session.get('is_anon') else '' }}">
+                    <div class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-base-900 rounded-full z-10 box-content"></div>
+                </div>
+                {% else %}
+                <div class="w-10 h-10 rounded-full border border-base-700 bg-base-800 flex items-center justify-center text-lg relative shadow-sm shrink-0">
+                    <span id="myAvatar" class="transition-all duration-300 {{ 'opacity-50 grayscale' if session.get('is_anon') else '' }}">👤</span>
+                    <div class="absolute bottom-[-2px] right-[-2px] w-3 h-3 bg-emerald-500 border-2 border-base-900 rounded-full z-10 box-content"></div>
+                </div>
+                {% endif %}
+                <div class="flex-1 overflow-hidden">
+                    <div class="font-bold text-white text-sm truncate flex items-center gap-1.5">
+                        {{ session.get('name') }}
+                        <span class="text-[9px] text-base-400 font-mono bg-base-800 px-1.5 py-0.5 rounded shadow-inner border border-base-700">#{{ session.get('user_id') }}</span>
                     </div>
+                    <div class="text-[10px] font-bold text-base-500 uppercase tracking-widest mt-0.5">Online</div>
                 </div>
-            </div>
-            
-            <!-- Theme -->
-            <div class="settings-section">
-                <label class="settings-label">Theme</label>
-                <div class="theme-options">
-                    <div class="theme-option" onclick="setTheme('dark')" data-theme="dark" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);"></div>
-                    <div class="theme-option" onclick="setTheme('purple')" data-theme="purple" style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);"></div>
-                    <div class="theme-option" onclick="setTheme('blue')" data-theme="blue" style="background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);"></div>
-                    <div class="theme-option" onclick="setTheme('green')" data-theme="green" style="background: linear-gradient(135deg, #047857 0%, #10b981 100%);"></div>
-                    <div class="theme-option" onclick="setTheme('red')" data-theme="red" style="background: linear-gradient(135deg, #b91c1c 0%, #ef4444 100%);"></div>
-                </div>
-            </div>
-            
-            <!-- Chat Type -->
-            <div class="settings-section">
-                <label class="settings-label">Chat Type</label>
-                <select id="chatTypeSelect" class="form-select" style="background:#0f172a; border:1px solid var(--glass-border); color:white; border-radius:10px; padding:10px;" onchange="updateChatType(this.value)">
-                    <option value="public" style="background:#0f172a; color:white;">🌐 Public</option>
-                    <option value="private" style="background:#0f172a; color:white;">🔒 Private</option>
-                    <option value="p2p" style="background:#0f172a; color:white;">👤 Peer-to-Peer</option>
-                </select>
-            </div>
-            
-            <!-- Members Section -->
-            <div class="settings-section">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <label class="settings-label" style="margin:0;">Members</label>
-                    <button class="btn btn-sm btn-primary" style="border-radius:10px; font-size:0.75rem;" onclick="showAddMemberModal()">+ Add</button>
-                </div>
-                <div id="membersList" class="members-list" style="max-height:150px; overflow-y:auto; scrollbar-width:thin;">
-                    <!-- Dynamically populated -->
-                    <div class="member-item">
-                        <img src="/static/default.jpg" class="member-avatar">
-                        <span>Loading...</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Danger Zone -->
-            <div class="settings-section" style="border-top:1px solid rgba(239,68,68,0.3); padding-top:16px;">
-                <label class="settings-label" style="color:#ef4444;">Danger Zone</label>
-                <button class="btn w-100" style="background:rgba(239,68,68,0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.3); border-radius:10px; padding:10px; margin-bottom:8px;" onclick="leaveChannel()">
-                    🚪 Leave Channel
-                </button>
-                <button class="btn w-100" style="background:rgba(239,68,68,0.2); color:#ef4444; border:1px solid rgba(239,68,68,0.5); border-radius:10px; padding:10px;" onclick="deleteChannel()">
-                    🗑️ Delete Channel
-                </button>
-            </div>
-            
-            </div><!-- End Scrollable Content Wrapper -->
-            
-            <!-- Save Button (Fixed at bottom) -->
-            <div class="settings-section" style="padding-top:12px; border-top:1px solid var(--glass-border);">
-                <button class="btn btn-primary w-100" style="border-radius:12px; padding:12px; font-weight:600;" onclick="saveChannelSettings()">💾 Save Changes</button>
-            </div>
-        </div>
-
-        <div class="messages-area" id="messageArea">
-            <!-- Messages go here -->
-        </div>
-
-        <div class="input-area">
-            <div class="glass-input-wrapper">
-                <!-- Emoji Button -->
-                <button id="emojiBtn" title="Add Emoji" style="background:none; border:none; font-size:1.1rem; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; margin-right:8px; transition:color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-muted)'" onclick="toggleEmojiPicker()">
-                    <i class="far fa-smile"></i>
-                </button>
                 
-                <!-- Emoji Picker Container (Hidden by default) -->
-                <div id="emojiPicker" style="display:none; position:absolute; bottom:60px; left:20px; background:rgba(20,20,30,0.95); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px; width:280px; box-shadow:0 4px 15px rgba(0,0,0,0.5); backdrop-filter:blur(10px); z-index:100; max-height:300px; overflow-y:auto; grid-template-columns: repeat(8, 1fr); gap: 5px;">
-                    <!-- Populated by JS -->
+                <!-- Anon Toggle -->
+                <div class="flex items-center gap-2" title="Anonymous Mode">
+                    <span class="text-[10px] font-bold text-base-500 uppercase tracking-widest hidden md:block select-none cursor-help">Anon</span>
+                    <label class="relative inline-flex items-center cursor-pointer scale-75 transform origin-right">
+                        <input type="checkbox" id="anonToggle" class="sr-only peer" {{ 'checked' if session.get('is_anon') }} onchange="toggleAnonMode()">
+                        <div class="w-11 h-6 bg-base-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600 shadow-inner"></div>
+                    </label>
                 </div>
-
-                <!-- File Upload Button -->
-                <button title="Attach File" style="background:none; border:none; font-size:1.1rem; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; margin-right:8px; transition:color 0.2s; position:relative; z-index:10;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-muted)'" onclick="console.log('📎 Clicked'); document.getElementById('chatUploadInput').click()">
-                    <i class="fas fa-paperclip"></i>
-                </button>
-                <input type="file" id="chatUploadInput" style="display:none;" onchange="handleFileUpload(this)">
-
-                <input type="text" placeholder="Type a message..." id="messageInput">
-                <button class="btn-send" id="sendBtn">➤</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Leaderboard Container (Hidden by default) -->
-<div id="leaderboardContainer" class="messenger-container" style="display:none; flex-direction: column; padding: 2rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-        <div>
-            <h1 style="background: var(--primary-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-size: 2.5rem; font-weight: 800; margin: 0;">Community Leaderboard</h1>
-            <p style="color: var(--text-muted); margin-top: 0.5rem;">Top readers sharing their progress with the community</p>
-        </div>
-        <div style="text-align: right;">
-            <div style="font-size: 0.9rem; color: var(--text-muted);">Your Profile Visibility</div>
-            <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: flex-end; margin-top: 0.25rem;">
-                <span style="font-size: 0.8rem;" id="lb-visibility-text">
-                    {% if user.is_public %}
-                        <span style="color: #4ade80;">● Visible</span>
-                    {% else %}
-                        <span style="color: #ef4444;">● Hidden</span>
-                    {% endif %}
-                </span>
-                <button class="btn btn-sm btn-outline-light" style="border-radius: 20px; font-size: 0.75rem;" onclick="location.href='/member/goals'">Manage</button>
             </div>
         </div>
     </div>
 
-    <div class="glass-card" style="flex: 1; overflow-y: auto; padding: 0; background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px;">
-        <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.02);">
-                    <th style="padding: 1.25rem 1rem; text-align: center; color: var(--text-muted); width: 80px; font-weight: 600; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase;">Rank</th>
-                    <th style="padding: 1.25rem 1rem; text-align: left; color: var(--text-muted); font-weight: 600; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase;">Reader</th>
-                    <th style="padding: 1.25rem 1rem; text-align: center; color: var(--text-muted); font-weight: 600; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase;">Books Read</th>
-                    <th style="padding: 1.25rem 1rem; text-align: center; color: var(--text-muted); font-weight: 600; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase;">Yearly Goal</th>
-                </tr>
-            </thead>
-            <tbody id="leaderboardBody">
-                <!-- Populated by JS -->
-            </tbody>
-        </table>
+    <!-- Main Chat Area -->
+    <div class="flex-1 min-h-0 flex flex-col bg-base-900/50 border border-base-700 rounded-3xl overflow-hidden glass-card shadow-xl relative w-full">
+        <!-- Main Chat Header -->
+        <div class="h-[72px] px-6 border-b border-base-700/50 bg-base-800/30 flex items-center justify-between shrink-0 backdrop-blur-md rounded-t-3xl">
+            <div class="flex items-center gap-3">
+                <span class="font-mono text-brand-500 font-black text-2xl opacity-50">#</span>
+                <h2 class="font-black text-white text-xl tracking-tight" id="activeChannelName">Global Community <span class="text-xs text-base-500 ml-2 font-mono bg-base-800/50 px-2 py-0.5 rounded-lg border border-base-700/50 align-middle">#1</span></h2>
+            </div>
+            <div class="flex gap-2">
+                <button id="btnMembers" class="w-10 h-10 rounded-xl flex items-center justify-center text-base-400 hover:bg-base-800 hover:text-white transition-colors" title="Members Directory" onclick="showMembers()">
+                    <span class="material-symbols-outlined text-[20px]">group</span>
+                </button>
+                <button id="btnSettings" class="w-10 h-10 rounded-xl flex items-center justify-center text-base-400 hover:bg-base-800 hover:text-white transition-colors" title="Channel Settings" onclick="showSettings()">
+                    <span class="material-symbols-outlined text-[20px]">settings</span>
+                </button>
+                <button class="w-10 h-10 rounded-xl flex items-center justify-center text-base-400 hover:bg-base-800 hover:text-white transition-colors" title="Sync Logs" onclick="showLogs()">
+                    <span class="material-symbols-outlined text-[20px]">receipt_long</span>
+                </button>
+                <button class="w-10 h-10 rounded-xl flex items-center justify-center text-base-400 hover:bg-base-800 hover:text-white transition-colors" title="Group Rules" onclick="showRules()">
+                    <span class="material-symbols-outlined text-[20px]">info</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Messages Container -->
+        <div class="flex-1 min-h-0 overflow-y-auto p-6 flex flex-col-reverse gap-6 custom-scroll" id="msgContainer">
+            <!-- Messages appear here -->
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-6 pt-2 bg-gradient-to-t from-base-900 via-base-900/80 to-transparent shrink-0 rounded-b-3xl overflow-visible relative z-20">
+            <!-- Emoji Picker Popup container -->
+            <div id="emojiPickerContainer" class="hidden absolute bottom-[70px] left-6 z-[100] shadow-[0_15px_40px_rgba(0,0,0,0.5)] rounded-2xl overflow-hidden animate-fade-in origin-bottom-left">
+                <!-- we will inject picmo or emoji-picker-element here -->
+            </div>
+
+            <div class="relative flex items-center bg-base-800 border border-base-700 rounded-2xl px-2 py-2 transition-all focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500 shadow-lg" id="chatInputWrapper">
+                <button class="w-10 h-10 shrink-0 flex items-center justify-center text-base-400 hover:text-amber-400 transition-colors rounded-xl hover:bg-amber-400/10" id="emojiBtn" title="Insert Emoji">
+                    <span class="material-symbols-outlined text-[22px]">mood</span>
+                </button>
+                <button class="w-10 h-10 shrink-0 flex items-center justify-center text-base-400 hover:text-emerald-400 transition-colors rounded-xl hover:bg-emerald-400/10 -ml-1" id="attachBtn" title="Upload File or Image" onclick="document.getElementById('fileUpload').click()">
+                    <span class="material-symbols-outlined text-[22px]">attach_file</span>
+                </button>
+                
+                <input type="file" id="fileUpload" class="hidden" accept=".jpg,.jpeg,.png,.gif,.pdf,.txt,.doc,.docx,.csv">
+                
+                <!-- Preview badge inside input if file selected -->
+                <div id="filePreviewBadge" class="hidden items-center gap-1.5 px-2 py-1 bg-brand-500/20 text-brand-400 border border-brand-500/30 rounded-lg text-[10px] font-bold tracking-widest uppercase mr-2 max-w-[120px]">
+                    <span class="material-symbols-outlined text-[14px]">draft</span>
+                    <span id="filePreviewName" class="truncate flex-1">file.pdf</span>
+                    <button class="hover:text-rose-500" onclick="clearFileUpload()"><span class="material-symbols-outlined text-[14px]">close</span></button>
+                </div>
+
+                <input type="text" id="msgInput" class="flex-1 bg-transparent border-none text-base-100 text-sm px-2 focus:outline-none focus:ring-0 placeholder-base-500 font-medium" placeholder="Type a message..." autocomplete="off">
+                
+                <button class="w-10 h-10 shrink-0 flex items-center justify-center text-white bg-brand-600 hover:bg-brand-500 transition-colors rounded-xl shadow-[0_4px_15px_rgba(37,99,235,0.3)] ml-2" id="sendBtn">
+                    <span class="material-symbols-outlined text-[20px] ml-0.5">send</span>
+                </button>
+            </div>
+            <!-- Typing indicator -->
+            <div id="typingIndicator" class="h-5 text-[11px] font-medium italic text-base-500 mt-2 px-2 flex items-center min-h-[20px]"></div>
+        </div>
     </div>
 </div>
 
-<script>
-async function showLeaderboard() {
-    // UI Toggle
-    document.querySelectorAll('.nav-icon').forEach(n => n.classList.remove('active'));
-    document.getElementById('tab-leaderboard').classList.add('active');
-    
-    document.querySelector('.messenger-container').style.display = 'none'; // Hide Chat
-    document.getElementById('leaderboardContainer').style.display = 'flex'; // Show LB
+<!-- Leaderboard has been migrated to a dedicated sidebar page -->
 
-    // Fetch Data
-    const tbody = document.getElementById('leaderboardBody');
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:2rem;">Loading top readers...</td></tr>';
-
-    try {
-        const res = await fetch('/member/api/leaderboard');
-        const data = await res.json();
-        
-        tbody.innerHTML = '';
-        data.forEach((user, index) => {
-            const rank = index + 1;
-            let medal = '';
-            if(rank === 1) medal = '🥇';
-            if(rank === 2) medal = '🥈';
-            if(rank === 3) medal = '🥉';
-
-            const row = `
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
-                    <td style="padding: 1rem; text-align: center; font-weight: 700; font-size: 1.1rem;">
-                        ${medal || rank}
-                    </td>
-                    <td style="padding: 1rem;">
-                        <div style="display: flex; align-items: center; gap: 1rem;">
-                            <img src="/static/${user.profile_pic || 'default.jpg'}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--glass-border);">
-                            <div>
-                                <a href="/member/profile/${user.user_id}" style="color: white; text-decoration: none; font-weight: 600;">${user.name}</a>
-                                <div style="font-size: 0.75rem; color: var(--text-muted);">${user.tier || 'Member'}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td style="padding: 1rem; text-align: center; font-weight: 700; color: #c084fc;">
-                        ${user.books_read}
-                    </td>
-                    <td style="padding: 1rem; text-align: center; color: var(--text-muted);">
-                        ${user.goal_books}
-                    </td>
-                </tr>
-            `;
-            tbody.innerHTML += row;
-        });
-
-    } catch(e) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:2rem; color: #ef4444;">Failed to load leaderboard.</td></tr>';
-    }
-}
-
-// Hook into existing switchTab to hide leaderboard
-const originalSwitchTab = window.switchTab || function(){};
-window.switchTab = function(type) {
-    // Hide leaderboard, show chat
-    document.querySelector('.messenger-container').style.display = 'flex';
-    document.getElementById('leaderboardContainer').style.display = 'none';
-    document.getElementById('tab-leaderboard').classList.remove('active');
-    
-    if (typeof originalSwitchTab === 'function') {
-        // We need to reimplement the basic switch tab logic or assume the original function is available
-        // Since I can't easily wrap the original strictly defined in script tag without conflicts, 
-        // I'll just toggle the UI classes here manually as a patch for the tab buttons
-        document.querySelectorAll('.nav-icon').forEach(n => n.classList.remove('active'));
-        document.getElementById('tab-' + type).classList.add('active');
-        
-        // Trigger the chat filter logic if accessible, or relying on the original onclick handler usually works 
-        // if I didn't override the function. But since I am, I should call the original logic.
-        // CHECK: The original community.html script logic is separate. 
-        // I will just rely on the existing onclick handlers for the other tabs to work, 
-        // BUT I need to make sure they hide the leaderboard.
-        // Actually, best way is to add the hiding logic to the existing onclicks via event delegation or modifying them.
-        // But since I am replacing content, I can just bake the logic into the new function.
-        // Let's safe-guard this.
-        
-        // Call original logic (assumed global)
-        // But wait, I can't easily call the original function if I overwrote it.
-        // I will NOT overwrite it. I will let the onclicks handle themselves, but I will
-        // add logic to the other tabs to hide leaderboard.
-    }
-}
-</script>
-
-<script>
-// Patching existing tabs to hide leaderboard
-document.addEventListener('DOMContentLoaded', () => {
-    ['tab-public', 'tab-personal', 'tab-group'].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) {
-            const oldClick = el.onclick;
-            el.onclick = function(e) {
-                document.querySelector('.messenger-container').style.display = 'flex';
-                document.getElementById('leaderboardContainer').style.display = 'none';
-                document.getElementById('tab-leaderboard').classList.remove('active');
-                if(oldClick) oldClick.call(this, e);
-            }
-        }
-    });
-});
-</script>
-</div>
-
-
-<!-- Create Group Modal -->
-<div class="modal" id="createGroupModal" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content glass-modal-content">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold">Community Groups</h5>
-                <button type="button" class="btn-close-custom" onclick="forceCloseModals()">&times;</button>
-            </div>
-            <div class="modal-body p-4">
-                <!-- Tabs -->
-                <div class="d-flex gap-3 mb-4 border-bottom" style="border-color: rgba(255,255,255,0.1)!important; padding-bottom: 0px;">
-                    <div class="tab-pill active" onclick="switchGroupModalTab('create')" id="tab-pill-create">Create Group</div>
-                    <div class="tab-pill" onclick="switchGroupModalTab('join')" id="tab-pill-join">Join by ID</div>
-                </div>
-
-                <!-- Create View -->
-                <div id="view-create">
-                    <div class="mb-4">
-                        <label class="form-label fw-bold text-uppercase">Group Name</label>
-                        <input type="text" class="form-control" id="newGroupName" placeholder="Enter group name">
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label fw-bold text-uppercase">Privacy</label>
-                        <select class="form-select" id="groupPrivacy">
-                            <option value="public" style="background: #1e1b4b;">Public Hub</option>
-                            <option value="private" style="background: #1e1b4b;">Private (Invite only)</option>
-                        </select>
-                    </div>
-                    <div class="d-flex justify-content-end">
-                        <button class="btn btn-primary w-100" onclick="submitCreateChannel()" style="background: var(--primary-gradient); border: none; border-radius: 12px; padding: 12px; font-weight: 600;">Create Group</button>
-                    </div>
-                </div>
-
-                <!-- Join View -->
-                <div id="view-join" style="display:none;">
-                    <div class="mb-4">
-                        <label class="form-label fw-bold text-uppercase">Group ID or Public ID</label>
-                        <input type="text" class="form-control" id="joinGroupId" placeholder="e.g. 1000000005">
-                        <div class="form-text text-muted mt-2">Ask the group admin for their Public ID.</div>
-                    </div>
-                    <div class="d-flex justify-content-end">
-                        <button class="btn btn-primary w-100" onclick="joinChannelById()" style="background: var(--primary-gradient); border: none; border-radius: 12px; padding: 12px; font-weight: 600;">Join Group</button>
-                    </div>
-                </div>
-            </div>
+<!-- Members Modal -->
+<div class="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl hidden flex-col items-center justify-center p-6 opacity-0 transition-opacity duration-300" id="membersModal">
+    <div class="w-full max-w-lg bg-base-900/80 border border-base-700 rounded-3xl overflow-hidden glass-card shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
+        <div class="px-6 py-4 border-b border-base-700/50 flex justify-between items-center bg-base-800/50">
+            <h3 class="text-lg font-black text-white flex items-center gap-2"><span class="material-symbols-outlined text-brand-400">group</span> Members Directory</h3>
+            <button onclick="closeMembers()" class="text-base-400 hover:text-white transition-colors"><span class="material-symbols-outlined">close</span></button>
         </div>
+        <div id="membersContent" class="max-h-[60vh] overflow-y-auto custom-scroll p-2"></div>
     </div>
 </div>
 
 <!-- Settings Modal -->
-<div class="modal" id="settingsModal" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content glass-modal-content">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold">Chat Settings</h5>
-                <button type="button" class="btn-close-custom" onclick="forceCloseModals()">&times;</button>
-            </div>
-            <div class="modal-body p-4">
-                <div id="channelSettingsView">
-                    <h6 class="text-accent mb-3 fw-bold">Group Management</h6>
-                    <button class="btn btn-danger w-100 mb-3" onclick="deleteCurrentChannel()" style="border-radius:12px;">Delete Group</button>
-                    <button class="btn btn-outline-light w-100" onclick="editChannelName()" style="border-radius:12px;">Rename Group</button>
-                </div>
-                <hr class="my-4" style="border-color: rgba(255,255,255,0.2);">
-                <div id="accountSettingsView">
-                    <h6 class="text-accent mb-3 fw-bold">Your Account</h6>
-                    <a href="/logout" class="btn btn-outline-danger w-100" style="border-radius:12px;">Logout</a>
-                </div>
-            </div>
+<div class="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl hidden flex-col items-center justify-center p-6 opacity-0 transition-opacity duration-300" id="settingsModal">
+    <div class="w-full max-w-lg bg-base-900/80 border border-base-700 rounded-3xl overflow-hidden glass-card shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
+        <div class="px-6 py-4 border-b border-base-700/50 flex justify-between items-center bg-base-800/50">
+            <h3 class="text-lg font-black text-white flex items-center gap-2"><span class="material-symbols-outlined text-brand-400">tune</span> Channel Config</h3>
+            <button onclick="closeSettings()" class="text-base-400 hover:text-white transition-colors"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <div id="settingsContent" class="max-h-[60vh] overflow-y-auto custom-scroll"></div>
+    </div>
+</div>
+
+<!-- Create/Connect Modal -->
+<div class="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl hidden flex-col items-center justify-center p-6 opacity-0 transition-opacity duration-300" id="createModal">
+    <div class="w-full max-w-sm bg-base-900/80 border border-base-700 rounded-3xl overflow-hidden glass-card shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
+        <div class="px-6 py-4 border-b border-base-700/50 flex justify-between items-center bg-base-800/50">
+            <h3 class="text-[16px] font-black text-white flex items-center gap-2" id="createModalTitle">
+                <span class="material-symbols-outlined text-brand-400">add_circle</span> New Connection
+            </h3>
+            <button onclick="closeCreateModal()" class="text-base-400 hover:text-white transition-colors"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <div class="p-6 space-y-4" id="createModalBody">
+            <!-- Populated Dynamically -->
         </div>
     </div>
 </div>
 
-<!-- User Profile Modal -->
-<div class="modal" id="userProfileModal" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content glass-modal-content">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold">My Profile</h5>
-                <button type="button" class="btn-close-custom" onclick="forceCloseModals()">&times;</button>
-            </div>
-            <div class="modal-body p-4 text-center">
-                
-                <!-- Avatar Section -->
-                <div class="position-relative d-inline-block mb-4" style="cursor:pointer;" onclick="document.getElementById('profileAvatarInput').click()">
-                    <img src="" id="profileModalAvatar" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:2px solid rgba(255,255,255,0.2);">
-                    <div class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:32px; height:32px; border:2px solid #1e293b;">
-                        <i class="fas fa-camera" style="font-size:0.8rem;"></i>
-                    </div>
-                </div>
-                <form id="avatarUploadForm" action="/member/profile/upload" method="POST" enctype="multipart/form-data" style="display:none;">
-                    <input type="file" name="avatar" id="profileAvatarInput" accept="image/*" onchange="document.getElementById('avatarUploadForm').submit()">
-                </form>
-
-                <!-- Basic Info -->
-                <div class="mb-3 text-start">
-                    <label class="form-label text-uppercase fw-bold text-muted" style="font-size:0.75rem;">Display Name</label>
-                    <input type="text" id="profileNameInput" class="form-control" placeholder="Your Name">
-                </div>
-
-                <div class="mb-3 text-start">
-                    <label class="form-label text-uppercase fw-bold text-muted" style="font-size:0.75rem;">About Me</label>
-                    <textarea id="profileBioInput" class="form-control" rows="3" placeholder="Tell us about yourself..."></textarea>
-                </div>
-
-                <div class="mb-4 text-start">
-                     <label class="form-label text-uppercase fw-bold text-muted" style="font-size:0.75rem;">My Public ID</label>
-                     <div class="input-group">
-                        <span class="input-group-text glass-input" style="border-right:0;">#</span>
-                        <input type="text" id="profilePublicId" class="form-control glass-input" style="border-left:0;" readonly>
-                        <button class="btn btn-outline-light" onclick="navigator.clipboard.writeText(document.getElementById('profilePublicId').value); alert('Copied ID!')">📋</button>
-                     </div>
-                </div>
-
-                <!-- Account Actions -->
-                <div class="d-grid gap-2">
-                    <button class="btn btn-primary" onclick="saveUserProfile()" style="border-radius:10px; font-weight:600;">Save Changes</button>
-                    <a href="/logout" class="btn btn-outline-danger" style="border-radius:10px;">Logout</a>
-                </div>
-
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Connections Hub Modal -->
-<!-- Connections Hub Modal (Refactored) -->
-<div class="modal" id="newChatModal" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content glass-modal-content">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold">Connections Hub</h5>
-                <button type="button" class="btn-close-custom" onclick="forceCloseModals()">&times;</button>
-            </div>
-            <div class="modal-body p-4">
-                <!-- Tabs -->
-                <div class="d-flex gap-3 mb-4 border-bottom" style="border-color: rgba(255,255,255,0.1)!important; padding-bottom: 0px;">
-                    <div class="tab-pill active" onclick="switchConnectionsTab('find')" id="tab-pill-find">Find People</div>
-                    <div class="tab-pill" onclick="switchConnectionsTab('requests')" id="tab-pill-requests">
-                        Requests <span id="requestsBadge" class="badge bg-danger rounded-pill ms-1" style="display:none">0</span>
-                    </div>
-                </div>
-
-                <!-- Find View -->
-                <div id="view-find">
-                    <div class="search-box mb-4" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
-                        <span>🔍</span>
-                        <input type="text" placeholder="Search by name..." id="userSearchInput" onkeyup="searchUsers()" style="color: white !important;">
-                    </div>
-                    <div id="userSearchResults" style="max-height: 250px; overflow-y: auto;">
-                        <!-- Results -->
-                    </div>
-                </div>
-
-                <!-- Requests View -->
-                <div id="view-requests" style="display:none;">
-                     <div id="pendingInvitesList" style="max-height: 300px; overflow-y: auto;"></div>
-                     <div id="noInvitesMsg" class="text-center text-muted mt-4" style="display:none">No pending requests</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Context Menu -->
-<div id="msgContextMenu" class="context-menu" style="display:none; position:fixed; z-index:20000; background:#1e293b; border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:6px; box-shadow:0 10px 25px rgba(0,0,0,0.5); min-width:150px; backdrop-filter: blur(20px);">
-    <div class="context-item" onclick="ctxReply()" style="padding:10px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9rem; border-radius:8px; display:flex; gap:10px; align-items:center;">
-        <span>↩️</span> Reply
-    </div>
-    <div class="context-item" onclick="ctxCopy()" style="padding:10px 16px; cursor:pointer; color:#e2e8f0; font-size:0.9rem; border-radius:8px; display:flex; gap:10px; align-items:center;">
-        <span>📋</span> Copy Text
-    </div>
-    <div class="context-item owner-only" onclick="ctxEdit()" style="padding:10px 16px; cursor:pointer; color:#facc15; font-size:0.9rem; border-radius:8px; display:flex; gap:10px; align-items:center;">
-        <span>✏️</span> Edit
-    </div>
-    <div class="context-item owner-only" onclick="ctxDelete()" style="padding:10px 16px; cursor:pointer; color:#ef4444; font-size:0.9rem; border-radius:8px; display:flex; gap:10px; align-items:center;">
-        <span>🗑️</span> Delete
-    </div>
-</div>
-
-
-
-
-<!-- Logs Modal -->
-<div class="modal" id="logsModal" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content glass-modal-content">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold">Audit Logs</h5>
-                <button type="button" class="btn-close-custom" onclick="logsModal.hide()">&times;</button>
-            </div>
-            <div class="modal-body p-4">
-                <div id="logsList" style="max-height: 400px; overflow-y: auto; display:flex; flex-direction:column; gap:8px;">
-                    <!-- Logs go here -->
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Rules Modal -->
-<div class="modal" id="rulesModal" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content glass-modal-content">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold">Community Rules</h5>
-                <button type="button" class="btn-close-custom" onclick="rulesModal.hide()">&times;</button>
-            </div>
-            <div class="modal-body p-4">
-                <textarea id="rulesText" class="form-control" rows="10" placeholder="Loading rules..." style="background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1); border-radius:12px; resize:none;"></textarea>
-                <div class="mt-3 text-end" id="rulesSaveBtnContainer" style="display:none;">
-                    <button class="btn btn-primary" onclick="saveRules()" style="border-radius:10px;">💾 Save Rules</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<style>
-.context-item:hover {
-    background: rgba(255,255,255,0.1);
-}
-/* Hide scrollbar globally for a cleaner UI */
-::-webkit-scrollbar {
-    display: none;
-}
-* {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
-}
-</style>
-
-{% endblock %}
-
-{% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Scripts section -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 <script>
-    let createGroupModal, settingsModal, newChatModal, logsModal, rulesModal, userProfileModal;
-
     const socket = io();
-    
-    // ... (rest of vars) ...
-    
-    document.addEventListener('DOMContentLoaded', () => {
-        // Initialize Modals properly
-        const cgEl = document.getElementById('createGroupModal');
-        const stEl = document.getElementById('settingsModal');
-        const ncEl = document.getElementById('newChatModal');
-        const upEl = document.getElementById('userProfileModal'); // New Profile Modal
+    let activeChannelId = 1;
+    let currentMainTab = 'public';
+    let conversations = { public: [], personal: [], group: [] };
+    const myUserId = parseInt("{{ session.get('user_id', 0) }}"); // Added to accurately identify self messages
 
-        // FORCE MOVE TO BODY: This fixes all stacking context issues
-        if(cgEl) { document.body.appendChild(cgEl); createGroupModal = new bootstrap.Modal(cgEl, { backdrop: true, keyboard: true }); }
-        if(stEl) { document.body.appendChild(stEl); settingsModal = new bootstrap.Modal(stEl, { backdrop: true, keyboard: true }); }
-        if(ncEl) { document.body.appendChild(ncEl); newChatModal = new bootstrap.Modal(ncEl, { backdrop: true, keyboard: true }); }
-        if(upEl) { document.body.appendChild(upEl); userProfileModal = new bootstrap.Modal(upEl, { backdrop: true, keyboard: true }); } // Init
+    document.addEventListener('DOMContentLoaded', () => {
+        initSocket();
+        fetchHubData();
         
-        // ... (rest of initializers) ...
+        document.getElementById('msgInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') executeTransmission();
+        });
+        document.getElementById('sendBtn').onclick = executeTransmission;
+        
+        // Mobile nav logic if we want minimal bottom nav mapping
+        switchMainTab('public');
+        
+        // Hide emoji picker if clicking outside
+        document.addEventListener('click', (e) => {
+            const container = document.getElementById('emojiPickerContainer');
+            if(!container.classList.contains('hidden') && !e.target.closest('#emojiPickerContainer') && !e.target.closest('#emojiBtn')) {
+                container.classList.add('hidden');
+            }
+        });
     });
 
-    // ... (rest of functions) ...
+    function initSocket() {
+        socket.on('connect', () => {
+            console.log("Connected to chat server.");
+            joinChannel(activeChannelId);
+        });
 
-    function showSettingsModal() {
-       // OLD: settingsModal.show();
-       // NEW: Redirect to Profile Modal as requested by user
-       showUserProfileModal();
-    }
-    
-    function showUserProfileModal() {
-        if(!userProfileModal) return;
-        
-        // Populate Data
-        document.getElementById('profileModalAvatar').src = document.getElementById('myAvatar').src;
-        document.getElementById('profileNameInput').value = "{{ session.get('name') }}";
-        // Bio isn't in session unless we add it, for now fetch or leave empty if not critical
-        // document.getElementById('profileBioInput').value = ...; 
-        
-        // Public ID
-        const uid = {{ session.get('user_id', 0) }};
-        document.getElementById('profilePublicId').value = formatPublicId(uid);
-        
-        userProfileModal.show();
-    }
-    
-    async function saveUserProfile() {
-        const name = document.getElementById('profileNameInput').value;
-        const bio = document.getElementById('profileBioInput').value;
-        
-        try {
-            const res = await fetch('/member/profile/update', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ name, bio })
-            });
-            const data = await res.json();
-            
-            if(data.success) {
-                alert('✅ Profile updated!');
-                location.reload(); // Reload to refresh sidebar/session
-            } else {
-                alert('❌ Error: ' + (data.error || 'Update failed'));
+        socket.on('receive_message', (data) => {
+            if (data.channel_id == activeChannelId) {
+                renderPlaceholderMessage(data);
+                scrollToBottom();
             }
-        } catch(e) {
-            alert('Failed to update profile');
-        }
+        });
+
+        socket.on('message_history', (data) => {
+            const container = document.getElementById('msgContainer');
+            container.innerHTML = '';
+            data.messages.forEach(m => renderPlaceholderMessage(m));
+            scrollToBottom();
+        });
+
+        socket.on('typing', (data) => {
+            const indicator = document.getElementById('typingIndicator');
+            indicator.innerHTML = `<span class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-brand-500 rounded-full animate-ping"></span>${data.user} is processing data...</span>`;
+            setTimeout(() => indicator.innerHTML = '', 3000);
+        });
     }
-    
-    function forceCloseModals() {
-        if(createGroupModal) createGroupModal.hide();
-        if(settingsModal) settingsModal.hide();
-        if(newChatModal) newChatModal.hide();
-        if(userProfileModal) userProfileModal.hide();
-        
-        // ... (rest of cleanup) ...
-    }
-    const myId = parseInt("{{ session.get('user_id') | default('-1') }}");
-    const PUBLIC_ID_OFFSET = 1000000000;
-    
-    function formatPublicId(id) {
-        if (!id || id == -1) return '';
-        return '#' + (parseInt(id) + PUBLIC_ID_OFFSET);
-    }
-    
-    let currentChannelId = 1; // Default to Global
-    let isAnonymousMode = {{ 'true' if session.get('is_anon') else 'false' }}; // Initialize from template
-    const userRole = '{{ session.get("role", "member") }}'; // Admin or member
-    const currentUserId = {{ session.get('user_id', 0) }};
-    
-    async function toggleAnonymous() {
-        console.log("🎭 toggleAnonymous called");
-        isAnonymousMode = document.getElementById('anonToggle').checked; // Update global state from checkbox
-        console.log("🎭 Anonymous Mode:", isAnonymousMode);
-        try {
-            const res = await fetch('/chat/anonymous', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ is_anon: isAnonymousMode })
-            });
-            console.log("🎭 Server Response:", res.status);
-            
-            // Update UI
-            const avatar = document.getElementById('myAvatar');
-            if (isAnonymousMode) { // Use the global variable here
-                avatar.style.filter = 'grayscale(100%) brightness(0.5)';
-                console.log("🎭 Avatar grayed out");
-            } else {
-                avatar.style.filter = '';
-                console.log("🎭 Avatar restored");
-            }
-        } catch(e) {
-            console.error("❌ Failed to toggle anonymous:", e);
-        }
-    }
-</script>
 
-<script src="{{ url_for('static', filename='js/js_channel_settings.js') }}"></script>
-
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // Initialize Modals properly
-        const cgEl = document.getElementById('createGroupModal');
-        const stEl = document.getElementById('settingsModal');
-        const ncEl = document.getElementById('newChatModal');
-
-        // FORCE MOVE TO BODY: This fixes all stacking context issues
-        if(cgEl) { document.body.appendChild(cgEl); createGroupModal = new bootstrap.Modal(cgEl, { backdrop: true, keyboard: true }); }
-        if(stEl) { document.body.appendChild(stEl); settingsModal = new bootstrap.Modal(stEl, { backdrop: true, keyboard: true }); }
-        if(ncEl) { document.body.appendChild(ncEl); newChatModal = new bootstrap.Modal(ncEl, { backdrop: true, keyboard: true }); }
-        
-        const lmEl = document.getElementById('logsModal');
-        const rmEl = document.getElementById('rulesModal');
-        if(lmEl) { document.body.appendChild(lmEl); logsModal = new bootstrap.Modal(lmEl, { backdrop: true }); }
-        if(rmEl) { document.body.appendChild(rmEl); rulesModal = new bootstrap.Modal(rmEl, { backdrop: true }); }
-
-        // Cleanup any lingering backdrops on load
-        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-
-        // Initial setup
-        loadConversation('global');
-        fetchConversations();
-
-        // Listeners
-        document.getElementById('sendBtn').onclick = sendMessage;
-        document.getElementById('messageInput').onkeypress = (e) => { if(e.keyCode === 13) sendMessage(); };
-    });
-
-    let currentTab = 'public';
-    let allConversations = { public: [], personal: [], group: [] };
-
-    async function fetchConversations() {
+    async function fetchHubData() {
         try {
             const res = await fetch('/chat/conversations');
             const data = await res.json();
-            if(data.success) {
-                allConversations = data.conversations;
-                renderChatList();
+            if (data.success) {
+                conversations = data.conversations;
+                renderChannelList();
             }
-        } catch (e) { console.error("Fetch Error:", e); }
+        } catch (e) { console.error("Archive fetch failed", e); }
     }
 
-    function switchTab(tab) {
-        currentTab = tab;
-        document.querySelectorAll('.nav-icon').forEach(el => el.classList.remove('active'));
-        document.getElementById(`tab-${tab}`).classList.add('active');
-        renderChatList();
-    }
-
-    function renderChatList() {
-        const container = document.getElementById('dynamicChatList');
-        container.innerHTML = '';
+    async function renderChannelList() {
+        const list = document.getElementById('channelList');
+        list.innerHTML = '';
+        const currentList = conversations[currentMainTab] || [];
         
-        const list = allConversations[currentTab] || [];
-        
-        if (list.length === 0) {
-            container.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-muted); font-size:0.8rem;">No conversations in this category.</div>`;
-            return;
-        }
-
-        list.forEach(item => {
-            const div = document.createElement('div');
-            div.className = `chat-item ${currentChannelId == item.channel_id ? 'active' : ''}`;
-            div.id = `chat-${item.channel_id}`;
-            div.onclick = () => loadConversation(item.channel_id, item.name, item.type, item.icon);
-            
-            const defaultIcon = (item.type === 'personal') ? '👤' : (item.type === 'group' ? '👥' : '🌐');
-            
-            // Use custom icon if available
-            let iconHtml = '';
-            if (item.icon) {
-                iconHtml = `<img src="/static/${item.icon}" style="width:100%; height:100%; object-fit:cover; border-radius:14px;">`;
-            } else {
-                iconHtml = defaultIcon;
-            }
-            
-            div.innerHTML = `
-                <div style="background: var(--primary-gradient); width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; overflow:hidden;">${iconHtml}</div>
-                <div class="chat-info">
-                    <div class="chat-name">${item.name} <span style="font-size: 0.65rem; opacity: 0.5; font-weight: 400;">#${item.public_id}</span></div>
-                    <div class="chat-preview">${item.guild_name || 'Active hub'}</div>
-                </div>
-            `;
-            container.appendChild(div);
-        });
-    }
-
-    // Call on load
-    fetchConversations();
-
-    async function loadConversation(id, name, type, icon) {
-        currentChannelId = (id === 'global') ? 1 : id;
-        window.currentChatType = type; // Store globally for checks
-        
-        // UI Updates
-        document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
-        const activeItem = document.getElementById(`chat-${id}`);
-        if(activeItem) activeItem.classList.add('active');
-
-        const displayName = name || (id === 'global' ? 'Global Community' : 'Private chat');
-        const displayId = (id === 'global') ? '#1000000001' : formatPublicId(id);
-        
-        let iconMarkup = '🌐';
-        let statusText = 'Live Community';
-        
-        if (type === 'personal') {
-            iconMarkup = '👤';
-            statusText = 'Peer-to-Peer';
-        } else if (type === 'group') {
-            iconMarkup = '👥';
-            statusText = 'Private Group';
-        } else if (id === 'global') {
-            iconMarkup = '🌐';
-            statusText = 'Global Community';
-        }
-        
-        // If custom icon exists, display image instead of emoji
-        const iconEl = document.getElementById('activeChatIcon');
-        if (icon) {
-            iconEl.innerHTML = `<img src="/static/${icon}" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">`;
-        } else {
-            iconEl.innerHTML = iconMarkup;
-        }
-        
-        document.getElementById('activeChatName').innerHTML = `${displayName} <span style="font-size: 0.8rem; opacity: 0.5; font-weight: 400; margin-left: 8px;">${displayId}</span>`;
-        document.getElementById('activeChatStatus').innerText = statusText;
-
-        // Join Socket Room - Ensure string ID
-        socket.emit('join_channel', { channel_id: String(currentChannelId) });
-
-        // Fetch History
-        const res = await fetch(`/chat/channels/${currentChannelId}/messages`);
-        const data = await res.json();
-        const container = document.getElementById('messageArea');
-        container.innerHTML = '';
-        
-        if(data.success) {
-            data.messages.reverse().forEach(renderMessage);
-            scrollToBottom();
-        }
-        
-        // Load channel-specific theme
-        loadChannelTheme();
-        
-        // Setup Input Access (Global Chat Restriction)
-        const msgInput = document.getElementById('messageInput');
-        const sendBtn = document.getElementById('sendBtn');
-        const uploadBtn = document.querySelector('button[title="Attach File"]'); // Button that triggers upload
-        
-        if (id === 1 || id === 'global') {
-            if (userRole !== 'admin') {
-                msgInput.disabled = true;
-                msgInput.placeholder = "Read-only channel (Admin only)";
-                msgInput.style.opacity = "0.5";
-                msgInput.style.cursor = "not-allowed";
-                
-                if(sendBtn) {
-                     sendBtn.disabled = true;
-                     sendBtn.style.opacity = "0.5";
-                     sendBtn.style.cursor = "not-allowed";
-                }
-                
-                if(uploadBtn) {
-                    uploadBtn.disabled = true;
-                    uploadBtn.style.opacity = "0.5";
-                    uploadBtn.style.cursor = "not-allowed";
-                    uploadBtn.onclick = null; // Remove click handler
-                }
-            } else {
-                // Admin in Global - Enable
-                msgInput.disabled = false;
-                msgInput.placeholder = "Type a message...";
-                msgInput.style.opacity = "1";
-                msgInput.style.cursor = "text";
-                if(sendBtn) {
-                    sendBtn.disabled = false;
-                    sendBtn.style.opacity = "1";
-                    sendBtn.style.cursor = "pointer";
-                }
-                if(uploadBtn) {
-                    uploadBtn.disabled = false;
-                    uploadBtn.style.opacity = "1";
-                    uploadBtn.style.cursor = "pointer";
-                    uploadBtn.onclick = function() { document.getElementById('chatUploadInput').click(); };
-                }
-            }
-        } else {
-            // Normal Chat - Enable
-            msgInput.disabled = false;
-            msgInput.placeholder = "Type a message...";
-            msgInput.style.opacity = "1";
-            msgInput.style.cursor = "text";
-            if(sendBtn) {
-                sendBtn.disabled = false;
-                sendBtn.style.opacity = "1";
-                sendBtn.style.cursor = "pointer";
-            }
-            if(uploadBtn) {
-                uploadBtn.disabled = false;
-                uploadBtn.style.opacity = "1";
-                uploadBtn.style.cursor = "pointer";
-                uploadBtn.onclick = function() { document.getElementById('chatUploadInput').click(); };
-            }
-        }
-        
-        // Trigger Mobile View
-        showMobileChat();
-    }
-
-    // Mobile Toggle Helpers
-    function showMobileChat() {
-        if (window.innerWidth <= 768) {
-            document.querySelector('.messenger-container').classList.add('chat-active');
-        }
-    }
-
-    function hideMobileChat() {
-        document.querySelector('.messenger-container').classList.remove('chat-active');
-        // Optional: Clear active chat selection visually
-        document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
-    }
-
-    function renderMessage(msg) {
-        const container = document.getElementById('messageArea');
-        const div = document.createElement('div');
-        
-        // Data Normalization
-        const sender = msg.sender_name || (msg.user_profile && msg.user_profile.name) || 'Anonymous';
-        const sId = msg.user_id || msg.sender_id || (msg.user_profile && msg.user_profile.id);
-        const content = msg.content || msg.message_text || msg.message || "";
-        const time = msg.created_at || 'Just now';
-        
-        // Identify if it belongs to current user
-        const isMe = (msg.sender_type === 'me') || (String(sId) === String(myId));
-        
-        div.className = `msg-bubble ${isMe ? 'msg-me' : 'msg-other'}`;
-        div.dataset.mid = msg.message_id; 
-        
-        const publicHandle = sId ? `<span style="font-weight:400; font-size:0.65rem; opacity:0.5; margin-left:4px;">${formatPublicId(sId)}</span>` : '';
-        
-        let attachmentHtml = '';
-        if(msg.attachment) {
-            if(msg.attachment.type === 'image') {
-                attachmentHtml = `<img src="${msg.attachment.url}" style="max-width:200px; border-radius:8px; display:block; margin-bottom:4px; cursor:pointer;" onclick="window.open(this.src)">`;
-            } else {
-                attachmentHtml = `<a href="${msg.attachment.url}" target="_blank" style="display:flex; align-items:center; gap:8px; background:rgba(0,0,0,0.2); padding:8px; border-radius:8px; text-decoration:none; color:inherit; margin-bottom:4px;">
-                    <i class="fas fa-file"></i> <span>${msg.attachment.name || 'File'}</span>
-                </a>`;
-            }
-        }
-
-        let replyHtml = '';
-        if(msg.reply_to) {
-             replyHtml = `<div style="border-left:2px solid var(--primary); padding-left:8px; font-size:0.75rem; opacity:0.7; margin-bottom:4px;">Reply to: ${msg.reply_to.content || '...'}</div>`;
-        }
-
-        div.innerHTML = `
-            <div style="font-weight:700; font-size:0.75rem; margin-bottom:4px; opacity:0.8;">${sender}${publicHandle}</div>
-            ${replyHtml}
-            ${attachmentHtml}
-            <div class="msg-content" style="word-break: break-word;">${content}</div>
-            <div class="msg-meta">${time}</div>
-        `;
-        container.appendChild(div);
-    }
-
-    function sendMessage() {
-        const input = document.getElementById('messageInput');
-        const txt = input.value.trim();
-        
-        // --- Edit Mode ---
-        if(isEditing && editingMessageId) {
-            socket.emit('edit_message', {
-                channel_id: String(currentChannelId),
-                message_id: editingMessageId,
-                new_content: txt
-            });
-            cancelEdit();
-            return;
-        }
-
-        // --- Normal Send ---
-        const replyCtx = document.getElementById('replyContextBanner');
-        const replyId = replyCtx ? replyCtx.dataset.mid : null;
-        
-        if(!txt && !currentAttachment) return;
-
-        socket.emit('send_message', {
-            channel_id: String(currentChannelId),
-            message: txt,
-            attachment: currentAttachment,
-            reply_to_id: replyId,
-            is_anon: isAnonymousMode
-        });
-        
-        input.value = '';
-        currentAttachment = null;
-        if(replyCtx) cancelReply();
-        cancelAttachment();
-    }
-    
-    // Reply Context UI
-    function cancelReply() {
-        const banner = document.getElementById('replyContextBanner');
-        if(banner) banner.remove();
-    }
-    
-    function cancelAttachment() {
-        currentAttachment = null;
-        const banner = document.getElementById('attachmentPreviewBanner');
-        if(banner) banner.remove();
-         // Also clear file input so change event triggers again for same file
-         const fileInput = document.getElementById('chatUploadInput');
-         if(fileInput) fileInput.value = '';
-    }
-
-    socket.on('receive_message', (msg) => {
-        console.log("📩 Message Received:", msg);
-        if(String(msg.channel_id) === String(currentChannelId)) {
-            renderMessage(msg);
-            scrollToBottom();
-        } else {
-            console.log("🙈 Message ignored (wrong channel):", msg.channel_id, "vs", currentChannelId);
-        }
-    });
-
-    socket.on('error', (err) => {
-        console.error("❌ Socket Error:", err);
-        alert("Chat Error: " + (err.message || "Unknown error"));
-    });
-
-    function scrollToBottom() {
-        const area = document.getElementById('messageArea');
-        area.scrollTop = area.scrollHeight;
-    }
-
-    function showCreateGroupModal() {
-        createGroupModal.show();
-    }
-
-    function showSettingsModal() {
-        showUserProfileModal();
-    }
-
-    function forceCloseModals() {
-        if(createGroupModal) createGroupModal.hide();
-        if(settingsModal) settingsModal.hide();
-        if(newChatModal) newChatModal.hide();
-        if(userProfileModal) userProfileModal.hide();
-        
-        // Safety cleanup for UI persistence
-        setTimeout(() => {
-            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-            document.body.classList.remove('modal-open');
-            document.body.style.overflow = '';
-            document.body.style.paddingRight = '';
-        }, 100);
-    }
-
-    function showNewChatModal() {
-        newChatModal.show();
-        fetchPendingInvites();
-    }
-
-    // ===== CHAT SETTINGS PANEL =====
-    let currentTheme = localStorage.getItem('chatTheme') || 'dark';
-    let settingsPanelOpen = false;
-    
-    function toggleSettingsPanel() {
-        const panel = document.getElementById('chatSettingsPanel');
-        settingsPanelOpen = !settingsPanelOpen;
-        
-        if(settingsPanelOpen) {
-            panel.style.display = 'flex';
-            fetchChannelMembers();
-            loadChannelSettings();
-        } else {
-            panel.style.display = 'none';
-        }
-    }
-    
-    function setTheme(theme, save = true) {
-        currentTheme = theme;
-        
-        // Save per-channel if save is true
-        if(save && currentChannelId) {
-            localStorage.setItem(`chatTheme_${currentChannelId}`, theme);
-        }
-        
-        // Update theme option UI
-        document.querySelectorAll('.theme-option').forEach(el => el.classList.remove('active'));
-        const themeEl = document.querySelector(`.theme-option[data-theme="${theme}"]`);
-        if(themeEl) themeEl.classList.add('active');
-        
-        // Theme background colors
-        const themes = {
-            'dark': { bg: 'rgba(15, 23, 42, 0.95)', accent: '#1e293b' },
-            'purple': { bg: 'rgba(88, 28, 135, 0.3)', accent: '#581c87' },
-            'blue': { bg: 'rgba(30, 58, 138, 0.3)', accent: '#1e3a8a' },
-            'green': { bg: 'rgba(6, 78, 59, 0.3)', accent: '#064e3b' },
-            'red': { bg: 'rgba(127, 29, 29, 0.3)', accent: '#7f1d1d' }
-        };
-        
-        const t = themes[theme];
-        
-        // Only change the chat/messages area background
-        const msgArea = document.getElementById('messageArea');
-        if(msgArea) {
-            msgArea.style.background = t.bg;
-        }
-        
-        // Also update the chat window background slightly
-        const chatWindow = document.querySelector('.chat-window');
-        if(chatWindow) {
-            chatWindow.style.background = `linear-gradient(180deg, ${t.accent}22 0%, transparent 100%)`;
-        }
-    }
-    
-    // Load channel-specific theme when switching chats
-    function loadChannelTheme() {
-        const savedTheme = localStorage.getItem(`chatTheme_${currentChannelId}`) || 'dark';
-        setTheme(savedTheme, false); // Don't re-save
-    }
-    
-    function updateChatType(type) {
-        console.log('📢 Updating chat type to:', type);
-        // Will be saved when user clicks Save
-    }
-    
-    async function fetchChannelMembers() {
-        // Handle global channel same as others to get count/list
-        const targetId = (!currentChannelId || currentChannelId === 'global') ? 1 : currentChannelId;
-        
-        try {
-            const res = await fetch(`/chat/channels/${targetId}/members`);
-            const data = await res.json();
-            
-            if(data.success && data.members) {
-                const list = document.getElementById('membersList');
-                list.innerHTML = '';
-                
-                // Show Total Count
-                const countDiv = document.createElement('div');
-                countDiv.style.padding = '8px 12px';
-                countDiv.style.marginBottom = '8px';
-                countDiv.style.borderBottom = '1px solid rgba(255,255,255,0.1)';
-                countDiv.style.color = 'var(--text-muted)';
-                countDiv.style.fontSize = '0.85rem';
-                countDiv.style.fontWeight = '500';
-                countDiv.innerHTML = `Total Members: <span style="color:var(--text-primary);">${data.members.length}</span>`;
-                list.appendChild(countDiv);
-                
-                // Sort members: Admins first
-                const admins = data.members.filter(m => m.role === 'admin' || m.is_owner);
-                const members = data.members.filter(m => m.role !== 'admin' && !m.is_owner);
-                
-                const amOwner = data.is_owner || false;
-                const amAdmin = data.is_admin || false;
-                
-                // --- ADMINS SECTION ---
-                if (admins.length > 0) {
-                    const adminHeader = document.createElement('div');
-                    adminHeader.style.padding = '8px 12px';
-                    adminHeader.style.color = '#a855f7'; // Purple accent
-                    adminHeader.style.fontSize = '0.75rem';
-                    adminHeader.style.fontWeight = '700';
-                    adminHeader.style.textTransform = 'uppercase';
-                    adminHeader.innerText = `Admins (${admins.length})`;
-                    list.appendChild(adminHeader);
+        // Render Pending Requests if Personal Tab
+        if(currentMainTab === 'personal') {
+            try {
+                const reqRes = await fetch('/chat/social/requests');
+                const reqData = await reqRes.json();
+                if(reqData.success && reqData.requests && reqData.requests.length > 0) {
+                    const reqHdr = document.createElement('div');
+                    reqHdr.className = "text-[10px] font-bold text-emerald-500 uppercase tracking-widest px-2 pb-1 mb-2 mt-1 border-b border-emerald-500/20";
+                    reqHdr.innerText = "Connection Requests";
+                    list.appendChild(reqHdr);
                     
-                    admins.forEach(m => {
-                        try { renderMemberItem(m, list, amOwner, amAdmin); } 
-                        catch(e) { console.error('Render error:', e); }
+                    reqData.requests.forEach(req => {
+                        const item = document.createElement('div');
+                        item.className = 'flex flex-col gap-2 p-3 bg-base-800/60 rounded-xl mb-3 border border-base-700/60 shadow-sm';
+                        item.innerHTML = `
+                            <div class="flex items-center gap-2">
+                               <div class="w-8 h-8 rounded-full overflow-hidden bg-base-900 shrink-0 border border-base-600">
+                                   ${req.sender_pic && req.sender_pic !== 'default.jpg' ? `<img src="/static/${req.sender_pic}" class="w-full h-full object-cover">` : '<span class="flex items-center justify-center w-full h-full text-[12px] opacity-60">👤</span>'}
+                               </div>
+                               <div class="flex-1 overflow-hidden">
+                                   <div class="text-xs font-bold text-white truncate">${req.sender_name}</div>
+                                   <div class="text-[9px] text-base-500 font-mono mt-0.5">ID Request #${req.sender_id}</div>
+                               </div>
+                            </div>
+                            <div class="flex gap-2 w-full mt-1">
+                                <button onclick="respondReq(${req.id}, 'accepted')" class="flex-1 py-1.5 rounded-lg bg-brand-600/20 text-brand-400 border border-brand-500/30 hover:bg-brand-500 hover:text-white transition-colors text-[10px] font-bold shadow-sm">Accept</button>
+                                <button onclick="respondReq(${req.id}, 'rejected')" class="flex-1 py-1.5 rounded-lg bg-base-900/50 text-base-400 border border-base-700 hover:bg-rose-500 hover:text-white hover:border-rose-500 transition-colors text-[10px] font-bold shadow-sm">Decline</button>
+                            </div>
+                        `;
+                        list.appendChild(item);
                     });
+                    
+                    const listHdr = document.createElement('div');
+                    listHdr.className = "text-[10px] font-bold text-base-500 uppercase tracking-widest px-2 pb-1 mb-2 mt-4 border-b border-base-700/50";
+                    listHdr.innerText = "Connections";
+                    list.appendChild(listHdr);
                 }
-                
-                // --- MEMBERS SECTION ---
-                if (members.length > 0) {
-                     // Check if we should hide normal member list (Global Chat restriction)
-                     // If Global Chat (ID 1) AND User is NOT Admin -> Hide "Members" section
-                     const isGlobal = (targetId == 1);
-                     if (isGlobal && userRole !== 'admin') {
-                         const restrictedDiv = document.createElement('div');
-                         restrictedDiv.style.padding = '20px';
-                         restrictedDiv.style.textAlign = 'center';
-                         restrictedDiv.style.color = 'var(--text-muted)';
-                         restrictedDiv.style.fontSize = '0.8rem';
-                         restrictedDiv.innerHTML = '<i>Member list hidden for Global Community.</i>';
-                         list.appendChild(restrictedDiv);
-                     } else {
-                        const memberHeader = document.createElement('div');
-                        memberHeader.style.padding = '8px 12px';
-                        memberHeader.style.color = 'var(--text-muted)';
-                        memberHeader.style.fontSize = '0.75rem';
-                        memberHeader.style.fontWeight = '700';
-                        memberHeader.style.textTransform = 'uppercase';
-                        memberHeader.style.marginTop = '12px';
-                        memberHeader.innerText = `Members (${members.length})`;
-                        list.appendChild(memberHeader);
-                        
-                        members.forEach(m => {
-                            try { renderMemberItem(m, list, amOwner, amAdmin); } 
-                            catch(e) { console.error('Render error:', e); }
-                        });
-                     }
-                }
-            }
-        } catch(e) {
-            console.error('Error fetching members:', e);
-            document.getElementById('membersList').innerHTML = '<div style="padding:20px; text-align:center; color:red;">Failed to load members</div>';
-        }
-    }
-    
-    function renderMemberItem(m, list, isOwnerOfChannel, isChannelAdmin) {
-        const div = document.createElement('div');
-        div.className = 'member-item';
-        
-        // --- Permissions ---
-        const isSelf = (String(m.user_id) === String(currentUserId));
-        // Can manage: System Admin OR Channel Owner OR Channel Admin
-        // AND NOT in Personal Chat (P2P)
-        const isP2P = (window.currentChatType === 'personal');
-        const canManage = (userRole === 'admin' || isOwnerOfChannel || isChannelAdmin) && !isSelf && !isP2P;
-        
-        let actions = '';
-        if(canManage) {
-            // Kick Button (Hammer)
-            const kickBtn = `<button class="action-btn btn-kick" title="Kick Member" onclick="kickMember(${m.user_id}, '${m.name ? m.name.replace("'", "\\'") : "Unknown"}')">
-                <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Hammer.png" alt="Kick" width="24" height="24">
-            </button>`;
-            
-            // Promote/Demote Button
-            // m.role is now potentially the channel role (or global)
-            const isAdmin = (m.role === 'admin' || m.is_owner);
-            if (!m.is_owner) { // Cannot demote owner
-                const promoteTitle = isAdmin ? "Demote to Member" : "Make Admin";
-                const promoteIcon = isAdmin 
-                    ? `<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Symbols/Down%20Arrow.png" alt="Demote" width="24" height="24">` 
-                    : `<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Crown.png" alt="Make Admin" width="24" height="24">`;
-                
-                const promoteColor = isAdmin ? "#f59e0b" : "#10b981"; // Yellow to remove, Green to add
-                
-                actions += `<button class="action-btn" title="${promoteTitle}" onclick="updateMemberRole(${m.user_id}, '${isAdmin ? 'member' : 'admin'}')" style="color:${promoteColor}; border-color:${promoteColor}30; background:${promoteColor}10;">
-                    ${promoteIcon}
-                </button>`;
-            }
-            
-            actions += kickBtn;
+            } catch(e) { console.error('Requests fetch err:', e); }
         }
         
-        // Add badges
-        let badges = '';
-        if(m.is_owner) badges += '<span style="background:#eab308; color:black; font-size:0.6rem; padding:2px 6px; border-radius:4px; margin-left:6px; font-weight:700;">OWNER</span>';
-        else if(m.role === 'admin') badges += '<span style="background:#a855f7; color:white; font-size:0.6rem; padding:2px 6px; border-radius:4px; margin-left:6px; font-weight:700;">ADMIN</span>';
-        
-        div.innerHTML = `
-            <div style="display:flex; align-items:center; gap:10px;">
-                <img src="/static/${m.profile_pic || 'default.jpg'}" class="member-avatar">
-                <div style="display:flex; flex-direction:column;">
-                    <span style="font-weight:600; font-size:0.9rem;">${m.name || 'Unknown'}${badges}</span>
-                    <span style="font-size:0.7rem; color:var(--text-muted);">#${1000000000 + (m.user_id || 0)}</span>
-                </div>
-            </div>
-            <div style="display:flex; gap:8px;">${actions}</div>
-        `;
-        list.appendChild(div);
-    }
-    
-    async function updateMemberRole(userId, newRole) {
-        if(!confirm(`Are you sure you want to change this user's role to ${newRole.toUpperCase()}?`)) return;
-        
-        try {
-            const res = await fetch(`/chat/channels/${currentChannelId}/members/${userId}/role`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ role: newRole })
-            });
-            const data = await res.json();
-            if(data.success) {
-                // Refresh list
-                fetchChannelMembers();
-            } else {
-                alert('Error: ' + (data.error || 'Failed to update role'));
-            }
-        } catch(e) {
-            console.error(e);
-            alert('Failed to update role');
-        }
-    }
-    
-    async function kickMember(userId, userName) {
-        if(!confirm(`Are you sure you want to kick ${userName} from this channel?`)) return;
-        
-        try {
-            const res = await fetch(`/chat/channels/${currentChannelId}/kick/${userId}`, {
-                method: 'POST'
-            });
-            const data = await res.json();
-            
-            if(data.success) {
-                alert('✅ ' + (data.message || 'Member kicked'));
-                fetchChannelMembers(); // Refresh list
-            } else {
-                alert('❌ ' + (data.error || 'Failed to kick member'));
-            }
-        } catch(e) {
-            console.error('Error kicking member:', e);
-            alert('❌ Error kicking member');
-        }
-    }
-    
-    function showAddMemberModal() {
-        // Set mode to Group Invite
-        window.inviteMode = 'group';
-        window.inviteTargetChannelId = currentChannelId;
-        
-        // Update Modal Title (Optional but nice)
-        const title = document.querySelector('#newChatModal .modal-title');
-        if(title) title.innerText = "Invite to Group";
-
-        // Use existing newChatModal for user search
-        newChatModal.show();
-        // Switch to find tab
-        switchConnectionsTab('find');
-    }
-    
-    function previewGroupPhoto(input) {
-        if(input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                document.getElementById('groupPhotoPreview').src = e.target.result;
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-    
-    // --- TOPIC EDITING ---
-    let canEditTopic = false; // Set by loadChannelSettings based on admin status
-    
-    function editTopic() {
-        if(!canEditTopic) return; // Non-admins can't edit
-        
-        const display = document.getElementById('settingsTopic');
-        const input = document.getElementById('settingsTopicInput');
-        
-        if(display && input) {
-            // Switch to edit mode
-            input.value = display.innerText === 'No topic set' ? '' : display.innerText;
-            display.style.display = 'none';
-            input.style.display = 'block';
-            input.focus();
-        }
-    }
-    
-    async function loadChannelSettings() {
-        const isGlobal = (currentChannelId === 'global' || currentChannelId == 1);
-        
-        // --- UI ELEMENTS ---
-        const saveBtn = document.querySelector('button[onclick="saveChannelSettings()"]');
-        const deleteBtn = document.querySelector('button[onclick="deleteChannel()"]');
-        const leaveBtn = document.querySelector('button[onclick="leaveChannel()"]');
-        const renameBtn = document.querySelector('button[onclick="editChannelName()"]');
-        const photoBtn = document.querySelector('button[onclick="document.getElementById(\'groupPhotoInput\').click()"]');
-        const typeSelect = document.getElementById('chatTypeSelect');
-        const themeOptions = document.querySelectorAll('.theme-option');
-        
-        // Helper to Lock/Unlock UI
-        function setSettingsReadOnly(locked) {
-            if(saveBtn) {
-                 saveBtn.style.display = locked ? 'none' : 'block';
-                 saveBtn.innerText = 'Save Changes'; // Reset text
-            }
-            if(deleteBtn) deleteBtn.style.display = locked ? 'none' : 'block';
-            if(renameBtn) renameBtn.disabled = locked;
-            if(photoBtn) { photoBtn.disabled = locked; photoBtn.innerText = locked ? "Locked" : "Change Photo"; }
-            if(typeSelect) typeSelect.disabled = locked;
-            themeOptions.forEach(opt => opt.style.pointerEvents = locked ? 'none' : 'auto');
+        if(currentList.length === 0) {
+            list.innerHTML += `<div class="p-4 text-center text-xs font-bold text-base-500 uppercase tracking-widest">No Active Links</div>`;
+            return;
         }
 
-        // 1. Initial State (Locked by default to prevent flicker)
-        setSettingsReadOnly(true);
-
-        // --- P2P PERSONAL CHAT RESTRICTION ---
-        if (window.currentChatType === 'personal') {
-            // Hide Add Member Button
-            const addBtn = document.querySelector('button[onclick="showAddMemberModal()"]');
-            if(addBtn) addBtn.style.display = 'none';
-
-            // Hide Owner Name/Topic Section
-            const nameEl = document.getElementById('settingsName');
-            if(nameEl) {
-                const section = nameEl.closest('.settings-section');
-                if(section) section.style.display = 'none';
-            }
-
-            // Hide Photo Section
-            const photoPreview = document.getElementById('groupPhotoPreview');
-            if(photoPreview) {
-                const section = photoPreview.closest('.settings-section');
-                if(section) section.style.display = 'none';
-            }
+        currentList.forEach(c => {
+            const isActive = c.channel_id == activeChannelId;
+            const item = document.createElement('div');
             
-            // INJECT P2P PROFILE HEADER
-            let p2pHeader = document.getElementById('p2pSettingsHeader');
-            if(!p2pHeader) {
-                p2pHeader = document.createElement('div');
-                p2pHeader.id = 'p2pSettingsHeader';
-                p2pHeader.className = 'settings-section';
-                p2pHeader.style.textAlign = 'center';
-                p2pHeader.style.marginBottom = '20px';
-                
-                // Insert after the header
-                const panelHeader = document.querySelector('#chatSettingsPanel .settings-header');
-                if(panelHeader) panelHeader.insertAdjacentElement('afterend', p2pHeader);
-            }
+            // Channel Item Class Assignment
+            item.className = `channel-item group flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all border mb-1 ${
+                isActive 
+                ? 'bg-brand-500/10 border-brand-500/30 text-white shadow-[0_0_15px_rgba(37,99,235,0.05)]' 
+                : 'border-transparent text-base-400 hover:bg-base-700/50 hover:text-base-100'
+            }`;
+            item.onclick = () => joinChannel(c.channel_id, c.name);
             
-            // Populate content from Active Chat Bar
-            const currentImg = document.getElementById('activeChatIcon').innerHTML; // Has the img tag or emoji
-            // Extract src from img tag if possible, or just use innerHTML
-            const currentName = document.getElementById('activeChatName').innerText.split('#')[0].trim();
-            const currentId = document.getElementById('activeChatName').innerText.split('#')[1] || '';
-            
-            p2pHeader.innerHTML = `
-                <div style="width:80px; height:80px; border-radius:24px; margin:0 auto 12px auto; overflow:hidden; display:flex; align-items:center; justify-content:center; background:var(--primary-gradient); font-size:2.5rem;">
-                    ${currentImg.replace('width:100%', 'width:100%').replace('height:100%', 'height:100%')} 
-                </div>
-                <h3 style="margin:0; font-weight:700;">${currentName}</h3>
-                <div style="font-size:0.8rem; opacity:0.6;">#${currentId}</div>
-                <div style="font-size:0.75rem; color:var(--accent); margin-top:4px;">Peer-to-Peer</div>
+            item.innerHTML = `
+                <span class="font-mono text-[14px] font-black opacity-50 ${isActive ? 'text-brand-400 opacity-100' : 'text-base-500 group-hover:text-base-400'}">${currentMainTab === 'personal' ? '@' : '#'}</span>
+                <span class="font-semibold text-sm truncate flex-1">${c.name} <span class="text-[9px] text-base-500 font-mono ml-1 opacity-70">#${c.channel_id}</span></span>
+                ${c.unread ? `<span class="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]"></span>` : ''}
             `;
-            p2pHeader.style.display = 'block';
-
-            // UNLOCK THEMES for P2P
-            themeOptions.forEach(opt => opt.style.pointerEvents = 'auto');
-            
-            // Set Owner Name (Partner Name) - technically hidden but keeps logic safe
-            const ownerEl = document.getElementById('settingsOwnerName');
-            // We need to fetch settings to get the name, but UI is locked.
-            // Let's scroll down to fetch...
-            // Allow photo change? Maybe not for P2P (usually shows user avatar). Let's lock it.
-            if(photoBtn) { photoBtn.style.display = 'none'; }
-            // SHOW SAVE BUTTON FOR THEME
-            if(saveBtn) { 
-                saveBtn.style.display = 'block'; 
-                saveBtn.innerText = 'Save Theme';
-                saveBtn.disabled = false;
-            }
-            if(deleteBtn) deleteBtn.style.display = 'none'; // Cannot delete P2P history usually, or maybe clear history?
-        } else {
-             // Reset visibility for groups
-             const addBtn = document.querySelector('button[onclick="showAddMemberModal()"]');
-             if(addBtn) addBtn.style.display = 'block';
-             if(typeSelect && typeSelect.parentElement) typeSelect.parentElement.style.display = 'block';
-             if(photoBtn) photoBtn.style.display = 'block';
-             
-             // Show default sections
-             const nameEl = document.getElementById('settingsName');
-             if(nameEl && nameEl.closest('.settings-section')) nameEl.closest('.settings-section').style.display = 'block';
-             const photoPreview = document.getElementById('groupPhotoPreview');
-             if(photoPreview && photoPreview.closest('.settings-section')) photoPreview.closest('.settings-section').style.display = 'block';
-             
-             // Hide P2P Header
-             const p2pHeader = document.getElementById('p2pSettingsHeader');
-             if(p2pHeader) p2pHeader.style.display = 'none';
-        }
-
-        // 2. Global Channel Logic
-        if(isGlobal) {
-            // Unlocked only for Global Admins
-            if (userRole === 'admin') setSettingsReadOnly(false);
-            
-            // Global defaults
-            if(typeSelect) typeSelect.value = 'public';
-             try {
-                const res = await fetch(`/chat/channels/1/settings`);
-                const data = await res.json();
-                if(data.success) {
-                     if(data.icon) {
-                         document.getElementById('groupPhotoPreview').src = `/static/${data.icon}`;
-                     }
-                     // Populate Name and Topic for Global too
-                     const nameEl = document.getElementById('settingsName');
-                     if(nameEl) nameEl.innerText = data.name || 'Global Community';
-                     
-                     const topicEl = document.getElementById('settingsTopic');
-                     if(topicEl) topicEl.innerText = data.topic || 'Welcome to the community!';
-                     
-                     const ownerEl = document.getElementById('settingsOwnerName');
-                     if(ownerEl) ownerEl.innerText = data.owner_name || 'System';
-                }
-             } catch(e) {}
-            return;
-        }
-        
-        // 3. Private Group Logic
-        try {
-            const res = await fetch(`/chat/channels/${currentChannelId}/settings`);
-            const data = await res.json();
-            
-            if(data.success) {
-                // Determine Access
-                const isGroupAdmin = (data.user_role === 'admin') || (data.owner_name === '{{ session.get("name") }}'); // Fallback
-                
-                // CRITICAL: Do NOT re-lock settings for P2P chats (they were already configured above)
-                if (window.currentChatType !== 'personal') {
-                    setSettingsReadOnly(!isGroupAdmin);
-                    
-                    // Enable topic editing for admins
-                    canEditTopic = isGroupAdmin;
-                    const topicDisplay = document.getElementById('settingsTopic');
-                    if(topicDisplay) topicDisplay.style.cursor = isGroupAdmin ? 'pointer' : 'default';
-                }
-
-                // Set chat type dropdown
-                if(typeSelect) {
-                    if(data.is_private) typeSelect.value = 'private';
-                    else typeSelect.value = 'public';
-                }
-                
-                // --- Populate Group Header (Name, Topic, Admin) for Public/Private ---
-                if (window.currentChatType !== 'personal') {
-                    const nameEl = document.getElementById('settingsName');
-                    if(nameEl) nameEl.innerText = data.name || 'Unnamed Group';
-                    
-                    const topicEl = document.getElementById('settingsTopic');
-                    if(topicEl) topicEl.innerText = data.topic || 'No topic set';
-                }
-                
-                // Set Owner Name
-                const ownerEl = document.getElementById('settingsOwnerName');
-                if(ownerEl) ownerEl.innerText = data.owner_name || 'System';
-                
-                // Set group photo if exists
-                if(data.icon) {
-                    document.getElementById('groupPhotoPreview').src = `/static/${data.icon}`;
-                }
-            }
-        } catch(e) {
-            console.log('Could not load channel settings');
-        }
+            list.appendChild(item);
+        });
     }
-    
-    async function saveChannelSettings() {
-        if(!currentChannelId || currentChannelId === 'global') {
-            alert('Cannot modify global channel');
-            return;
-        }
+
+    function joinChannel(id, name) {
+        activeChannelId = id;
+        if (name) document.getElementById('activeChannelName').innerHTML = `${name} <span class="text-xs text-base-500 ml-2 font-mono bg-base-800/50 px-2 py-0.5 rounded-lg border border-base-700/50 align-middle">#${id}</span>`;
+        renderChannelList(); 
+        socket.emit('join_channel', { channel_id: id });
         
-        const chatType = document.getElementById('chatTypeSelect').value;
-        const photoInput = document.getElementById('groupPhotoInput');
-        
-        // Create FormData for potential file upload
-        const formData = new FormData();
-        
-        if (window.currentChatType === 'personal') {
-             // For P2P, we only care about Theme (and maybe photo if allowed later)
-             // We do NOT want to change type or public/private status
-             // We send current values just to be safe, or backend ignores.
-             formData.append('type', 'personal');
-             // Theme is appended later below
-        } else {
-             formData.append('is_private', chatType === 'private');
-             formData.append('type', chatType);
-             
-             // Add topic if input is visible (admin was editing)
-             const topicInput = document.getElementById('settingsTopicInput');
-             if(topicInput && topicInput.style.display !== 'none') {
-                 formData.append('topic', topicInput.value);
-             }
-        }
-        
-        if(photoInput.files[0]) {
-            formData.append('icon', photoInput.files[0]);
-        }
-        
-        try {
-            const res = await fetch(`/chat/channels/${currentChannelId}/settings`, {
-                method: 'POST',
-                body: formData
-            });
-            
-            const data = await res.json();
-            if(data.success) {
-                alert('✅ Settings saved!');
-                
-                // If a new icon was uploaded, update header icon immediately
-                if(data.icon) {
-                    const iconEl = document.getElementById('activeChatIcon');
-                    iconEl.innerHTML = `<img src="/static/${data.icon}" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">`;
-                }
-                
-                toggleSettingsPanel();
-                fetchConversations(); // Refresh sidebar to show new icon
-            } else {
-                alert('❌ Error: ' + (data.error || 'Unknown error'));
-            }
-        } catch(e) {
-            alert('❌ Failed to save settings');
-            console.error(e);
-        }
+        // Hide member roster in direct messages, but keep settings for leaving/disconnecting
+        const isDM = (currentMainTab === 'personal');
+        const btnMembers = document.getElementById('btnMembers');
+        const btnSettings = document.getElementById('btnSettings');
+        if (btnMembers) btnMembers.style.display = isDM ? 'none' : 'flex';
+        if (btnSettings) btnSettings.style.display = 'flex';
     }
-    
-    // Apply saved theme on load
-    document.addEventListener('DOMContentLoaded', () => {
-        setTheme(currentTheme);
+
+    let selectedFile = null;
+
+    document.getElementById('fileUpload').addEventListener('change', function(e) {
+        if(this.files && this.files[0]) {
+            selectedFile = this.files[0];
+            document.getElementById('filePreviewName').innerText = selectedFile.name;
+            document.getElementById('filePreviewBadge').classList.remove('hidden');
+            document.getElementById('filePreviewBadge').classList.add('flex');
+        }
     });
-    
-    async function leaveChannel() {
-        if(!currentChannelId || currentChannelId === 'global' || currentChannelId === 1) {
-            alert('Cannot leave this channel');
-            return;
-        }
+
+    function clearFileUpload() {
+        selectedFile = null;
+        document.getElementById('fileUpload').value = '';
+        document.getElementById('filePreviewBadge').classList.add('hidden');
+        document.getElementById('filePreviewBadge').classList.remove('flex');
+    }
+
+    async function executeTransmission() {
+        const input = document.getElementById('msgInput');
+        let content = input.value.trim();
         
-        if(!confirm('Are you sure you want to leave this channel?')) return;
-        
-        try {
-            const res = await fetch(`/chat/channels/${currentChannelId}/leave`, {
-                method: 'POST'
-            });
-            const data = await res.json();
+        if (!content && !selectedFile) return;
+
+        // Visual loading state
+        const sendBtn = document.getElementById('sendBtn');
+        sendBtn.innerHTML = '<span class="material-symbols-outlined font-black animate-spin text-[20px] ml-0.5">sync</span>';
+        sendBtn.disabled = true;
+
+        if (selectedFile) {
+            const formData = new FormData();
+            formData.append('file', selectedFile);
             
-            if(data.success) {
-                alert('✅ Left channel successfully');
-                toggleSettingsPanel();
-                fetchConversations();
-                // Switch to global
-                loadConversation(1, 'Global Community');
-            } else {
-                alert('❌ ' + (data.error || 'Failed to leave'));
-            }
-        } catch(e) {
-            alert('❌ Error leaving channel');
-            console.error(e);
-        }
-    }
-    
-    async function deleteChannel() {
-        if(!currentChannelId || currentChannelId === 'global' || currentChannelId === 1) {
-            alert('Cannot delete this channel');
-            return;
-        }
-        
-        if(!confirm('⚠️ Are you sure you want to DELETE this channel? This action cannot be undone!')) return;
-        if(!confirm('This will delete ALL messages. Type "DELETE" to confirm.')) return;
-        
-        try {
-            const res = await fetch(`/chat/channels/${currentChannelId}`, {
-                method: 'DELETE'
-            });
-            const data = await res.json();
-            
-            if(data.success) {
-                alert('✅ Channel deleted');
-                toggleSettingsPanel();
-                fetchConversations();
-                loadConversation(1, 'Global Community');
-            } else {
-                alert('❌ ' + (data.error || 'Failed to delete'));
-            }
-        } catch(e) {
-            alert('❌ Error deleting channel');
-            console.error(e);
-        }
-    }
-    
-    async function submitCreateChannel() {
-        const name = document.getElementById('newGroupName').value.trim();
-        const privacy = document.getElementById('groupPrivacy').value;
-        if(!name) return;
-
-        const res = await fetch('/chat/channels', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                name: name,
-                type: 'text',
-                is_private: (privacy === 'private')
-            })
-        });
-        const data = await res.json();
-        if(data.success) {
-            createGroupModal.hide();
-            // Refresh list or just select
-            loadConversation(data.channel_id, name);
-            // Optionally reload whole list if it was a public one
-        }
-    }
-
-    async function searchUsers() {
-        const query = document.getElementById('userSearchInput').value.trim();
-        if(query.length < 2) return;
-
-        // FIXED: Encode query to handle '#' character correctly
-        const res = await fetch(`/member/search_users_json?q=${encodeURIComponent(query)}`);
-        const data = await res.json();
-        const results = document.getElementById('userSearchResults');
-        results.innerHTML = '';
-
-        if(data.users) {
-            data.users.forEach(u => {
-                // if(u.user_id == myId) return; // Allow showing self for verification
-                const div = document.createElement('div');
-                div.className = 'chat-item';
-                div.style.background = 'rgba(255,255,255,0.05)';
-                
-                let actionBtn = '';
-                if(u.user_id == myId) {
-                    actionBtn = `<span class="badge bg-secondary">You</span>`;
-                } else {
-                    if (window.inviteMode === 'group') {
-                         actionBtn = `<button class="btn btn-sm btn-primary" style="height:fit-content; border-radius:10px; font-size:0.7rem;" onclick="sendInvite(${u.user_id}, 'GROUP', ${window.inviteTargetChannelId})">Invite</button>`;
-                    } else {
-                         actionBtn = `<button class="btn btn-sm btn-primary" style="height:fit-content; border-radius:10px; font-size:0.7rem;" onclick="sendInvite(${u.user_id}, 'DM')">Connect</button>`;
-                    }
-                }
-
-                div.innerHTML = `
-                    <img src="/static/${u.profile_pic || 'default.jpg'}" class="chat-avatar">
-                    <div class="chat-info">
-                        <div class="chat-name">${u.name} <span style="font-size: 0.65rem; opacity: 0.5; font-weight: 400;">${formatPublicId(u.user_id)}</span></div>
-                        <div class="chat-preview">${u.role}</div>
-                    </div>
-                    ${actionBtn}
-                `;
-                results.appendChild(div);
-            });
-        }
-    }
-
-    async function sendInvite(targetId, type, channelId = null) {
-        const res = await fetch('/chat/invites/send', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                target_user_id: targetId,
-                target_channel_id: channelId,
-                type: type
-            })
-        });
-        const data = await res.json();
-        if(data.success) {
-            alert("Request sent successfully!");
-        }
-    }
-
-    async function joinChannelById() {
-        const publicId = document.getElementById('joinGroupId').value.trim().replace('#', '');
-        if(!publicId || isNaN(publicId)) return;
-        
-        // Convert back to DB ID
-        const dbId = parseInt(publicId) - PUBLIC_ID_OFFSET;
-        
-        const res = await fetch(`/chat/join/${dbId}`, { method: 'POST' });
-        const data = await res.json();
-        if(data.success) {
-            forceCloseModals();
-            loadConversation(dbId);
-            // Optionally reload sidebar
-        } else {
-            alert(data.message || "Could not join group.");
-        }
-    }
-
-    async function fetchPendingInvites() {
-        const res = await fetch('/chat/invites/pending');
-        const data = await res.json();
-        const section = document.getElementById('pendingInvitesSection');
-        const list = document.getElementById('pendingInvitesList');
-        
-        if(data.success && data.invites.length > 0) {
-            section.style.display = 'block';
-            list.innerHTML = '';
-            data.invites.forEach(inv => {
-                const div = document.createElement('div');
-                div.className = 'chat-item';
-                div.style.background = 'rgba(255,255,255,0.05)';
-                let subtitle = inv.type === 'DM' ? 'Wants to chat' : `Joins ${inv.channel_name || 'Group'}`;
-                div.innerHTML = `
-                    <img src="/static/${inv.sender_pic || 'default.jpg'}" class="chat-avatar">
-                    <div class="chat-info">
-                        <div class="chat-name">${inv.sender_name}</div>
-                        <div class="chat-preview">${subtitle}</div>
-                    </div>
-                    <div style="display:flex; gap:8px;">
-                        <button class="btn btn-sm btn-success" style="border-radius:10px;" onclick="handleInvite('${inv.invite_id}', 'accept')">✓</button>
-                        <button class="btn btn-sm btn-danger" style="border-radius:10px;" onclick="handleInvite('${inv.invite_id}', 'reject')">✕</button>
-                    </div>
-                `;
-                list.appendChild(div);
-            });
-        } else {
-            section.style.display = 'none';
-        }
-    }
-
-    async function handleInvite(inviteId, action) {
-        const res = await fetch('/chat/invites/handle', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ invite_id: inviteId, action: action })
-        });
-        const data = await res.json();
-        if(data.success) {
-            fetchPendingInvites();
-            if(action === 'accept') {
-                fetchConversations();
-                if(data.channel_id) loadConversation(data.channel_id);
-            }
-        }
-    }
-
-    async function deleteCurrentChannel() {
-        if(currentChannelId === 1) return alert("Cannot delete Global Hub");
-        if(!confirm("Are you sure you want to delete this group?")) return;
-
-        // Note: Need a route for this too. 
-        // For now, let's assume it's implemented.
-        const res = await fetch(`/chat/channels/${currentChannelId}`, { method: 'DELETE' });
-        if(res.ok) {
-            settingsModal.hide();
-            loadConversation('global');
-            fetchConversations();
-        }
-    }
-
-    async function editChannelName() {
-        const newName = prompt("Enter new name:");
-        if(!newName) return;
-        const res = await fetch(`/chat/channels/${currentChannelId}`, {
-            method: 'PATCH',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({name: newName})
-        });
-        if(res.ok) {
-            document.getElementById('activeChatName').innerText = newName;
-            fetchConversations();
-        }
-    }
-
-    // --- NEW FEATURES IMPLEMENTATION ---
-
-    // 1. Invitations Logic
-    async function fetchPendingInvites() {
-        console.log("Fetching pending invites...");
-        try {
-            const res = await fetch('/chat/invites/pending');
-            const data = await res.json();
-            const list = document.getElementById('pendingInvitesList');
-            const badge = document.getElementById('requestsBadge');
-            const noMsg = document.getElementById('noInvitesMsg');
-            
-            if(!list) return; // Guard
-            list.innerHTML = '';
-            
-            if(data.success && data.invites && data.invites.length > 0) {
-                badge.style.display = 'inline-block';
-                badge.innerText = data.invites.length;
-                if(noMsg) noMsg.style.display = 'none';
-                
-                data.invites.forEach(inv => {
-                    const isGroup = (inv.type === 'GROUP');
-                    const subtitle = isGroup ? `Group Invite: ${inv.channel_name}` : 'Friend Request';
-                    const div = document.createElement('div');
-                    div.className = 'd-flex align-items-center justify-content-between p-2 mb-2';
-                    div.style.background = 'rgba(255,255,255,0.05)';
-                    div.style.borderRadius = '12px';
-                    div.innerHTML = `
-                        <div class="d-flex align-items-center gap-2">
-                             <div style="width:32px; height:32px; background:#6366f1; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white;">${inv.sender_name ? inv.sender_name[0] : '?'}</div>
-                             <div>
-                                 <div style="font-weight:bold; font-size:0.9rem; color:white;">${inv.sender_name}</div>
-                                 <div style="font-size:0.75rem; opacity:0.7; color:#cbd5e1;">${subtitle}</div>
-                             </div>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-sm btn-success" onclick="handleInvite('${inv.invite_id}', 'accept')">✓</button>
-                            <button class="btn btn-sm btn-danger" onclick="handleInvite('${inv.invite_id}', 'reject')">✕</button>
-                        </div>
-                    `;
-                    list.appendChild(div);
+            try {
+                const res = await fetch('/chat/upload', {
+                    method: 'POST',
+                    body: formData
                 });
-            } else {
-                badge.style.display = 'none';
-                if(noMsg) noMsg.style.display = 'block';
-            }
-        } catch(e) { console.error("Error fetching invites:", e); }
-    }
-
-    function showNewChatModal() {
-        // Reset to DM Mode
-        window.inviteMode = 'dm';
-        window.inviteTargetChannelId = null;
-        const title = document.querySelector('#newChatModal .modal-title');
-        if(title) title.innerText = "Connections Hub";
-
-        fetchPendingInvites();
-        newChatModal.show();
-    }
-
-    // --- Message Actions Logic ---
-
-    // 1. Context Menu
-    let ctxMessageId = null;
-    let ctxContent = null;
-    let ctxIsMe = false;
-
-    document.getElementById('messageArea').addEventListener('contextmenu', function(e) {
-        let target = e.target.closest('.msg-bubble');
-        if(!target) return;
-        
-        e.preventDefault();
-        ctxMessageId = target.dataset.mid;
-        // Select content securely
-        const contentEl = target.querySelector('.msg-content');
-        ctxContent = contentEl ? contentEl.innerText : target.children[target.children.length-2].innerText; // Fallback
-        ctxIsMe = target.classList.contains('msg-me');
-        
-        // Show menu at mouse position
-        const menu = document.getElementById('msgContextMenu');
-        console.log("🖱️ Opening Context Menu at", e.clientX, e.clientY);
-        
-        menu.style.display = 'block';
-        menu.style.left = e.clientX + 'px';
-        menu.style.top = e.clientY + 'px';
-        menu.style.zIndex = '20000'; // Ensure it's on top of everything
-        
-        document.querySelectorAll('.owner-only').forEach(el => {
-            el.style.display = ctxIsMe ? 'flex' : 'none';
-        });
-    });
-
-    document.addEventListener('click', () => {
-        const menu = document.getElementById('msgContextMenu');
-        if(menu) menu.style.display = 'none';
-    });
-
-    function ctxCopy() {
-        navigator.clipboard.writeText(ctxContent);
-        // Toast/Alert replacement could go here
-    }
-
-    async function ctxDelete() {
-        if(!confirm("Delete this message?")) return;
-        socket.emit('delete_message', {
-            channel_id: currentChannelId,
-            message_id: ctxMessageId
-        });
-    }
-
-    // Edit State
-    let isEditing = false;
-    let editingMessageId = null;
-
-    function ctxEdit() {
-        isEditing = true;
-        editingMessageId = ctxMessageId;
-        
-        const inp = document.getElementById('messageInput');
-        inp.value = ctxContent;
-        inp.focus();
-
-        // Show Edit Banner
-        let banner = document.getElementById('editContextBanner');
-        if(!banner) {
-            banner = document.createElement('div');
-            banner.id = 'editContextBanner';
-            banner.style.padding = '8px';
-            banner.style.background = 'rgba(255,255,255,0.1)';
-            banner.style.borderLeft = '3px solid #facc15'; // Yellow for edit
-            banner.style.fontSize = '0.8rem';
-            banner.style.marginBottom = '8px';
-            
-            // Insert before input wrapper (inside input-area)
-            // Fix: The class is .input-area, but we want to insert inside it, before .glass-input-wrapper
-            const container = document.querySelector('.input-area');
-            const wrapper = document.querySelector('.glass-input-wrapper');
-            container.insertBefore(banner, wrapper);
-        }
-        
-        banner.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span class="text-warning fw-bold">✏️ Editing Message</span>
-                <button onclick="cancelEdit()" style="background:none; border:None; color:inherit;">✕</button>
-            </div>
-            <div style="opacity:0.7; font-style:italic;">${ctxContent.substring(0,50)}...</div>
-        `;
-        
-        // Change send button icon to checkmark temporarily
-        document.getElementById('sendBtn').innerHTML = '✓';
-    }
-
-    function cancelEdit() {
-        isEditing = false;
-        editingMessageId = null;
-        document.getElementById('messageInput').value = '';
-        const banner = document.getElementById('editContextBanner');
-        if(banner) banner.remove();
-        document.getElementById('sendBtn').innerHTML = '➤';
-    }
-
-    function ctxReply() {
-        // Fix: Use correct selector for banner insertion
-        // We want to insert it inside .input-area, before .glass-input-wrapper
-        const container = document.querySelector('.input-area');
-        const wrapper = document.querySelector('.glass-input-wrapper');
-        
-        let banner = document.getElementById('replyContextBanner');
-        if(!banner) {
-            banner = document.createElement('div');
-            banner.id = 'replyContextBanner';
-            banner.style.padding = '8px';
-            banner.style.background = 'rgba(255,255,255,0.1)';
-            banner.style.borderLeft = '3px solid var(--primary)';
-            banner.style.fontSize = '0.8rem';
-            banner.style.marginBottom = '8px';
-            container.insertBefore(banner, wrapper);
-        }
-        
-        banner.innerHTML = `
-            <div style="display:flex; justify-content:space-between;">
-                <span>Replying to <span style="font-weight:bold;">Example User</span></span>
-                <button onclick="cancelReply()" style="background:none; border:None; color:inherit;">✕</button>
-            </div>
-            <div style="opacity:0.7;">${ctxContent.substring(0,50)}...</div>
-        `;
-        
-        // Store ID on banner dataset
-        banner.dataset.mid = ctxMessageId;
-        document.getElementById('messageInput').focus();
-    }
-
-    // --- Restored Logic (Typing, Updates, Files) ---
-
-    // 3. Typing Indicator
-    let typingTimer;
-    document.getElementById('messageInput').addEventListener('input', () => {
-        socket.emit('typing', { channel_id: String(currentChannelId) });
-        clearTimeout(typingTimer);
-        typingTimer = setTimeout(() => {
-             socket.emit('stop_typing', { channel_id: String(currentChannelId) });
-        }, 1000);
-    });
-
-    socket.on('typing', (data) => {
-        const header = document.getElementById('activeChatStatus');
-        header.dataset.original = header.dataset.original || header.innerText;
-        header.innerText = `${data.user} is typing...`;
-        header.style.color = '#4ade80';
-    });
-
-    socket.on('stop_typing', () => {
-        const header = document.getElementById('activeChatStatus');
-        if(header.dataset.original) {
-             header.innerText = header.dataset.original;
-             header.style.color = '';
-        }
-    });
-
-    socket.on('message_deleted', (data) => {
-        const el = document.querySelector(`.msg-bubble[data-mid="${data.message_id}"]`);
-        if(el) {
-            el.innerHTML = '<div style="opacity:0.6; font-style:italic; color:#9ca3af;">🚫 This message was deleted</div>';
-        }
-    });
-
-    socket.on('message_updated', (data) => {
-        const el = document.querySelector(`.msg-bubble[data-mid="${data.message_id}"]`);
-        if(el) {
-             const contentDiv = el.querySelector('.msg-content');
-             // If not found (legacy messages), try children approx
-             const target = contentDiv || el.children[1]; 
-             if(target) {
-                 target.innerText = data.new_content + ' (edited)';
-                 // Highlight change
-                 target.style.transition = 'color 0.5s';
-                 const oldColor = target.style.color;
-                 target.style.color = '#facc15'; // yellow highlight
-                 setTimeout(() => target.style.color = oldColor, 1000);
-             }
-        }
-    });
-
-    // 4. File Upload
-    let currentAttachment = null; 
-
-    async function handleFileUpload(input) {
-        if(!input.files || input.files.length === 0) return;
-        const file = input.files[0];
-        
-        const formData = new FormData();
-        formData.append('file', file);
-        
-        try {
-            const res = await fetch('/chat/upload', {
-                method: 'POST',
-                body: formData
-            });
-            const data = await res.json();
-            
-            if(data.success) {
-                currentAttachment = {
-                    url: data.file_path,
-                    type: data.type,
-                    name: data.filename
-                };
+                const data = await res.json();
                 
-                // Show Banner instead of appending text
-                let banner = document.getElementById('attachmentPreviewBanner');
-                if(!banner) {
-                    banner = document.createElement('div');
-                    banner.id = 'attachmentPreviewBanner';
-                    banner.style.padding = '8px';
-                    banner.style.background = 'rgba(255,255,255,0.1)';
-                    banner.style.borderLeft = '3px solid var(--success)';
-                    banner.style.fontSize = '0.8rem';
-                    banner.style.marginBottom = '8px';
-                    
-                    // Insert before input wrapper
-                    const area = document.querySelector('.input-area');
-                    area.insertBefore(banner, area.firstChild);
-                }
-                
-                banner.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="display:flex; align-items:center; gap:6px;">
-                            <i class="fas fa-paperclip"></i> 
-                            ${data.filename}
-                        </span>
-                        <button onclick="cancelAttachment()" style="background:none; border:None; color:inherit;">✕</button>
-                    </div>
-                `;
-                
-                document.getElementById('messageInput').focus();
-            } else {
-                console.error("Upload failed:", data);
-                alert("Upload failed: " + (data.error || "Unknown server error"));
-            }
-        } catch (err) {
-            console.error("Upload Exception:", err);
-            alert("Upload error: " + err.message);
-        }
-    }
-
-    function switchGroupModalTab(tab) {
-        // Toggle Tabs
-        document.querySelectorAll('.tab-pill').forEach(el => el.classList.remove('active'));
-        document.getElementById(`tab-pill-${tab}`).classList.add('active');
-        
-        // Toggle Views
-        if(tab === 'create') {
-            document.getElementById('view-create').style.display = 'block';
-            document.getElementById('view-join').style.display = 'none';
-        } else {
-            document.getElementById('view-create').style.display = 'none';
-            document.getElementById('view-join').style.display = 'block';
-        }
-    }
-    function switchConnectionsTab(tab) {
-        // Toggle Tabs
-        document.querySelectorAll('#newChatModal .tab-pill').forEach(el => el.classList.remove('active'));
-        document.getElementById(`tab-pill-${tab}`).classList.add('active');
-
-        // Toggle Views
-        if(tab === 'find') {
-            document.getElementById('view-find').style.display = 'block';
-            document.getElementById('view-requests').style.display = 'none';
-        } else {
-            document.getElementById('view-find').style.display = 'none';
-            document.getElementById('view-requests').style.display = 'block';
-            // Refresh invites when switching to tab
-            fetchPendingInvites();
-        }
-    }
-    
-    // --- Logs & Rules Logic ---
-    async function showLogsModal() {
-        logsModal.show();
-        const list = document.getElementById('logsList');
-        list.innerHTML = '<div class="text-center text-muted">Loading logs...</div>';
-        
-        try {
-            const res = await fetch(`/chat/channels/${currentChannelId}/logs`);
-            const data = await res.json();
-            
-            if(data.success) {
-                if(!data.logs || data.logs.length === 0) {
-                    list.innerHTML = '<div class="text-center text-muted">No logs found.</div>';
+                if (data.success) {
+                    if (data.is_image) {
+                        content += `<br><img src="/static/${data.url}" class="mt-2 rounded-xl max-w-full max-h-[250px] border border-base-700/50 shadow-md">`;
+                    } else {
+                        content += `<br><a href="/static/${data.url}" target="_blank" class="mt-2 flex items-center gap-2 px-3 py-2 bg-base-900 border border-base-700/50 rounded-xl hover:border-brand-500 transition-colors text-xs font-bold w-max shadow-sm"><span class="material-symbols-outlined text-emerald-400">description</span> Download ${data.filename}</a>`;
+                    }
+                } else {
+                    alert('Attachment failed: ' + data.error);
+                    sendBtn.innerHTML = '<span class="material-symbols-outlined text-[20px] ml-0.5">send</span>';
+                    sendBtn.disabled = false;
                     return;
                 }
-                
-                list.innerHTML = '';
-                data.logs.forEach(log => {
-                    const div = document.createElement('div');
-                    div.style.padding = '10px';
-                    div.style.background = 'rgba(255,255,255,0.05)';
-                    div.style.borderRadius = '8px';
-                    div.style.fontSize = '0.85rem';
-                    div.innerHTML = `
-                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                            <span style="font-weight:bold; color:#a855f7;">${log.action_type}</span>
-                            <span style="color:var(--text-muted); font-size:0.75rem;">${new Date(log.created_at).toLocaleString()}</span>
-                        </div>
-                        <div style="margin-bottom:4px;">${log.details || 'No details'}</div>
-                        <div style="font-size:0.75rem; color:var(--text-muted);">By: ${log.user_name} (${log.user_role})</div>
-                    `;
-                    list.appendChild(div);
-                });
-            } else {
-                list.innerHTML = `<div class="text-center text-danger">${data.error || 'Access Denied'}</div>`;
+            } catch(e) {
+                alert('Connection anomaly during upload.');
+                sendBtn.innerHTML = '<span class="material-symbols-outlined text-[20px] ml-0.5">send</span>';
+                sendBtn.disabled = false;
+                return;
             }
-        } catch(e) {
-            list.innerHTML = '<div class="text-center text-danger">Failed to fetch logs.</div>';
         }
+
+        socket.emit('send_message', {
+            channel_id: activeChannelId,
+            content: content,
+            is_anon: document.getElementById('anonToggle').checked
+        });
+
+        input.value = '';
+        clearFileUpload();
+        sendBtn.innerHTML = '<span class="material-symbols-outlined text-[20px] ml-0.5">send</span>';
+        sendBtn.disabled = false;
     }
 
-    async function showRulesModal() {
-        rulesModal.show();
-        const textarea = document.getElementById('rulesText');
-        const saveBtn = document.getElementById('rulesSaveBtnContainer');
-        textarea.value = 'Loading...';
-        textarea.readOnly = true; // Default to read-only
-        saveBtn.style.display = 'none';
+    function renderPlaceholderMessage(m) {
+        const container = document.getElementById('msgContainer');
+        // Backend historically sets 'me' or we map sender_id
+        const isMe = m.sender_type === 'me' || m.sender_id === myUserId; 
+        
+        let dateObj = m.created_at;
+        if(typeof dateObj === 'string' && !dateObj.includes('T') && dateObj.split(' ').length > 1) {
+            // Handle flask basic date strings if not ISO
+             const timeParts = dateObj.split(' ')[1].split(':');
+             dateObj = new Date();
+             dateObj.setHours(timeParts[0], timeParts[1]);
+        } else if (typeof dateObj === 'string') {
+             dateObj = new Date(dateObj);
+        } else {
+             dateObj = new Date();
+        }
+        
+        const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const avatarRaw = m.user_profile?.pic || m.sender_pic;
+        const hasCustomAvatar = avatarRaw && avatarRaw !== 'default.jpg';
+        const avatarHTML = hasCustomAvatar 
+            ? `<img src="/static/${avatarRaw}" class="w-7 h-7 rounded-full object-cover shadow-sm border border-base-700/50 shrink-0">`
+            : `<div class="w-7 h-7 rounded-full border border-base-700/50 bg-base-800 flex items-center justify-center text-xs shadow-sm shrink-0">👤</div>`;
+            
+        const nameRaw = m.user_profile?.name || m.sender_name;
+        const isActuallyAnon = String(m.sender_type).toLowerCase() === 'anon' || nameRaw === 'Anonymous Member' || nameRaw === 'Anonymous User';
+        const senderName = isActuallyAnon ? 'Anonymous Member' : (nameRaw || 'Anonymous User');
+        
+        let senderIdLabel = '';
+        if (!isActuallyAnon && m.sender_id) {
+             senderIdLabel = `#${m.sender_id}`;
+        } else if (!isActuallyAnon && m.anon_id) {
+             senderIdLabel = `#${m.anon_id.toString().substring(0,4)}`;
+        }
+
+        const wrapper = document.createElement('div');
+        wrapper.className = `flex ${isMe ? 'justify-end' : 'justify-start'} w-full transform transition-all duration-300 translate-y-2 opacity-0`;
+        
+        // Layout shift for self vs other
+        wrapper.innerHTML = `
+            <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[85%] md:max-w-[75%] gap-1">
+                <div class="flex items-center gap-2 ${isMe ? 'flex-row-reverse' : ''}">
+                    <!-- Avatar -->
+                    ${avatarHTML}
+                    <!-- Meta -->
+                    <span class="text-[10px] font-bold text-base-500 uppercase tracking-widest flex items-center gap-1.5">
+                        ${senderName}
+                        ${senderIdLabel ? `<span class="lowercase font-mono text-[9px] text-base-400 bg-base-800 px-1 py-0.5 rounded border border-base-700 shadow-sm opacity-80">${senderIdLabel}</span>` : ''}
+                        <span class="opacity-50 mx-0.5">•</span> ${timeStr}
+                    </span>
+                </div>
+                
+                <div class="px-5 py-3 ${isMe 
+                    ? 'bg-brand-600 text-white rounded-2xl rounded-tr-sm shadow-[0_4px_15px_rgba(37,99,235,0.2)]' 
+                    : 'bg-base-800 border border-base-700 text-base-100 rounded-2xl rounded-tl-sm shadow-sm'
+                } text-[14px] leading-relaxed break-words whitespace-pre-wrap ${isMe ? 'mr-9' : 'ml-9'} relative z-10">${m.content}</div>
+            </div>
+        `;
+        
+        container.prepend(wrapper);
+        
+        // Trigger paint animation
+        requestAnimationFrame(() => {
+            wrapper.classList.remove('translate-y-2', 'opacity-0');
+        });
+    }
+
+    function scrollToBottom() {
+        // Reversed container scrolls automatically typically, but force scroll down if needed
+        const container = document.getElementById('msgContainer');
+        container.scrollTop = 0; // Since it's column-reverse
+    }
+
+    function switchMainTab(tabName) {
+        currentMainTab = tabName;
+        document.querySelectorAll('.nav-node').forEach(n => {
+            n.classList.remove('active-icon');
+            const icon = n.querySelector('span');
+            icon.classList.remove('text-brand-400');
+            icon.classList.add('text-base-400');
+            if(n.id === `btn-${tabName}`) {
+                n.classList.add('active-icon');
+                icon.classList.add('text-brand-400');
+                icon.classList.remove('text-base-400');
+            }
+        });
+        
+        // Update Sidebar Header Text 
+        const titleSpan = document.getElementById('channelListTitle');
+        const iconSpan = document.getElementById('channelIcon');
+        if (titleSpan && iconSpan) {
+            if (tabName === 'public') {
+                 titleSpan.innerText = 'Global Channels';
+                 iconSpan.innerText = 'public';
+            } else if (tabName === 'personal') {
+                 titleSpan.innerText = 'Direct Messages';
+                 iconSpan.innerText = 'forum';
+            } else if (tabName === 'group') {
+                 titleSpan.innerText = 'Group Channels';
+                 iconSpan.innerText = 'groups';
+            }
+        }
+        
+        renderChannelList();
+    }
+
+    // --- LEADERBOARD LOGIC ---
+
+
+    async function toggleAnonMode() {
+        const isAnon = document.getElementById('anonToggle').checked;
+        const avatar = document.getElementById('myAvatar');
+        
+        if (avatar && avatar.tagName === 'IMG') {
+            if (isAnon) {
+                avatar.classList.add('grayscale', 'sepia-[.3]', 'hue-rotate-180', 'brightness-50');
+            } else {
+                avatar.classList.remove('grayscale', 'sepia-[.3]', 'hue-rotate-180', 'brightness-50');
+            }
+        } else if (avatar) {
+            if (isAnon) avatar.classList.add('opacity-50', 'grayscale');
+            else avatar.classList.remove('opacity-50', 'grayscale');
+        }
+        
+        await fetch('/chat/anonymous', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ is_anon: isAnon })
+        });
+    }
+
+    // Utilities
+    function showLogs() { alert("Logs are currently restricted to Administrators."); }
+    function showRules() { alert("1: Be excellent to each other.\n2: Knowledge is infinite."); }
+
+    // Members & Admins Directory
+    async function showMembers() {
+        const modal = document.getElementById('membersModal');
+        const content = document.getElementById('membersContent');
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        
+        content.innerHTML = '<div class="p-10 text-center animate-pulse text-base-400 font-bold tracking-widest uppercase text-xs">Loading members...</div>';
         
         try {
-            const res = await fetch(`/chat/channels/${currentChannelId}/rules`);
+            const res = await fetch(`/chat/channels/${activeChannelId}/members`);
             const data = await res.json();
-            
-            if(data.success) {
-                textarea.value = data.rules;
-                
-                if(data.can_edit) {
-                    textarea.readOnly = false;
-                    saveBtn.style.display = 'block';
+            if (data.success) {
+                const admins = data.members.filter(m => m.role === 'admin' || m.is_owner);
+                const regulars = data.members.filter(m => m.role !== 'admin' && !m.is_owner);
+
+                const renderUser = (m) => `
+                    <div class="flex items-center justify-between p-3 border-b border-base-700/50 hover:bg-base-800/50 transition-colors rounded-xl mx-2 my-1 group">
+                        <div class="flex items-center gap-3">
+                            ${m.profile_pic && m.profile_pic !== 'default.jpg' ? `
+                                <img src="/static/${m.profile_pic}" class="w-10 h-10 object-cover rounded-full border border-base-700 shadow-sm group-hover:border-brand-500 transition-colors">
+                            ` : `
+                                <div class="w-10 h-10 rounded-full border border-base-700 bg-base-800 flex items-center justify-center text-lg shadow-sm group-hover:border-brand-500 transition-colors">👤</div>
+                            `}
+                            <div>
+                                <div class="text-sm font-bold text-white flex items-center gap-1">
+                                    ${m.name} ${m.user_id == myUserId ? '<span class="text-base-500 ml-1 text-xs">(You)</span>' : ''}
+                                </div>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <div class="text-[9px] ${m.role === 'admin' || m.is_owner ? 'text-amber-500 font-black' : 'text-brand-400 font-bold'} uppercase tracking-widest">${m.is_owner ? 'owner' : m.role}</div>
+                                    <div class="text-[9px] text-base-500 font-mono tracking-widest bg-base-800 px-1.5 py-0.5 rounded shadow-inner border border-base-700">ID: #${m.user_id}</div>
+                                </div>
+                            </div>
+                        </div>
+                        ${m.user_id != myUserId ? `
+                            <button onclick="startDM(${m.user_id})" class="flex items-center gap-1 text-[11px] bg-brand-600/20 hover:bg-brand-500 border border-brand-500/50 hover:border-transparent text-brand-300 hover:text-white px-3 py-1.5 rounded-lg font-bold transition-all shadow-sm">
+                                <span class="material-symbols-outlined text-[14px]">chat</span> Connect
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+
+                let html = '';
+                if (admins.length > 0) {
+                    html += '<div class="px-4 pt-4 pb-2 text-[10px] font-black uppercase text-amber-500 tracking-widest border-b border-base-700/50 mx-2 mb-2">Administrators</div>';
+                    html += admins.map(renderUser).join('');
                 }
+                if (regulars.length > 0) {
+                    html += '<div class="px-4 pt-4 pb-2 text-[10px] font-black uppercase text-base-500 tracking-widest border-b border-base-700/50 mx-2 mb-2">Members</div>';
+                    html += regulars.map(renderUser).join('');
+                }
+
+                if(admins.length === 0 && regulars.length === 0) {
+                    html = `<div class="p-8 text-center text-base-500 text-sm font-bold tracking-widest uppercase">No members found.</div>`;
+                }
+
+                content.innerHTML = html;
             } else {
-                textarea.value = 'Error loading rules.';
+                content.innerHTML = `<div class="p-4 text-rose-500 text-center text-sm font-bold">${data.error}</div>`;
             }
-        } catch(e) {
-            textarea.value = 'Failed to fetch rules.';
+        } catch (e) {
+            content.innerHTML = `<div class="p-4 text-rose-500 text-center text-sm font-bold">Failed to load members.</div>`;
         }
     }
     
-    async function saveRules() {
-        const rules = document.getElementById('rulesText').value;
+    function closeMembers() {
+        const modal = document.getElementById('membersModal');
+        modal.classList.add('opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }, 300);
+    }
+
+    async function startDM(userId) {
         try {
-            const res = await fetch(`/chat/channels/${currentChannelId}/rules`, {
+            const res = await fetch('/chat/dms', {
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ target_id: userId })
+            });
+            const data = await res.json();
+            if (data.success) {
+                closeMembers();
+                await fetchHubData();
+                switchMainTab('personal');
+                joinChannel(data.channel_id);
+            } else {
+                alert(data.error || "Connection failed.");
+            }
+        } catch(e) { alert("Error connecting to node."); }
+    }
+
+    // Settings / Personalization
+    async function showSettings() {
+        const modal = document.getElementById('settingsModal');
+        const content = document.getElementById('settingsContent');
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        content.innerHTML = '<div class="p-10 text-center animate-pulse text-base-400 font-bold tracking-widest uppercase text-xs">Loading configuration...</div>';
+        
+        try {
+            const [setRes, rulesRes] = await Promise.all([
+                fetch(`/chat/channels/${activeChannelId}/settings`),
+                fetch(`/chat/channels/${activeChannelId}/rules`)
+            ]);
+            const data = await setRes.json();
+            const rulesData = await rulesRes.json();
+            
+            if (data.success) {
+                // Determine if this is a DM channel
+                // We use data.name as it defaults to 'DM' in backend, while frontend changes activeChannelName
+                if (data.name === 'DM' && data.type !== 'public' && data.type !== 'group') {
+                    const oppUserName = document.getElementById('activeChannelName').innerText;
+                    content.innerHTML = `
+                        <div class="p-8 text-center">
+                            <div class="w-20 h-20 rounded-full bg-base-800 border-2 border-brand-500/50 flex items-center justify-center mx-auto mb-4 custom-shadow">
+                                <span class="material-symbols-outlined text-brand-400 text-4xl block">lock_person</span>
+                            </div>
+                            <h4 class="text-2xl font-black text-white mb-2 tracking-tight">Direct Connection</h4>
+                            <p class="text-sm text-base-400 font-medium leading-relaxed max-w-sm mx-auto">
+                                End-to-end secured personal channel with <strong class="text-base-100">${oppUserName}</strong>.<br><br>
+                                <span class="text-[11px] uppercase tracking-widest text-base-500">ID: #${activeChannelId}</span>
+                            </p>
+                            
+                            <div class="mt-8 pt-6 border-t border-base-700/50">
+                                <button onclick="leaveChannel()" class="w-full py-3 bg-rose-500/10 hover:bg-rose-500 border border-rose-500/30 text-rose-500 hover:text-white rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2">
+                                    <span class="material-symbols-outlined text-[18px]">person_remove</span> Disconnect Link
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Ensure only admins, owners, or super admins can modify it.
+                if (data.user_role !== 'admin' && parseInt("{% if session.get('role') == 'admin' %}1{% else %}0{% endif %}") !== 1 && data.owner_name !== "{{ session.get('name') }}") {
+                     content.innerHTML = `<div class="p-10 text-center"><span class="material-symbols-outlined text-rose-500 text-4xl mb-4 block">lock</span><div class="text-base-400 text-sm font-medium">You lack administrative privileges to alter node configuration.<br><br>Contact operator: <span class="text-white font-bold">${data.owner_name}</span></div></div>`;
+                     return;
+                }
+                
+                content.innerHTML = `
+                    <div class="space-y-6 p-8">
+                        <div>
+                            <label class="block text-[10px] font-bold text-base-400 uppercase tracking-widest mb-1.5 ml-1">Channel Name</label>
+                            <input type="text" id="set-name" class="w-full bg-base-800 border border-base-700/50 rounded-xl px-4 py-3 text-sm text-base-100 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-medium" value="${data.name}">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-base-400 uppercase tracking-widest mb-1.5 ml-1">Channel Topic (Optional)</label>
+                            <input type="text" id="set-topic" class="w-full bg-base-800 border border-base-700/50 rounded-xl px-4 py-3 text-sm text-base-100 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-medium" value="${data.topic || ''}">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-base-400 uppercase tracking-widest mb-1.5 ml-1">Channel Rules</label>
+                            <textarea id="set-rules" rows="4" class="w-full bg-base-800 border border-base-700/50 rounded-xl px-4 py-3 text-sm text-base-100 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-medium custom-scroll">${rulesData.success ? rulesData.rules : ''}</textarea>
+                        </div>
+                        <div class="pt-2">
+                            <button onclick="saveSettings()" class="w-full py-3.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-sm font-bold shadow-[0_4px_15px_rgba(37,99,235,0.3)] transition-all flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined text-[18px]">save</span> Save Changes
+                            </button>
+                        </div>
+                        
+                        <div class="pt-4 mt-4 border-t border-base-700/50 space-y-3">
+                            <button onclick="leaveChannel()" class="w-full py-2.5 bg-base-800 hover:bg-base-700 border border-base-600 text-base-100 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm">
+                                <span class="material-symbols-outlined text-[16px]">logout</span> Leave Channel
+                            </button>
+                            ${(data.user_role === 'admin' || parseInt("{% if session.get('role') == 'admin' %}1{% else %}0{% endif %}") === 1 || data.owner_name === "{{ session.get('name') }}") ? `
+                            <button onclick="deleteChannel()" class="w-full py-2.5 bg-rose-500/10 hover:bg-rose-500 border border-rose-500/30 text-rose-500 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined text-[16px]">delete_forever</span> Delete Channel
+                            </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            } else {
+                content.innerHTML = `<div class="p-4 text-rose-500 text-center text-sm font-bold">${data.error}</div>`;
+            }
+        } catch (e) {
+            content.innerHTML = `<div class="p-4 text-rose-500 text-center text-sm font-bold">Failed to load configuration.</div>`;
+        }
+    }
+
+    function closeSettings() {
+        const modal = document.getElementById('settingsModal');
+        modal.classList.add('opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }, 300);
+    }
+    
+    async function saveSettings() {
+        const name = document.getElementById('set-name').value;
+        const topic = document.getElementById('set-topic').value;
+        const rules = document.getElementById('set-rules').value;
+        const btn = event.currentTarget;
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = 'Applying...';
+        btn.disabled = true;
+        
+        try {
+            // Update channel name
+            await fetch(`/chat/channels/${activeChannelId}`, {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ name: name })
+            });
+            
+            // Update topic
+            const formData = new FormData();
+            formData.append('topic', topic);
+            
+            await fetch(`/chat/channels/${activeChannelId}/settings`, {
+                method: 'POST',
+                body: formData
+            });
+
+            // Update rules
+            await fetch(`/chat/channels/${activeChannelId}/rules`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({rules: rules})
+                body: JSON.stringify({ rules: rules })
+            });
+            
+            await fetchHubData();
+            document.getElementById('activeChannelName').innerText = name;
+            closeSettings();
+        } catch(e) {
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }
+    }
+
+    async function leaveChannel() {
+        if(!confirm("Are you sure you want to leave this connection?")) return;
+        try {
+            const res = await fetch(`/chat/channels/${activeChannelId}/leave`, { method: 'POST' });
+            const data = await res.json();
+            if(data.success) {
+                closeSettings();
+                fetchHubData();
+                activeChannelId = 1;
+                switchMainTab('public');
+            } else { alert(data.error || "Failed to leave"); }
+        } catch(e) { console.error(e); }
+    }
+
+    async function deleteChannel() {
+        if(!confirm("CRITICAL WARNING: Are you strictly sure you want to completely eradicate this channel and wipe all historical messages permanently?")) return;
+        try {
+            const res = await fetch(`/chat/channels/${activeChannelId}`, { method: 'DELETE' });
+            const data = await res.json();
+            if(data.success) {
+                closeSettings();
+                fetchHubData();
+                activeChannelId = 1;
+                switchMainTab('public');
+            } else { alert(data.error || "Failed to delete"); }
+        } catch(e) { console.error(e); }
+    }
+
+    // ======== Connect & Create Operations ========
+    async function respondReq(reqId, status) {
+        try {
+            const res = await fetch(`/chat/social/requests/${reqId}/respond`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ status })
             });
             const data = await res.json();
             if(data.success) {
-                alert('✅ Rules saved!');
-                rulesModal.hide();
+                fetchHubData();
             } else {
-                alert('❌ ' + (data.error || 'Failed to save rules'));
+                alert(data.error || "Failed to respond");
             }
-        } catch(e) {
-            alert('Error saving rules');
-        }
+        } catch(e) { console.error(e) }
     }
 
-    // --- EMOJI PICKER LOGIC ---
-    const emojiList = [
-        // Smileys & People
-        "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "🥲", "😊", "😇", "🙂", "🙃", "😉", "😌",
-        "😍", "🥰", "😘", "😗", "😙", "😚", "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎",
-        "🥸", "🤩", "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", "😣", "😖", "😫", "😩",
-        "🥺", "😢", "😭", "😤", "😠", "😡", "🤬", "🤯", "😳", "🥵", "🥶", "😱", "😨", "😰", "😥",
-        "😓", "🤗", "🤔", "🤭", "🤫", "🤥", "😶", "😐", "😑", "😬", "🙄", "😯", "😦", "😧", "😮",
-        "😲", "🥱", "😴", "🤤", "😪", "😵", "🤐", "🥴", "🤢", "🤮", "🤧", "😷", "🤒", "🤕", "🤑",
-        "🤠", "😈", "👿", "👹", "👺", "🤡", "💩", "👻", "💀", "☠️", "👽", "👾", "🤖", "🎃",
+    function openCreateModal() {
+        const title = document.getElementById('createModalTitle');
+        const body = document.getElementById('createModalBody');
         
-        // Hands & Body
-        "👋", "🤚", "🖐️", "✋", "🖖", "👌", "🤌", "🤏", "✌️", "🤞", "🤟", "🤘", "🤙", "👈", "👉",
-        "👆", "🖕", "👇", "☝️", "👍", "👎", "✊", "👊", "🤛", "🤜", "👏", "🙌", "👐", "🤲", "🤝",
-        "🙏", "✍️", "💅", "🤳", "💪", "🦾", "🦵", "🦿", "🦶", "👣", "👀", "👁️", "🧠", "💋", "👄",
+        if (currentMainTab === 'public' || currentMainTab === 'group') {
+            const isGroup = currentMainTab === 'group';
+            title.innerHTML = `<span class="material-symbols-outlined text-brand-400">add_circle</span> Create ${isGroup ? 'Group' : 'Global'} Chat`;
+            body.innerHTML = `
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-base-400 uppercase tracking-widest mb-1.5 cursor-pointer">Channel Name</label>
+                        <input type="text" id="newChannelName" class="w-full bg-base-800 text-white px-4 py-2.5 rounded-xl border border-base-700 focus:outline-none focus:border-brand-500 font-medium text-sm transition-all shadow-inner" placeholder="e.g. Science Fiction">
+                    </div>
+                    <button onclick="submitCreateChannel()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-sm font-bold shadow-[0_4px_15px_rgba(37,99,235,0.3)] transition-all">Create Channel</button>
+                </div>
+            `;
+        } else if (currentMainTab === 'personal') {
+            title.innerHTML = `<span class="material-symbols-outlined text-brand-400">person_add</span> Connect & Request`;
+            body.innerHTML = `
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-base-400 uppercase tracking-widest mb-1.5 cursor-pointer">User ID / Anon ID</label>
+                        <input type="text" id="newFriendId" class="w-full bg-base-800 text-white px-4 py-2.5 rounded-xl border border-base-700 focus:outline-none focus:border-brand-500 font-medium text-sm transition-all shadow-inner" placeholder="Enter target ID number...">
+                    </div>
+                    <button onclick="submitConnectReq()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-sm font-bold shadow-[0_4px_15px_rgba(37,99,235,0.3)] transition-all">Send Request</button>
+                </div>
+            `;
+        }
         
-        // Hearts & Symbols
-        "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔", "❣️", "💕", "💞", "💓", "💗",
-        "💖", "💘", "💝", "💟", "☮️", "✝️", "☪️", "🕉️", "☸️", "✡️", "🔯", "🕎", "☯️", "☦️", "🛐",
-        "✨", "🌟", "💫", "🔥", "💥", "💯", "💢", "💦", "💨", "🕳️", "💣", "💬", "👁️‍🗨️", "🗨️",
-        
-        // Animals & Nature
-        "🐵", "🐒", "🦍", "🦧", "🐶", "🐕", "🦮", "🐩", "🐺", "🦊", "🦝", "🐱", "🐈", "🦁", "🐯",
-        "🐅", "🐆", "🐴", "🐎", "🦄", "🦓", "🦌", "🐮", "ox", "🐃", "🐄", "🐷", "🐖", "🐗", "🐽",
-        "🐏", "🐑", "🐐", "🐪", "🐫", "🦙", "🦒", "🐘", "🦣", "🦏", "🦛", "🐭", "🐁", "🐀", "🐹",
-        "🐰", "🐇", "🐿️", "🦫", "🦔", "🦇", "🐻", "🐨", "🐼", "🦥", "🦦", "🦨", "🦘", "🦡", "🐾",
-        "🦃", "🐔", "🐓", "🐣", "🐤", "🐥", "🐦", "🐧", "🕊️", "🦅", "🦆", "🦢", "🦉", "🦤", "🪶",
-        "🦩", "🦚", "🦜", "🐸", "🐊", "🐢", "🦎", "🐍", "🐲", "🐉", "🦕", "🦖", "🐳", "🐋", "🐬",
-        "🦭", "🐟", "🐠", "🐡", "🦈", "🐙", "🐚", "🐌", "🦋", "🐛", "🐜", "🐝", "🪲", "🐞", "🦗",
-        "💐", "🌸", "💮", "🏵️", "🌹", "🥀", "🌺", "🌻", "🌼", "🌷", "🌱", "🪴", "🌲", "🌳", "🌴",
-        "🌵", "🌾", "🌿", "☘️", "🍀", "🍁", "🍂", "🍃",
-        
-        // Food & Drink
-        "🍇", "🍈", "🍉", "🍊", "🍋", "🍌", "🍍", "🥭", "🍎", "🍏", "🍐", "🍑", "🍒", "🍓", "🫐",
-        "🥝", "🍅", "🫒", "🥥", "🥑", "🍆", "🥔", "🥕", "🌽", "🌶️", "🫑", "🥒", "🥬", "🥦", "🧄",
-        "🧅", "🍄", "🥜", "🌰", "🍞", "🥐", "🥖", "🫓", "🥨", "🥯", "🥞", "🧇", "🧀", "🍖", "🍗",
-        "🥩", "🥓", "🍔", "🍟", "🍕", "🌭", "🥪", "🌮", "🌯", "🫔", "🥙", "🧆", "🥚", "🍳", "🥘",
-        "🍲", "🫕", "🥣", "🥗", "🍿", "🧈", "🧂", "🥫", "🍱", "🍘", "🍙", "🍚", "🍛", "🍜", "🍝",
-        "🍠", "🍢", "🍣", "🍤", "🍥", "🥮", "🍡", "🥟", "🥠", "🥡", "🦀", "🦞", "🦐", "🦑", "🦪",
-        "🍦", "🍧", "🍨", "🍩", "🍪", "🎂", "🍰", "🧁", "🥧", "🍫", "🍬", "🍭", "🍮", "🍯", "🍼",
-        "🥛", "☕", "🫖", "🍵", "🍶", "🍾", "🍷", "🍸", "🍹", "🍺", "🍻", "🥂", "🥃", "🥤", "🧋",
-        "🧃", "🧉", "🧊", "🥢", "🍽️", "🍴", "🥄", "🔪", "🏺"
-    ];
+        const modal = document.getElementById('createModal');
+        modal.classList.remove('hidden');
+        setTimeout(() => modal.classList.remove('opacity-0'), 10);
+    }
 
-    function toggleEmojiPicker() {
-        const picker = document.getElementById('emojiPicker');
-        if (!picker) return;
+    function closeCreateModal() {
+        const modal = document.getElementById('createModal');
+        modal.classList.add('opacity-0');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    }
+
+    async function submitCreateChannel() {
+        const name = document.getElementById('newChannelName').value.trim();
+        if(!name) return;
         
-        if (picker.style.display === 'none') {
-            picker.style.display = 'grid';
-            if (picker.children.length === 0) {
-                // Populate if empty
-                picker.innerHTML = ''; // Clear comments
-                emojiList.forEach(emoji => {
-                    const span = document.createElement('span');
-                    span.innerText = emoji;
-                    span.style.cursor = 'pointer';
-                    span.style.fontSize = '1.3rem';
-                    span.style.padding = '8px';
-                    span.style.borderRadius = '5px';
-                    span.style.textAlign = 'center';
-                    span.style.transition = 'background 0.2s';
-                    span.onmouseover = () => span.style.background = 'rgba(255,255,255,0.1)';
-                    span.onmouseout = () => span.style.background = 'transparent';
-                    span.onclick = () => {
-                        insertEmoji(emoji);
-                        picker.style.display = 'none';
-                    };
-                    picker.appendChild(span);
-                });
+        const isPrivate = currentMainTab === 'group';
+        
+        try {
+            const res = await fetch('/chat/channels', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ name: name, type: 'text', is_private: isPrivate })
+            });
+            const data = await res.json();
+            if(data.success) {
+                closeCreateModal();
+                fetchHubData(); // Refresh UI
+                joinChannel(data.channel_id, name); // Jump directly into it
+            } else {
+                alert(data.error || "Creation failed");
             }
-        } else {
-            picker.style.display = 'none';
-        }
+        } catch(e) { console.error(e); }
     }
 
-    function insertEmoji(emoji) {
-        const input = document.getElementById('messageInput');
-        if (input) {
-            input.value += emoji;
-            input.focus();
-        }
+    async function submitConnectReq() {
+        const targetId = document.getElementById('newFriendId').value.trim();
+        if(!targetId) return;
+        
+        try {
+            const res = await fetch('/member/api/community/add_friend', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ target_id: targetId })
+            });
+            const data = await res.json();
+            if(data.success || data.message) {
+                closeCreateModal();
+                const msg = data.message || "Request sent successfully!";
+                alert(msg);
+            } else {
+                alert(data.error);
+            }
+        } catch(e) { console.error(e); }
     }
 
-    // Close picker when clicking outside
-    document.addEventListener('click', function(event) {
-        const picker = document.getElementById('emojiPicker');
-        const btn = document.getElementById('emojiBtn');
-        if (picker && picker.style.display !== 'none' && !picker.contains(event.target) && !btn.contains(event.target)) {
-            picker.style.display = 'none';
-        }
-    });
 </script>
+
+<!-- Emoji Picker Injection -->
+<script type="module">
+  import 'https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js';
+  
+  const picker = document.createElement('emoji-picker');
+  picker.classList.add('dark'); // Matches our sci-fi dark aesthetic
+  
+  // Apply quick CSS variables to match brand colors
+  const style = document.createElement('style');
+  style.textContent = `
+    emoji-picker {
+      --background: #0f172a; 
+      --border-color: #334155; 
+      --button-hover-background: #1e293b;
+      --indicator-color: #3b82f6;
+    }
+  `;
+  picker.appendChild(style);
+
+  document.getElementById('emojiPickerContainer').appendChild(picker);
+
+  picker.addEventListener('emoji-click', event => {
+    const input = document.getElementById('msgInput');
+    input.value += event.detail.unicode;
+  });
+
+  document.getElementById('emojiBtn').addEventListener('click', (e) => {
+     e.stopPropagation();
+     const container = document.getElementById('emojiPickerContainer');
+     container.classList.toggle('hidden');
+  });
+</script>
+
+<style>
+/* Custom Nav Icon Coloring active styling override */
+.nav-node.active-icon::before {
+    background-color: rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Scrollbar specific to chat */
+.custom-scroll::-webkit-scrollbar { width: 6px; }
+.custom-scroll::-webkit-scrollbar-track { background: transparent; }
+.custom-scroll::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.5); border-radius: 10px; }
+.custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(51, 65, 85, 0.8); }
+
+</style>
 {% endblock %}

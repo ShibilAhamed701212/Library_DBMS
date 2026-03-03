@@ -2,308 +2,466 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{% endblock %} | {{ system_settings.library_name }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>{% block title %}Dashboard{% endblock %} | {{ system_settings.library_name }}</title>
     
-    <!-- Dynamic Settings Integration -->
+    <!-- Material Symbols -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
+    
+    <!-- Tailwind CSS (Clean Theme) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            50: '#eff6ff', 100: '#dbeafe', 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8'
+                        },
+                        base: {
+                            900: 'rgb(var(--base-900-rgb) / <alpha-value>)',
+                            800: 'rgb(var(--base-800-rgb) / <alpha-value>)',
+                            700: 'rgb(var(--base-700-rgb) / <alpha-value>)',
+                            400: 'rgb(var(--base-400-rgb) / <alpha-value>)',
+                            100: 'rgb(var(--base-100-rgb) / <alpha-value>)',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Base CSS to override traces -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Premium Dropdowns (TomSelect) -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.default.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
     <style>
+        /* Base Variables (Dark Theme) */
         :root {
-            --primary: {{ system_settings.accent_color or '#4e73df' }};
-            --primary-hover: {{ system_settings.accent_color or '#4e73df' }}dd;
+            --base-900: #0F172A; --base-900-rgb: 15 23 42;
+            --base-800: #1E293B; --base-800-rgb: 30 41 59;
+            --base-700: #334155; --base-700-rgb: 51 65 85;
+            --base-400: #94A3B8; --base-400-rgb: 148 163 184;
+            --base-100: #F1F5F9; --base-100-rgb: 241 245 249;
+            --border-glow: rgba(255, 255, 255, 0.1);
+            --dropdown-hover: #334155;
+            --shadow-custom: 0 10px 25px rgba(0, 0, 0, 0.5);
+            --invert-filter: invert(0);
+        }
+
+        /* Light Theme Overrides */
+        body.light-mode {
+            --base-900: #F8FAFC; --base-900-rgb: 248 250 252;
+            --base-800: #FFFFFF; --base-800-rgb: 255 255 255;
+            --base-700: #E2E8F0; --base-700-rgb: 226 232 240;
+            --base-400: #64748B; --base-400-rgb: 100 116 139;
+            --base-100: #0F172A; --base-100-rgb: 15 23 42;
+            --border-glow: rgba(0, 0, 0, 0.1);
+            --dropdown-hover: #F1F5F9;
+            --shadow-custom: 0 10px 25px rgba(0, 0, 0, 0.05);
+            --invert-filter: invert(1);
+        }
+
+        /* Tom Select Dark Mode Overrides */
+        .ts-wrapper .ts-control {
+            background-color: var(--base-800) !important;
+            border: 1px solid var(--border-glow) !important;
+            border-radius: 0.75rem !important; /* rounded-xl */
+            padding: 0.75rem 1rem !important;
+            color: var(--base-100) !important;
+            font-size: 0.875rem !important;
+            box-shadow: none !important;
+            transition: all 0.2s;
+        }
+        .ts-wrapper.single .ts-control::after {
+            border-color: var(--base-400) transparent transparent transparent !important;
+        }
+        .ts-wrapper.focus .ts-control {
+            border-color: #3b82f6 !important; /* brand-500 */
+            box-shadow: 0 0 0 1px #3b82f6 !important;
+        }
+        .ts-dropdown {
+            background-color: var(--base-800) !important;
+            border: 1px solid var(--border-glow) !important;
+            border-radius: 0.75rem !important;
+            box-shadow: var(--shadow-custom) !important;
+            margin-top: 5px !important;
+            color: var(--base-100) !important;
+            overflow: hidden !important;
+        }
+        .ts-dropdown .option {
+            padding: 0.75rem 1rem !important;
+            font-size: 0.875rem !important;
+            cursor: pointer !important;
+            color: var(--base-400) !important;
+        }
+        .ts-dropdown .option:hover, .ts-dropdown .option.active {
+            background-color: var(--dropdown-hover) !important; 
+            color: var(--base-100) !important;
+        }
+        /* Search input inside dropdown */
+        .ts-dropdown .dropdown-input {
+            border-bottom: 1px solid var(--border-glow) !important;
+            padding: 0.5rem 1rem !important;
+        }
+        .ts-control input {
+            color: var(--base-100) !important;
         }
     </style>
 
-    <!-- Theme Detection Script (prevents FOUC) -->
-    <script>
-        (function() {
-            const saved = localStorage.getItem('theme');
-            const config = "{{ system_settings.default_theme or 'auto' }}";
-            let t = 'light';
-            if (saved) t = saved;
-            else if (config !== 'auto') t = config;
-            else if (window.matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
-            document.documentElement.setAttribute('data-theme', t);
-        })();
-    </script>
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ range(1, 1000) | random }}">
     {% block head %}{% endblock %}
 </head>
-<body>
-    <!-- Mobile View: Premium Top Bar -->
+<body class="bg-base-900 text-base-100 font-sans antialiased overflow-hidden flex h-screen selection:bg-brand-500 selection:text-white">
+
     {% if not fullscreen %}
-    <div class="mobile-top-bar">
-        <div class="mobile-left">
-            <button class="menu-toggle" id="menuToggle">☰</button>
-            <div class="mobile-logo"><span>{{ system_settings.branding_emoji }}</span> {{ system_settings.library_name }}</div>
+    <!-- DESKTOP SIDEBAR -->
+    <aside class="hidden md:flex flex-col w-64 border-r border-base-700 bg-base-900 shrink-0 h-full">
+        <!-- Logo -->
+        <div class="p-6 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center text-white font-bold text-xl shadow-[0_0_15px_rgba(59,130,246,0.5)]">{{ system_settings.branding_emoji or system_settings.library_name[0] }}</div>
+            <div class="overflow-hidden">
+                <h1 class="font-bold text-lg tracking-tight leading-tight truncate">{{ system_settings.library_name }}</h1>
+                <p class="text-[9px] text-base-400 font-semibold uppercase tracking-widest mt-0.5 truncate">{{ system_settings.library_tagline[:30] }}{% if system_settings.library_tagline|length > 30 %}...{% endif %}</p>
+            </div>
         </div>
-        <div class="mobile-user">
-            <span class="mobile-user-name">{{ session.get('name', 'User') }}</span>
+
+        <!-- Links -->
+        <div class="flex-1 overflow-y-auto px-4 py-6 no-scrollbar space-y-1">
+            {% if session.get('role') == 'admin' %}
+            <a href="/admin/dashboard" class="flex items-center gap-3 px-3 py-2.5 rounded-xl {% if active_page == 'admin_overview' %}bg-brand-600/15 text-brand-400 font-semibold{% else %}text-base-400 hover:bg-base-800 hover:text-base-100{% endif %} transition-colors">
+                <span class="material-symbols-outlined text-[20px]">dashboard</span> Dashboard
+            </a>
+            <a href="/admin/books" class="flex items-center gap-3 px-3 py-2.5 rounded-xl {% if active_page == 'admin_books' %}bg-brand-600/15 text-brand-400 font-semibold{% else %}text-base-400 hover:bg-base-800 hover:text-base-100{% endif %} transition-colors">
+                <span class="material-symbols-outlined text-[20px]">menu_book</span> Books Catalog
+            </a>
+            <a href="/admin/users" class="flex items-center gap-3 px-3 py-2.5 rounded-xl {% if active_page == 'admin_users' %}bg-brand-600/15 text-brand-400 font-semibold{% else %}text-base-400 hover:bg-base-800 hover:text-base-100{% endif %} transition-colors">
+                <span class="material-symbols-outlined text-[20px]">group</span> Members
+            </a>
+            <a href="/admin/issues" class="flex items-center gap-3 px-3 py-2.5 rounded-xl {% if active_page == 'admin_issues' %}bg-brand-600/15 text-brand-400 font-semibold{% else %}text-base-400 hover:bg-base-800 hover:text-base-100{% endif %} transition-colors">
+                <span class="material-symbols-outlined text-[20px]">swap_horiz</span> Lending
+            </a>
+            <a href="/reports" class="flex items-center gap-3 px-3 py-2.5 rounded-xl {% if active_page == 'admin_reports' or active_page == 'admin_analytics' %}bg-brand-600/15 text-brand-400 font-semibold{% else %}text-base-400 hover:bg-base-800 hover:text-base-100{% endif %} transition-colors">
+                <span class="material-symbols-outlined text-[20px]">bar_chart</span> Reports
+            </a>
+            <a href="/admin/community" class="flex items-center gap-3 px-3 py-2.5 rounded-xl {% if active_page == 'admin_community' %}bg-brand-600/15 text-brand-400 font-semibold{% else %}text-base-400 hover:bg-base-800 hover:text-base-100{% endif %} transition-colors">
+                <span class="material-symbols-outlined text-[20px]">forum</span> Community Hub
+            </a>
+            <a href="/member/leaderboard" class="flex items-center gap-3 px-3 py-2.5 rounded-xl {% if active_page == 'member_leaderboard' %}bg-brand-600/15 text-brand-400 font-semibold{% else %}text-base-400 hover:bg-base-800 hover:text-base-100{% endif %} transition-colors">
+                <span class="material-symbols-outlined text-[20px] {% if active_page == 'member_leaderboard' %}fill-brand-400{% endif %}">military_tech</span> Leaderboard
+            </a>
+            <a href="/admin/settings" class="flex items-center gap-3 px-3 py-2.5 rounded-xl {% if active_page == 'admin_settings' %}bg-brand-600/15 text-brand-400 font-semibold{% else %}text-base-400 hover:bg-base-800 hover:text-base-100{% endif %} transition-colors">
+                <span class="material-symbols-outlined text-[20px]">settings</span> Settings
+            </a>
+            <a href="/admin/support" class="flex items-center gap-3 px-3 py-2.5 rounded-xl {% if active_page == 'admin_support' %}bg-brand-600/15 text-brand-400 font-semibold{% else %}text-base-400 hover:bg-base-800 hover:text-base-100{% endif %} transition-colors">
+                <span class="material-symbols-outlined text-[20px]">support_agent</span> Desk Support
+            </a>
+            <a href="/admin/account-requests" class="flex items-center gap-3 px-3 py-2.5 rounded-xl {% if active_page == 'admin_account_requests' %}bg-brand-600/15 text-brand-400 font-semibold{% else %}text-base-400 hover:bg-base-800 hover:text-base-100{% endif %} transition-colors">
+                <span class="material-symbols-outlined text-[20px]">person_add</span> Account Requests
+            </a>
+
+
+
+            {% else %}
+            <!-- Member Links -->
+            <p class="text-xs font-semibold text-base-400 uppercase tracking-widest mb-3 pl-3">Main Menu</p>
+            <a href="/member/dashboard" class="flex items-center gap-3 px-3 py-2.5 rounded-xl {% if active_page == 'member_overview' %}bg-base-800 text-brand-400 font-semibold border-l-2 border-brand-500{% else %}text-base-400 hover:bg-base-800 hover:text-base-100 border-l-2 border-transparent{% endif %} transition-colors">
+                <span class="material-symbols-outlined text-[20px] {% if active_page == 'member_overview' %}fill-brand-400{% endif %}">dashboard</span> Dashboard
+            </a>
+            <a href="/member/catalog" class="flex items-center gap-3 px-3 py-2.5 rounded-xl {% if active_page == 'member_catalog' %}bg-base-800 text-brand-400 font-semibold border-l-2 border-brand-500{% else %}text-base-400 hover:bg-base-800 hover:text-base-100 border-l-2 border-transparent{% endif %} transition-colors">
+                <span class="material-symbols-outlined text-[20px] {% if active_page == 'member_catalog' %}fill-brand-400{% endif %}">library_books</span> Catalog
+            </a>
+            <a href="/member/goals" class="flex items-center gap-3 px-3 py-2.5 rounded-xl {% if active_page == 'member_goals' %}bg-base-800 text-brand-400 font-semibold border-l-2 border-brand-500{% else %}text-base-400 hover:bg-base-800 hover:text-base-100 border-l-2 border-transparent{% endif %} transition-colors">
+                <span class="material-symbols-outlined text-[20px] {% if active_page == 'member_goals' %}fill-brand-400{% endif %}">history</span> History
+            </a>
+            <a href="{{ url_for('member.member_ai_chat') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl {% if active_page == 'ai_chat' %}bg-base-800 text-brand-400 font-semibold border-l-2 border-brand-500{% else %}text-base-400 hover:bg-base-800 hover:text-base-100 border-l-2 border-transparent{% endif %} transition-colors">
+                <span class="material-symbols-outlined text-[20px] {% if active_page == 'ai_chat' %}fill-brand-400{% endif %}">smart_toy</span> AI Assistant
+            </a>
+            <a href="/member/community" class="flex items-center gap-3 px-3 py-2.5 rounded-xl {% if active_page == 'member_community' %}bg-base-800 text-brand-400 font-semibold border-l-2 border-brand-500{% else %}text-base-400 hover:bg-base-800 hover:text-base-100 border-l-2 border-transparent{% endif %} transition-colors">
+                <span class="material-symbols-outlined text-[20px] {% if active_page == 'member_community' %}fill-brand-400{% endif %}">forum</span> Community Hub
+            </a>
+            <a href="/member/leaderboard" class="flex items-center gap-3 px-3 py-2.5 rounded-xl {% if active_page == 'member_leaderboard' %}bg-base-800 text-brand-400 font-semibold border-l-2 border-brand-500{% else %}text-base-400 hover:bg-base-800 hover:text-base-100 border-l-2 border-transparent{% endif %} transition-colors">
+                <span class="material-symbols-outlined text-[20px] {% if active_page == 'member_leaderboard' %}fill-brand-400{% endif %}">military_tech</span> Leaderboard
+            </a>
+
+            <p class="text-xs font-semibold text-base-400 uppercase tracking-widest mt-8 mb-3 pl-3">Personal</p>
+            <a href="/member/wishlist" class="flex items-center gap-3 px-3 py-2.5 rounded-xl {% if active_page == 'member_wishlist' %}bg-base-800 text-brand-400 font-semibold border-l-2 border-brand-500{% else %}text-base-400 hover:bg-base-800 hover:text-base-100 border-l-2 border-transparent{% endif %} transition-colors">
+                <span class="material-symbols-outlined text-[20px] {% if active_page == 'member_wishlist' %}fill-brand-400{% endif %}">favorite</span> Favorites
+            </a>
+            <a href="/member/profile" class="flex items-center gap-3 px-3 py-2.5 rounded-xl {% if active_page == 'member_profile' %}bg-base-800 text-brand-400 font-semibold border-l-2 border-brand-500{% else %}text-base-400 hover:bg-base-800 hover:text-base-100 border-l-2 border-transparent{% endif %} transition-colors">
+                <span class="material-symbols-outlined text-[20px] {% if active_page == 'member_profile' %}fill-brand-400{% endif %}">person</span> Profile Settings
+            </a>
+            <a href="/member/support" class="flex items-center gap-3 px-3 py-2.5 rounded-xl {% if active_page == 'member_support' %}bg-base-800 text-brand-400 font-semibold border-l-2 border-brand-500{% else %}text-base-400 hover:bg-base-800 hover:text-base-100 border-l-2 border-transparent{% endif %} transition-colors">
+                <span class="material-symbols-outlined text-[20px] {% if active_page == 'member_support' %}fill-brand-400{% endif %}">support_agent</span> Support & Tickets
+            </a>
+            
+            <!-- Pro Plan Box -->
+            <a href="/member/plans" class="block mt-8 mx-3 p-4 bg-brand-600 rounded-xl text-white shadow-[0_10px_25px_rgba(37,99,235,0.2)] hover:bg-brand-500 transition-colors group">
+                <p class="text-[10px] uppercase tracking-wider font-bold text-brand-100 mb-1">MEMBERSHIP</p>
+                <p class="text-[13px] font-semibold mb-3 leading-tight">Upgrade Your Plan</p>
+                <div class="w-full bg-white/20 group-hover:bg-white/30 text-white text-[11px] font-bold py-2 rounded-lg transition-colors text-center">View Plans</div>
+            </a>
+            {% endif %}
+        </div>
+
+        <div class="px-4 pb-6 mt-auto">
+            <a href="/logout" class="flex items-center gap-3 px-3 py-2 text-rose-400 hover:text-rose-300 transition-colors font-medium text-sm">
+                <span class="material-symbols-outlined text-[20px]">logout</span> Logout
+            </a>
+        </div>
+    </aside>
+
+    <!-- MOBILE TOP BAR -->
+    <div class="md:hidden fixed top-0 w-full h-16 bg-base-900 shadow-md border-b border-base-700 z-50 flex items-center justify-between px-4">
+        <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-base-100 text-2xl">menu</span>
+            <h1 class="font-bold text-lg text-base-100">{% block header_title %}Dashboard{% endblock %}</h1>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="relative cursor-pointer">
+                <span class="material-symbols-outlined text-base-400">notifications</span>
+                {% if unread_count > 0 %}
+                <span class="absolute 1 top-0 right-0 w-2.5 h-2.5 bg-rose-500 border-2 border-base-900 rounded-full"></span>
+                {% endif %}
+            </div>
+            <div class="w-8 h-8 rounded-full bg-orange-200 overflow-hidden flex items-center justify-center text-sm font-bold shadow-sm text-orange-800 border-2 border-base-900">
+                {% if session.get('profile_pic') %}
+                <img src="{{ url_for('static', filename=session.get('profile_pic')) }}" class="w-full h-full object-cover">
+                {% else %}
+                {{ session.get('name', 'U')[0] }}
+                {% endif %}
+            </div>
         </div>
     </div>
     {% endif %}
 
-    <!-- Flash Messages -->
-    <div class="flash-container">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, msg in messages %}
-          <div class="flash-message flash-{{ category }}">
-              <span>{{ msg }}</span>
-          </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-    </div>
-
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <div class="app-container" {% if fullscreen %}style="display: block;"{% endif %}>
-        <!-- Sidebar -->
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 flex flex-col h-[100dvh] bg-base-900 relative min-w-0 {{ '' if fullscreen else 'pt-16 md:pt-0 pb-16 md:pb-0' }} overflow-y-auto no-scrollbar">
+        
         {% if not fullscreen %}
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-logo">
-                <span style="font-size: 1.5rem; color: var(--primary);"><i class="fas fa-book-open"></i></span> {{ system_settings.library_name }}
-                <div class="sidebar-subtitle">{{ system_settings.library_tagline }}</div>
-            </div>
-            
-            <!-- Theme Toggle -->
-            <div class="theme-toggle-wrapper">
-                <button id="themeToggle" class="theme-btn">
-                    <span id="themeIcon"><i class="fas fa-moon"></i></span>
-                    <span id="themeText">Dark Mode</span>
-                </button>
-            </div>
-
-            <nav class="nav-links">
-                {% if session.get('role') == 'admin' %}
-                    <a href="/admin/dashboard" class="nav-link {% if active_page == 'admin_overview' %}active{% endif %}">
-                        <i class="fas fa-chart-line icon-overview"></i> Overview
-                    </a>
-                    <a href="/admin/books" class="nav-link {% if active_page == 'admin_books' %}active{% endif %}">
-                        <i class="fas fa-book icon-books"></i> Books
-                    </a>
-                    <a href="/admin/users" class="nav-link {% if active_page == 'admin_users' %}active{% endif %}">
-                        <i class="fas fa-users icon-users"></i> Users
-                    </a>
-                    <a href="/admin/issues" class="nav-link {% if active_page == 'admin_issues' %}active{% endif %}">
-                        <i class="fas fa-exchange-alt icon-exchange"></i> Issue/Return
-                    </a>
-                    <a href="/admin/requests" class="nav-link {% if active_page == 'admin_requests' %}active{% endif %}">
-                        <i class="fas fa-hourglass-half icon-requests"></i> Requests
-                    </a>
-                    <a href="/admin/suggestions" class="nav-link {% if active_page == 'admin_suggestions' %}active{% endif %}">
-                        <i class="fas fa-lightbulb icon-suggest"></i> Suggestions
-                    </a>
-                    <a href="/admin/purchase-list" class="nav-link {% if active_page == 'admin_purchase_list' %}active{% endif %}">
-                        <i class="fas fa-shopping-cart icon-catalog"></i> Purchase List
-                    </a>
-                    <a href="/reports" class="nav-link {% if active_page == 'admin_reports' or active_page == 'admin_analytics' %}active{% endif %}">
-                        <i class="fas fa-chart-pie icon-insights"></i> Insights
-                    </a>
-                    <a href="/admin/community" class="nav-link {% if active_page == 'admin_community' %}active{% endif %}">
-                        <i class="fas fa-users-cog icon-community"></i> Community Hub
-                    </a>
-                    <a href="/admin/scanner" class="nav-link {% if active_page == 'admin_scanner' %}active{% endif %}">
-                        <i class="fas fa-qrcode icon-scanner"></i> Scanner
-                    </a>
-                    <a href="/admin/support" class="nav-link {% if active_page == 'admin_support' %}active{% endif %}">
-                        <i class="fas fa-headset icon-support"></i> Support
-                    </a>
-                    <a href="/admin/settings" class="nav-link {% if active_page == 'admin_settings' %}active{% endif %}">
-                        <i class="fas fa-cog icon-settings"></i> Settings
-                    </a>
-                    <a href="/admin/system/health" class="nav-link {% if active_page == 'admin_health' %}active{% endif %}">
-                        <i class="fas fa-heartbeat icon-health"></i> System Health
-                    </a>
-                {% else %}
-                    <a href="/member/dashboard" class="nav-link {% if active_page == 'member_overview' %}active{% endif %}">
-                        <i class="fas fa-tachometer-alt icon-overview"></i> Overview
-                    </a>
-                    <a href="/member/goals" class="nav-link {% if active_page == 'member_goals' %}active{% endif %}">
-                        <i class="fas fa-bullseye icon-goals"></i> My Goals
-                    </a>
-                    <a href="/member/achievements" class="nav-link {% if active_page == 'member_achievements' %}active{% endif %}">
-                        <i class="fas fa-trophy icon-trophy"></i> Trophy Room
-                    </a>
-                    <a href="/member/catalog" class="nav-link {% if active_page == 'member_catalog' %}active{% endif %}">
-                        <i class="fas fa-book icon-catalog"></i> Catalog
-                    </a>
-                    <a href="/member/suggest-book" class="nav-link {% if active_page == 'suggest_book' %}active{% endif %}">
-                        <i class="fas fa-lightbulb icon-suggest"></i> Suggest Book
-                    </a>
-                    <a href="{{ url_for('member.member_ai_chat') }}" class="nav-link {% if active_page == 'ai_chat' %}active{% endif %}">
-                        <i class="fas fa-brain icon-ai"></i> AI Assistant
-                    </a>
-                    <a href="/member/wishlist" class="nav-link {% if active_page == 'member_wishlist' %}active{% endif %}">
-                        <i class="fas fa-heart icon-wishlist"></i> Wishlist
-                    </a>
-                    <a href="/member/community" class="nav-link {% if active_page == 'member_community' %}active{% endif %}">
-                        <i class="fas fa-comments icon-community"></i> Community
-                    </a>
-                     <a href="/member/support" class="nav-link {% if active_page == 'member_support' %}active{% endif %}">
-                        <i class="fas fa-ticket-alt icon-support"></i> Support
-                    </a>
-                    <a href="/member/api-keys" class="nav-link {% if active_page == 'member_api_keys' %}active{% endif %}">
-                        <i class="fas fa-key icon-api"></i> Developer API
-                    </a>
-                    <a href="/member/profile" class="nav-link {% if active_page == 'member_profile' %}active{% endif %}">
-                        <i class="fas fa-user-circle icon-profile"></i> My Profile
-                    </a>
-                {% endif %}
-            </nav>
-
-            <div style="margin-top: auto; border-top: 1px solid rgba(255, 255, 255, 0.2); padding-top: 1.5rem;">
-                <a href="/logout" class="nav-link" style="color: #ef4444;">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
-            </div>
-        </aside>
-        {% endif %}
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <header>
-                <div class="header-title">
-                    <h1>{% block header_title %}{% endblock %}</h1>
-                    <p>{% block header_subtitle %}{% endblock %}</p>
+        <!-- DESKTOP TOP BAR -->
+        <header class="hidden md:flex h-[72px] items-center justify-between px-8 border-b border-base-800 shrink-0 bg-base-900">
+            <!-- Left Header Title & Search -->
+            <div class="flex items-center gap-4 flex-1">
+                {% block header_search %}
+                <div class="relative w-full max-w-lg">
+                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-base-400 text-[20px]">search</span>
+                    <input type="text" placeholder="Search by title, author, or ISBN..." 
+                        class="w-full bg-base-800 text-base-100 pl-10 pr-4 py-2 rounded-xl border border-transparent focus:border-base-700 focus:bg-base-900 focus:outline-none text-sm placeholder-base-400 transition-all shadow-sm">
                 </div>
-                <div class="user-profile" style="display: flex; gap: 1rem; align-items: center;">
-                    <!-- Notifications -->
-                    <div class="notification-wrapper" style="position: relative;">
-                        <button class="notif-btn" id="notifBtn">
-                            🔔
-                            {% if unread_count > 0 %}
-                            <span class="notif-badge">{{ unread_count }}</span>
-                            {% endif %}
-                        </button>
-                        
-                        <!-- Dropdown -->
-                        <div class="notif-dropdown glass-card" id="notifDropdown">
-                            <div class="notif-dropdown-header">
-                                <strong>Notifications</strong>
-                                {% if unread_count > 0 %}
-                                <a href="/notifications/read/all" style="font-size: 0.8rem;">Mark all read</a>
-                                {% endif %}
-                            </div>
-                            {% if unread_notifications %}
-                                <div class="notif-dropdown-body">
-                                {% for n in unread_notifications %}
-                                    <div class="notif-item">
-                                        <p style="margin: 0; font-size: 0.9rem;">{{ n.message }}</p>
-                                        <div style="display: flex; justify-content: space-between; margin-top: 0.5rem;">
-                                            <small style="color: var(--text-sub);">{{ n.created_at }}</small>
-                                            <a href="/notifications/read/{{ n.notification_id }}" style="font-size: 0.8rem;">Dismiss</a>
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                                </div>
-                            {% else %}
-                                <div class="notif-empty">No new notifications</div>
-                            {% endif %}
+                {% endblock %}
+            </div>
+
+            <!-- Profile Area -->
+            <div class="flex items-center gap-5">
+                <button id="notif-btn" onclick="toggleTopDropdown('notificationsDropdown')" class="text-base-400 hover:text-base-100 transition-colors relative flex items-center justify-center w-10 h-10 rounded-full hover:bg-base-800 focus:outline-none">
+                    <span class="material-symbols-outlined text-[20px]">notifications</span>
+                    {% if unread_count > 0 %}
+                    <span class="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-brand-500 rounded-full border border-base-900 shadow-[0_0_5px_rgba(59,130,246,0.8)]"></span>
+                    {% endif %}
+                </button>
+                <button onclick="toggleTheme()" class="text-base-400 hover:text-base-100 transition-colors relative flex items-center justify-center w-10 h-10 rounded-full hover:bg-base-800 focus:outline-none" title="Toggle Theme">
+                    <span class="material-symbols-outlined text-[20px]" id="themeIcon">dark_mode</span>
+                </button>
+                <div class="h-6 w-px bg-base-700"></div>
+                
+                <!-- Profile Dropdown Container -->
+                <div class="relative">
+                    <button id="profile-btn" onclick="toggleTopDropdown('profileDropdown')" class="flex items-center gap-3 pl-1 focus:outline-none hover:opacity-80 transition-opacity">
+                        <div class="text-right hidden sm:block">
+                            <p class="text-xs font-semibold text-base-100">{{ session.get('name', 'User') }}</p>
+                            <p class="text-[10px] text-base-400 font-medium tracking-wide">{% if session.get('role') == 'admin' %}System Manager{% else %}{{ session.get('tier', 'Silver') }} Member{% endif %}</p>
                         </div>
-                    </div>
-                    
-                    <div class="header-user-info">
-                        <span class="header-user-name">{{ session.get('name', 'User') }}</span>
-                        <span class="header-user-role">{{ session.get('role')|capitalize }}</span>
-                    </div>
-                    {% if session.get('role') == 'member' %}
-                    <a href="/member/profile" style="text-decoration: none;">
-                        <div class="header-avatar header-avatar-member">
+                        <div class="w-9 h-9 rounded-full bg-[#fcdbb3] text-[#8b5a2b] overflow-hidden flex items-center justify-center text-sm font-bold shadow-sm">
                             {% if session.get('profile_pic') %}
-                            <img src="{{ url_for('static', filename=session.get('profile_pic')) }}" alt="Profile">
+                            <img src="{{ url_for('static', filename=session.get('profile_pic')) }}" class="w-full h-full object-cover">
                             {% else %}
                             {{ session.get('name', 'U')[0] }}
                             {% endif %}
                         </div>
-                    </a>
-                    {% else %}
-                    <div class="header-avatar header-avatar-admin">
-                        {{ session.get('name', 'A')[0] }}
+                    </button>
+                    
+                    <!-- Profile Menu -->
+                    <div id="profileDropdown" class="hidden absolute right-0 mt-3 w-48 bg-base-800 border border-base-700 rounded-2xl shadow-xl overflow-hidden z-50 transform origin-top-right transition-all">
+                        <div class="p-3 border-b border-base-700/50">
+                            <p class="text-xs font-bold text-white truncate">{{ session.get('email', 'Account') }}</p>
+                            <p class="text-[10px] text-brand-400 uppercase tracking-widest mt-0.5">Verified</p>
+                        </div>
+                        <div class="p-2 space-y-1">
+                            <a href="{% if session.get('role') == 'admin' %}/admin/settings{% else %}/member/profile{% endif %}" class="flex items-center gap-2 px-3 py-2 text-sm text-base-300 hover:text-white hover:bg-base-700 rounded-xl transition-colors">
+                                <span class="material-symbols-outlined text-[16px]">manage_accounts</span> Settings
+                            </a>
+                            <a href="/logout" class="flex items-center gap-2 px-3 py-2 text-sm text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl transition-colors mt-1">
+                                <span class="material-symbols-outlined text-[16px]">logout</span> Disconnect
+                            </a>
+                        </div>
                     </div>
-                    {% endif %}
+
+                    <!-- Notifications Menu -->
+                    <div id="notificationsDropdown" class="hidden absolute right-16 mt-3 w-72 bg-base-800 border border-base-700 rounded-2xl shadow-xl overflow-hidden z-50 transform origin-top-right transition-all">
+                        <div class="p-4 border-b border-base-700 flex justify-between items-center bg-base-900/50">
+                            <h3 class="text-sm font-black text-white">System Alerts</h3>
+                            <button class="text-[10px] text-brand-400 font-bold uppercase tracking-widest hover:text-brand-300">Clear</button>
+                        </div>
+                        <div class="p-4 text-center">
+                            <span class="material-symbols-outlined text-[32px] text-base-600 mb-2">notifications_paused</span>
+                            <p class="text-[11px] font-medium text-base-400">All transmissions clear.</p>
+                            <p class="text-[9px] text-base-500 uppercase tracking-widest mt-1">No pending alerts</p>
+                        </div>
+                    </div>
                 </div>
-            </header>
+            </div>
+        </header>
+        {% endif %}
 
-            {% block content %}{% endblock %}
-        </main>
-    </div>
-
-    <!-- Mobile Menu & Theme Toggle Script -->
-    <script>
-        // Mobile menu toggle
-        const menuToggle = document.getElementById('menuToggle');
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-        
-        function toggleMenu() {
-            sidebar.classList.toggle('open');
-            overlay.classList.toggle('active');
-        }
-
-        menuToggle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            toggleMenu();
-        });
-        
-        overlay.addEventListener('click', toggleMenu);
-        
-        // Close sidebar when clicking outside on mobile
-        document.addEventListener('click', (e) => {
-            if (window.innerWidth <= 1024 && 
-                !sidebar.contains(e.target) && 
-                !menuToggle.contains(e.target) &&
-                sidebar.classList.contains('open')) {
-                toggleMenu();
+        <script>
+            // Dropdown Interactivity Logic
+            function toggleTopDropdown(id) {
+                const target = document.getElementById(id);
+                const isHidden = target.classList.contains('hidden');
+                
+                // Hide all dropdowns first
+                document.getElementById('profileDropdown').classList.add('hidden');
+                document.getElementById('notificationsDropdown').classList.add('hidden');
+                
+                if (isHidden) {
+                    target.classList.remove('hidden');
+                }
             }
-        });
 
-        // Theme toggle
-        const themeToggle = document.getElementById('themeToggle');
-        const themeIcon = document.getElementById('themeIcon');
-        const themeText = document.getElementById('themeText');
-        const html = document.documentElement;
-
-        function updateToggleUI(theme) {
-            themeIcon.innerHTML = theme === 'dark' 
-                ? '<i class="fas fa-sun"></i>' 
-                : '<i class="fas fa-moon"></i>';
-            themeText.innerText = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
-        }
-
-        updateToggleUI(html.getAttribute('data-theme'));
-
-        themeToggle.addEventListener('click', () => {
-            const newTheme = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-            html.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            updateToggleUI(newTheme);
-        });
-
-        // Notification Toggle
-        const notifBtn = document.getElementById('notifBtn');
-        const notifDropdown = document.getElementById('notifDropdown');
-
-        if(notifBtn && notifDropdown) {
-            notifBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const isVisible = notifDropdown.style.display === 'block';
-                notifDropdown.style.display = isVisible ? 'none' : 'block';
-            });
-
-            document.addEventListener('click', (e) => {
-                if (!notifDropdown.contains(e.target) && !notifBtn.contains(e.target)) {
-                    notifDropdown.style.display = 'none';
+            // Theme Toggle Logic
+            function toggleTheme() {
+                const icon = document.getElementById('themeIcon');
+                const isLight = document.body.classList.contains('light-mode');
+                
+                if (isLight) {
+                    document.body.classList.remove('light-mode');
+                    localStorage.setItem('lumina_theme', 'dark');
+                    if (icon) icon.innerText = 'light_mode'; // Represents action to flip to light
+                } else {
+                    document.body.classList.add('light-mode');
+                    localStorage.setItem('lumina_theme', 'light');
+                    if (icon) icon.innerText = 'dark_mode'; // Represents action to flip to dark
+                }
+            }
+            
+            // Auto init theme
+            document.addEventListener("DOMContentLoaded", () => {
+                const saved = localStorage.getItem('lumina_theme');
+                const icon = document.getElementById('themeIcon');
+                if (saved === 'light') {
+                    document.body.classList.add('light-mode');
+                    if (icon) icon.innerText = 'dark_mode';
                 }
             });
-        }
+
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function(event) {
+                const profileBtn = event.target.closest('#profile-btn');
+                const notifBtn = event.target.closest('#notif-btn');
+                const profileMenu = document.getElementById('profileDropdown');
+                const notifMenu = document.getElementById('notificationsDropdown');
+                
+                if (!profileBtn && !profileMenu.contains(event.target)) {
+                    profileMenu.classList.add('hidden');
+                }
+                if (!notifBtn && !notifMenu.contains(event.target)) {
+                    notifMenu.classList.add('hidden');
+                }
+            });
+        </script>
+
+        <!-- FLASH MESSAGES -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="px-4 md:px-8 mt-4 space-y-2 z-50 shrink-0">
+            {% for category, msg in messages %}
+              <div class="px-4 py-3 rounded-xl text-sm font-medium shadow-sm {% if category == 'error' %}bg-rose-500/10 text-rose-500 border border-rose-500/20{% else %}bg-emerald-500/10 text-emerald-500 border border-emerald-500/20{% endif %} flex items-center justify-between">
+                  <span>{{ msg }}</span>
+                  <button onclick="this.parentElement.remove()" class="opacity-70 hover:opacity-100"><span class="material-symbols-outlined text-[18px]">close</span></button>
+              </div>
+            {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <!-- PAGE CONTENT -->
+        <div class="flex-1 min-h-0 w-full mx-auto flex flex-col {{ '' if fullscreen else 'px-4 md:px-6 lg:px-8 pb-10 pt-4 md:pt-6' }}">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    {% if not fullscreen %}
+    <!-- MOBILE BOTTOM BAR -->
+    <div class="md:hidden fixed bottom-0 w-full h-[64px] bg-base-900 border-t border-base-800 z-50 flex items-center justify-around px-2 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
+        {% if session.get('role') == 'admin' %}
+        <!-- Admin mobile nav -->
+        <a href="/admin/dashboard" class="flex flex-col items-center gap-1 w-16 {% if active_page == 'admin_overview' %}text-brand-500{% else %}text-base-400{% endif %}">
+            <span class="material-symbols-outlined text-[22px] {% if active_page == 'admin_overview' %}fill-current{% endif %}">dashboard</span>
+            <span class="text-[9px] font-medium tracking-wide">Home</span>
+        </a>
+        <a href="/admin/books" class="flex flex-col items-center gap-1 w-16 {% if active_page == 'admin_books' %}text-brand-500{% else %}text-base-400{% endif %}">
+            <span class="material-symbols-outlined text-[22px] {% if active_page == 'admin_books' %}fill-current{% endif %}">menu_book</span>
+            <span class="text-[9px] font-medium tracking-wide">Catalog</span>
+        </a>
+        <a href="/admin/users" class="flex flex-col items-center gap-1 w-16 {% if active_page == 'admin_users' %}text-brand-500{% else %}text-base-400{% endif %}">
+            <span class="material-symbols-outlined text-[22px] {% if active_page == 'admin_users' %}fill-current{% endif %}">group</span>
+            <span class="text-[9px] font-medium tracking-wide">Users</span>
+        </a>
+        <a href="/admin/settings" class="flex flex-col items-center gap-1 w-16 {% if active_page == 'admin_settings' %}text-brand-500{% else %}text-base-400{% endif %}">
+            <span class="material-symbols-outlined text-[22px] {% if active_page == 'admin_settings' %}fill-current{% endif %}">settings</span>
+            <span class="text-[9px] font-medium tracking-wide">Settings</span>
+        </a>
+        {% else %}
+        <!-- Member mobile nav matching Lumina -->
+        <a href="/member/dashboard" class="flex flex-col items-center gap-1 w-16 {% if active_page == 'member_overview' %}text-brand-500{% else %}text-base-400{% endif %} hover:text-brand-400 transition-colors">
+            <span class="material-symbols-outlined text-[22px] {% if active_page == 'member_overview' %}fill-current{% endif %}">home</span>
+            <span class="text-[9px] font-medium tracking-wide">Home</span>
+        </a>
+        <a href="/member/catalog" class="flex flex-col items-center gap-1 w-16 {% if active_page == 'member_catalog' %}text-brand-500{% else %}text-base-400{% endif %} hover:text-brand-400 transition-colors">
+            <span class="material-symbols-outlined text-[22px] {% if active_page == 'member_catalog' %}fill-current{% endif %}">explore</span>
+            <span class="text-[9px] font-medium tracking-wide">Explore</span>
+        </a>
+        <!-- Floating Scan Button -->
+        <div class="relative w-16 flex justify-center">
+            <a href="/member/scanner" class="absolute bottom-[0px] flex items-center justify-center w-12 h-12 rounded-full bg-brand-600 text-white shadow-[0_4px_15px_rgba(37,99,235,0.4)] border-4 border-base-900 transition-transform active:scale-95">
+                <span class="material-symbols-outlined text-[20px]">qr_code_scanner</span>
+            </a>
+        </div>
+        <a href="/member/wishlist" class="flex flex-col items-center gap-1 w-16 {% if active_page == 'member_wishlist' %}text-brand-500{% else %}text-base-400{% endif %} hover:text-brand-400 transition-colors">
+            <span class="material-symbols-outlined text-[22px] {% if active_page == 'member_wishlist' %}fill-current{% endif %}">book</span>
+            <span class="text-[9px] font-medium tracking-wide">My List</span>
+        </a>
+        <a href="/member/profile" class="flex flex-col items-center gap-1 w-16 {% if active_page == 'member_profile' %}text-brand-500{% else %}text-base-400{% endif %} hover:text-brand-400 transition-colors">
+            <span class="material-symbols-outlined text-[22px] {% if active_page == 'member_profile' %}fill-current{% endif %}">person</span>
+            <span class="text-[9px] font-medium tracking-wide">Profile</span>
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <script>
+        // Auto-initialize premium dropdowns globally
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('select.premium-select').forEach((el) => {
+                new TomSelect(el, {
+                    create: false,
+                    sortField: {
+                        field: "text",
+                        direction: "asc"
+                    },
+                    render: {
+                        no_results: function(data, escape) {
+                            return '<div class="no-results" style="padding: 0.75rem; text-align: center; color: #94A3B8; font-size: 0.8rem;">No results found</div>';
+                        }
+                    }
+                });
+            });
+        });
     </script>
-
     {% block scripts %}{% endblock %}
-
 </body>
 </html>

@@ -1,545 +1,446 @@
-{% extends "layout.html" %} {% block title %}Manage Books{% endblock %} {% block
-header_title %}Book Inventory{% endblock %} {% block header_subtitle %}View,
-add, or update the library's physical collection.{% endblock %}
+{% extends "layout.html" %}
+{% set active_page = 'admin_books' %}
+{% block title %}Manage Books{% endblock %}
+
+{% block header_search %}
+<div class="relative w-full max-w-xl">
+    <form action="/admin/books" method="GET" class="flex items-center">
+        <span class="material-symbols-outlined absolute left-4 text-base-400 text-[20px] pointer-events-none">search</span>
+        <input type="text" name="q" value="{{ q }}" placeholder="Search inventory by title, author, or category..." 
+            class="w-full bg-base-800 text-base-100 pl-11 pr-4 py-3 rounded-full border border-base-700/50 focus:border-brand-500 focus:bg-base-900 focus:outline-none text-sm placeholder-base-400 transition-all shadow-sm">
+    </form>
+</div>
+{% endblock %}
 
 {% block content %}
-<!-- Floating Action Header -->
-<div class="glass-card sticky-action-bar fade-in">
-  <form action="/admin/books" method="GET" style="display: flex; flex: 1; margin: 0; align-items: center; gap: 1rem;">
-    <div class="search-input-wrapper">
-        <i class="fas fa-search"></i>
-        <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search items..." />
+<div class="w-full max-w-7xl mx-auto space-y-6 pb-10">
+
+    <!-- Header & Actions -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-black text-white tracking-tight">Inventory Control</h1>
+            <p class="text-sm font-medium text-base-400 mt-1">Manage {{ total_pages * 12 or 'your' }} books in the library inventory</p>
+        </div>
+        
+        <div class="flex gap-3 mt-4 md:mt-0">
+            <button onclick="openModal('importBookModal')" class="flex items-center gap-2 px-5 py-2.5 bg-base-800 hover:bg-base-700 text-base-100 border border-base-700/50 rounded-full text-sm font-bold transition-all shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">publish</span> Import CSV
+            </button>
+            <button onclick="openModal('addBookModal')" class="flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-full text-sm font-bold shadow-[0_4px_15px_rgba(37,99,235,0.3)] transition-all">
+                <span class="material-symbols-outlined text-[18px]">add_circle</span> Add Node
+            </button>
+        </div>
     </div>
-    <button type="submit" class="btn btn-primary btn-sm btn-pill">Filter</button>
-  </form>
-  
-  <div style="display: flex; gap: 0.75rem;">
-      <button class="btn btn-outline-secondary btn-pill" onclick="openModal('importBookModal')" style="font-size: 0.85rem;">
-        <i class="fas fa-file-import"></i> Import
-      </button>
-      <button class="btn btn-primary btn-pill" onclick="openModal('addBookModal')" style="font-size: 0.85rem; box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);">
-        <i class="fas fa-plus"></i> Add Book
-      </button>
-  </div>
+
+    <!-- Category Filters -->
+    <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-2" id="genre-filters">
+        <button class="shrink-0 px-5 py-1.5 bg-brand-600 hover:bg-brand-500 text-white rounded-full text-sm font-bold shadow-sm transition-all" onclick="filterGrid('all')">All Nodes</button>
+        <!-- Additional filters injected by JS based on rendered books -->
+    </div>
+
+    {% if not books %}
+    <div class="glass-card flex flex-col items-center justify-center p-16 text-center border-base-700 rounded-2xl">
+        <div class="w-20 h-20 rounded-full bg-base-800 border border-base-700 flex items-center justify-center mb-6">
+            <span class="material-symbols-outlined text-[36px] text-base-400">inventory_2</span>
+        </div>
+        <h3 class="text-xl font-bold text-white mb-2">Archive Empty</h3>
+        <p class="text-base-400 text-sm max-w-md">No records found matching your current parameters.</p>
+        <a href="/admin/books" class="btn-brand mt-6 inline-flex items-center gap-2 px-6 py-2.5 bg-base-800 text-white rounded-lg">
+            <span class="material-symbols-outlined text-[18px]">restart_alt</span> Reset Search
+        </a>
+    </div>
+    {% else %}
+    
+    <!-- Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 stagger-in">
+        {% for b in books %}
+        <div class="book-card-premium glass-card overflow-hidden rounded-[20px] border border-base-700/50 flex flex-col transition-all duration-300 hover:-translate-y-1 hover:border-brand-500/30 hover:shadow-[0_15px_30px_rgba(0,0,0,0.5),0_0_15px_rgba(37,99,235,0.1)] group" data-category="{{ b.category }}">
+            
+            <!-- Top Image Area -->
+            <div class="relative h-48 bg-base-900 border-b border-base-800 flex items-center justify-center p-4 overflow-hidden">
+                <!-- Blurred background -->
+                {% if b.cover_url and b.cover_url != 'None' and 'placehold.co' not in b.cover_url %}
+                    <div class="absolute inset-0 bg-cover bg-center blur-xl opacity-30 transform scale-110" style="background-image: url('{{ b.cover_url }}')"></div>
+                    <img src="{{ b.cover_url }}" class="relative z-10 h-full w-auto rounded-lg shadow-xl shadow-black/50 transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-3" alt="{{ b.title }}">
+                {% else %}
+                    <div class="relative z-10 w-24 h-36 bg-gradient-to-br from-indigo-900 to-indigo-800 rounded-lg flex items-center justify-center shadow-xl shadow-black/50 border border-indigo-500/20">
+                        <span class="text-4xl font-black text-white mix-blend-overlay">{{ b.title[0] }}</span>
+                    </div>
+                {% endif %}
+
+                <!-- Floating Tags -->
+                <div class="absolute top-3 right-3 flex flex-col gap-2 items-end z-20">
+                    <span class="px-2.5 py-1 text-[9px] font-black uppercase tracking-widest rounded-md backdrop-blur-md border border-white/10 {% if b.available_copies == 0 %}bg-rose-500/80 text-white{% else %}bg-emerald-500/80 text-white{% endif %}">
+                        {{ b.available_copies }} / {{ b.total_copies }}
+                    </span>
+                    <span class="px-2.5 py-1 bg-black/50 text-[9px] font-bold text-base-300 uppercase tracking-widest rounded-md backdrop-blur-md border border-white/10 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[10px]">sell</span> {{ b.category }}
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Details Area -->
+            <div class="p-5 flex-grow flex flex-col bg-base-800/20">
+                <h3 class="text-lg font-black text-white leading-tight mb-1 line-clamp-2" title="{{ b.title }}">{{ b.title }}</h3>
+                <p class="text-xs font-semibold text-base-400 mb-4 truncate">by {{ b.author_name or 'Unknown Author' }}</p>
+                
+                <div class="mt-auto grid grid-cols-2 gap-3">
+                    <button class="edit-btn flex items-center justify-center gap-2 px-3 py-2 bg-base-800 hover:bg-base-700 text-white text-xs font-bold rounded-lg transition-colors border border-base-700" data-id="{{ b.book_id }}">
+                        <span class="material-symbols-outlined text-[16px]">edit</span> Edit
+                    </button>
+                    <button class="delete-btn flex items-center justify-center gap-2 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 text-xs font-bold rounded-lg transition-colors border border-rose-500/20" data-id="{{ b.book_id }}" data-title="{{ b.title }}">
+                        <span class="material-symbols-outlined text-[16px]">delete</span> Trash
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    <div class="pt-8 flex flex-col sm:flex-row items-center justify-between border-t border-base-800 mt-8">
+        <span class="text-sm font-medium text-base-400 mb-4 sm:mb-0">Page <strong class="text-white">{{ current_page }}</strong> of <strong class="text-white">{{ total_pages }}</strong></span>
+        
+        <div class="flex items-center gap-2">
+            {% if current_page > 1 %}
+            <a href="/admin/books?page={{ current_page - 1 }}&q={{ q }}" class="w-10 h-10 flex items-center justify-center bg-base-800 hover:bg-base-700 text-white rounded-xl border border-base-700 transition-colors">
+                <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+            </a>
+            {% endif %}
+            
+            {% if current_page < total_pages %}
+            <a href="/admin/books?page={{ current_page + 1 }}&q={{ q }}" class="w-10 h-10 flex items-center justify-center bg-brand-600 hover:bg-brand-500 text-white rounded-xl shadow-[0_2px_10px_rgba(37,99,235,0.3)] transition-colors">
+                <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
 </div>
 
-<!-- Import Modal -->
-<div id="importBookModal" class="modal-overlay">
-    <div class="modal-content glass-card">
-        <div class="modal-header-row">
-            <h2>Bulk Import</h2>
-            <button type="button" class="modal-close-btn" onclick="closeModal('importBookModal')">✕</button>
-        </div>
-        <p style="color: var(--text-sub); margin-bottom: var(--space-lg);">Upload a CSV with columns: <code>Title, Author, Category, Copies</code></p>
+<!-- Modals -->
+
+<!-- Add Book Modal -->
+<div id="addBookModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 opacity-0 transition-opacity duration-300">
+    <div class="bg-base-900 border border-base-700 rounded-3xl w-full max-w-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] transform scale-95 transition-transform duration-300 overflow-hidden flex flex-col max-h-[90vh]">
         
-        <form action="/admin/books/import" method="POST" enctype="multipart/form-data">
-            <div class="form-group">
-                <label>Select CSV File</label>
-                <input type="file" name="csv_file" accept=".csv" required>
+        <div class="p-6 border-b border-base-800 flex justify-between items-center shrink-0">
+            <div>
+                <h2 class="text-xl font-black text-white">Initialize New Node</h2>
+                <p class="text-xs text-base-400 font-medium">Add a new book to the library collective.</p>
             </div>
-            <div class="form-grid-2col" style="margin-top: var(--space-lg);">
-                <button type="submit" class="btn btn-primary">Upload</button>
-                <button type="button" class="btn btn-outline-secondary" onclick="closeModal('importBookModal')">Cancel</button>
+            <button onclick="closeModal('addBookModal')" class="w-8 h-8 flex items-center justify-center rounded-full bg-base-800 hover:bg-rose-500/20 text-base-400 hover:text-rose-400 transition-colors">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+        </div>
+
+        <div class="p-6 overflow-y-auto shrink">
+            <!-- Fetch ISBN Box -->
+            <div class="bg-indigo-500/5 border border-indigo-500/20 rounded-2xl p-4 mb-6 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl"></div>
+                
+                <h4 class="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[16px]">query_stats</span> Auto-Fetch Meta
+                </h4>
+                
+                <div class="flex gap-2 relative z-10">
+                    <input type="text" id="isbnInput" placeholder="Enter ISBN-13..." class="flex-1 bg-base-800 border-none text-white rounded-xl px-4 py-2.5 text-sm focus:ring-1 focus:ring-indigo-500 font-medium placeholder-base-500">
+                    <button id="fetchIsbnBtn" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-xl transition-colors shadow-sm whitespace-nowrap">Fetch</button>
+                </div>
+                <p id="isbnFeedback" class="text-xs mt-2 font-medium hidden transition-opacity"></p>
+            </div>
+
+            <form action="/admin/book/add" method="POST" enctype="multipart/form-data" class="space-y-4">
+                
+                <div>
+                    <label class="block text-[10px] font-bold text-base-400 uppercase tracking-widest mb-1.5 ml-1">Node Title</label>
+                    <input type="text" name="title" id="bookTitle" required class="w-full bg-base-800 border border-base-700 rounded-xl px-4 py-3 text-sm text-base-100 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-medium">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-base-400 uppercase tracking-widest mb-1.5 ml-1">Lead Architect (Author)</label>
+                    <input type="text" name="new_author_name" list="authorList" required class="w-full bg-base-800 border border-base-700 rounded-xl px-4 py-3 text-sm text-base-100 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-medium">
+                    <datalist id="authorList">
+                        {% for a in authors %}
+                        <option value="{{ a.name }}">
+                        {% endfor %}
+                    </datalist>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-base-400 uppercase tracking-widest mb-1.5 ml-1">Sector (Category)</label>
+                        <select name="category" id="bookCategory" required class="w-full bg-base-800 border border-base-700 rounded-xl px-4 py-3 text-sm text-base-100 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-medium appearance-none">
+                            <option value="Programming">Programming</option>
+                            <option value="Fiction">Fiction</option>
+                            <option value="Science">Science</option>
+                            <option value="Technology">Technology</option>
+                            <option value="History">History</option>
+                            <option value="Philosophy">Philosophy</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-base-400 uppercase tracking-widest mb-1.5 ml-1">Inventory Volume</label>
+                        <input type="number" name="copies" id="bookCopies" value="5" min="1" required class="w-full bg-base-800 border border-base-700 rounded-xl px-4 py-3 text-sm text-base-100 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-medium">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-base-400 uppercase tracking-widest mb-1.5 ml-1">Sync Digital Source (PDF)</label>
+                    <input type="file" name="pdf_file" accept=".pdf" class="w-full bg-base-800 border border-base-700 rounded-xl px-4 py-2.5 text-sm text-base-300 file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-base-700 file:text-base-200 hover:file:bg-base-600 transition-colors file:cursor-pointer cursor-pointer">
+                </div>
+                
+                <div class="pt-4 flex gap-3 pb-2">
+                    <button type="button" onclick="closeModal('addBookModal')" class="w-1/3 py-3.5 bg-base-800 hover:bg-base-700 text-base-300 rounded-xl text-sm font-bold transition-colors">Cancel</button>
+                    <button type="submit" class="w-2/3 py-3.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-sm font-bold shadow-[0_4px_15px_rgba(37,99,235,0.3)] transition-all flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-[18px]">upload</span> Commit Record
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Book Modal -->
+<div id="editBookModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 opacity-0 transition-opacity duration-300">
+    <div class="bg-base-900 border border-base-700 rounded-3xl w-full max-w-lg shadow-[0_20px_50px_rgba(0,0,0,0.8)] transform scale-95 transition-transform duration-300 overflow-hidden">
+        
+        <div class="p-6 border-b border-base-800 flex justify-between items-center">
+            <h2 class="text-xl font-black text-white">Update Book Details</h2>
+            <button onclick="closeModal('editBookModal')" class="w-8 h-8 flex items-center justify-center rounded-full bg-base-800 hover:bg-base-700 text-base-400 transition-colors">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+        </div>
+
+        <form id="editBookForm" method="POST" class="p-6 space-y-4">
+            <div>
+                <label class="block text-[10px] font-bold text-base-400 uppercase tracking-widest mb-1.5 ml-1">Node Title</label>
+                <input type="text" name="title" id="editTitle" required class="w-full bg-base-800 border border-base-700 rounded-xl px-4 py-3 text-sm text-base-100 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-medium">
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-bold text-base-400 uppercase tracking-widest mb-1.5 ml-1">Architect (Author)</label>
+                <input type="text" name="new_author_name" id="editAuthorName" required class="w-full bg-base-800 border border-base-700 rounded-xl px-4 py-3 text-sm text-base-100 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-medium">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-base-400 uppercase tracking-widest mb-1.5 ml-1">Sector (Category)</label>
+                    <select name="category" id="editCategory" class="w-full bg-base-800 border border-base-700 rounded-xl px-4 py-3 text-sm text-base-100 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-medium appearance-none">
+                        <option value="Programming">Programming</option>
+                        <option value="Fiction">Fiction</option>
+                        <option value="Science">Science</option>
+                        <option value="Technology">Technology</option>
+                        <option value="History">History</option>
+                        <option value="Philosophy">Philosophy</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-base-400 uppercase tracking-widest mb-1.5 ml-1">Volume</label>
+                    <input type="number" name="copies" id="editCopies" required class="w-full bg-base-800 border border-base-700 rounded-xl px-4 py-3 text-sm text-base-100 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-medium">
+                </div>
+            </div>
+            
+            <div class="pt-4 flex gap-3">
+                <button type="button" onclick="closeModal('editBookModal')" class="flex-1 py-3 bg-base-800 hover:bg-base-700 text-white rounded-xl text-sm font-bold transition-colors border border-base-700">Abort</button>
+                <button type="submit" class="flex-1 py-3 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-sm font-bold shadow-[0_4px_15px_rgba(37,99,235,0.3)] transition-all">Update Core</button>
             </div>
         </form>
     </div>
 </div>
 
-{% if not books %}
-<div class="glass-card empty-state" style="margin-top: 2rem;">
-    <div class="empty-state-icon"><i class="fas fa-book-open fa-3x"></i></div>
-    <h4>No books found</h4>
-    <p>Try adjusting your search or add a new book to the library.</p>
-    <a href="/admin/books" class="btn btn-primary btn-pill" style="margin-top: 1rem;">
-      <i class="fas fa-sync-alt"></i> Reset Filters
-    </a>
-</div>
-{% else %}
-
-<!-- Smart Genre Filter Bar -->
-<div id="genre-filter-bar" class="filter-bar-container fade-in fade-in-delay-1">
-    <!-- Chips injected via JS -->
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const cards = document.querySelectorAll('.book-card-premium');
-    const categories = new Set();
-    
-    cards.forEach(card => {
-        const cat = card.getAttribute('data-category');
-        if(cat && cat !== 'None') categories.add(cat);
-    });
-    
-    if(categories.size > 0) {
-        const bar = document.getElementById('genre-filter-bar');
-        
-        const allChip = document.createElement('div');
-        allChip.className = 'filter-chip active';
-        allChip.innerHTML = '<i class="fas fa-layer-group"></i> All Books';
-        allChip.onclick = () => filterBooks('all', allChip);
-        bar.appendChild(allChip);
-        
-        Array.from(categories).sort().forEach(cat => {
-            const chip = document.createElement('div');
-            chip.className = 'filter-chip';
-            chip.innerText = cat;
-            chip.onclick = () => filterBooks(cat, chip);
-            bar.appendChild(chip);
-        });
-    }
-});
-
-function filterBooks(category, btn) {
-    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-    btn.classList.add('active');
-
-    const cards = document.querySelectorAll('.book-card-premium');
-    cards.forEach(card => {
-        card.style.display = (category === 'all' || card.getAttribute('data-category') === category) ? 'flex' : 'none';
-    });
-}
-</script>
-
-
-<div class="admin-books-layout fade-in fade-in-delay-2">
-  {% for b in books %}
-  <div class="glass-card book-card-premium" data-category="{{ b.category }}">
-    
-    <!-- Top: Cover & Quick Stats -->
-    <div class="book-cover-container">
-        <img src="{{ b.cover_url }}" class="book-thumb-lg" onerror="this.src='https://placehold.co/90x130?text={{ b.title[0] }}';" />
-        <div class="book-quick-stats">
-             <div class="stat-pill">
-                <i class="fas fa-tag text-primary"></i> <span>{{ b.category }}</span>
-             </div>
-             <div class="stat-pill" style="{% if b.available_copies == 0 %}color: #ef4444; border-color: #fecaca; background: #fef2f2;{% endif %}">
-                <i class="fas fa-box-open {% if b.available_copies == 0 %}text-danger{% else %}text-success{% endif %}"></i> 
-                <span>{{ b.available_copies }} / {{ b.total_copies }}</span>
-             </div>
-             {% if b.series_title %}
-             <div class="stat-pill">
-                <i class="fas fa-layer-group text-info"></i> <span style="font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px;">{{ b.series_title }}</span>
-             </div>
-             {% endif %}
-        </div>
-    </div>
-
-    <!-- Bottom: Info & Actions -->
-    <div class="book-info-body">
-      <h3 title="{{ b.title }}" class="book-title-text">{{ b.title }}</h3>
-      <p class="book-author-text">by {{ b.author_name or 'Unknown' }}</p>
-
-      <div class="book-actions">
-        <button class="btn btn-outline-primary btn-sm edit-btn" style="border-radius: 8px; font-weight: 600;" data-id="{{ b.book_id }}">
-          <i class="fas fa-edit"></i> Edit
-        </button>
-        <button class="btn btn-outline-danger btn-sm delete-btn" style="border-radius: 8px; font-weight: 600;" data-id="{{ b.book_id }}" data-title="{{ b.title }}">
-          <i class="fas fa-trash-alt"></i> Delete
-        </button>
-      </div>
-    </div>
-  </div>
-  {% endfor %}
-</div>
-
-<!-- PAGINATION -->
-<div class="pagination">
-  {% if current_page > 1 %}
-  <a href="/admin/books?page={{ current_page - 1 }}&q={{ q }}" class="btn btn-danger btn-sm">Previous</a>
-  {% else %}
-  <button class="btn btn-disabled btn-sm" disabled>Previous</button>
-  {% endif %}
-
-  <span class="page-info">Page <strong>{{ current_page }}</strong> of {{ total_pages }}</span>
-
-  {% if current_page < total_pages %}
-  <a href="/admin/books?page={{ current_page + 1 }}&q={{ q }}" class="btn btn-primary btn-sm">Next</a>
-  {% else %}
-  <button class="btn btn-disabled btn-sm" disabled>Next</button>
-  {% endif %}
-</div>
-{% endif %}
-
-<!-- Add Book Modal -->
-<div id="addBookModal" class="modal-overlay">
-  <div class="modal-content glass-card">
-    <div class="modal-header-row">
-        <h2>Add New Book</h2>
-        <button type="button" class="modal-close-btn" onclick="closeModal('addBookModal')">✕</button>
-    </div>
-    
-    <!-- ISBN Fetcher -->
-    <div class="isbn-autofill-box">
-        <label class="isbn-autofill-label">✨ Smart ISBN Auto-Fill</label>
-        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-            <input type="text" id="isbnInput" placeholder="Enter ISBN-13..." style="flex: 1;">
-            <button type="button" id="fetchIsbnBtn" class="btn btn-primary" style="background: linear-gradient(135deg, #6366f1, #a855f7); border: none; padding: 0 1.5rem;">Fetch</button>
-        </div>
-        <small id="isbnFeedback" style="display: block; margin-top: 0.5rem; font-size: 0.75rem;"></small>
-    </div>
-
-    <form id="addBookForm" action="/admin/book/add" method="POST" enctype="multipart/form-data" class="form-grid">
-      <div class="form-group form-group-flush">
-        <label>Title *</label>
-        <input type="text" id="bookTitle" name="title" required placeholder="Enter book title">
-      </div>
-
-      <div class="form-group form-group-flush">
-        <label>Author (Select or Type New) *</label>
-        <input type="text" name="new_author_name" list="authorList" required placeholder="Type to search or add new author...">
-        <datalist id="authorList">
-            {% for a in authors %}
-            <option value="{{ a.name }}">
-            {% endfor %}
-        </datalist>
-        <input type="hidden" name="author_id"> 
-      </div>
-
-      <div class="form-grid-2-1">
-          <div class="form-group form-group-flush">
-              <label>Series (Optional)</label>
-              <input type="text" name="new_series_name" list="seriesList" placeholder="Search or add new series...">
-              <datalist id="seriesList">
-                  {% for s in series_list %}
-                  <option value="{{ s.title }}">
-                  {% endfor %}
-              </datalist>
-          </div>
-          <div class="form-group form-group-flush">
-              <label>Order #</label>
-              <input type="number" name="series_order" min="1" placeholder="1">
-          </div>
-      </div>
-
-      <div class="form-grid-2col">
-          <div class="form-group form-group-flush">
-            <label>Category *</label>
-            <select id="bookCategory" name="category" required>
-              <option value="">Select Category</option>
-              <option value="Fiction">Fiction</option>
-              <option value="Non-Fiction">Non-Fiction</option>
-              <option value="Science">Science</option>
-              <option value="Technology">Technology</option>
-              <option value="Reference">Reference</option>
-              <option value="Biography">Biography</option>
-              <option value="History">History</option>
-            </select>
-          </div>
-          <div class="form-group form-group-flush">
-            <label>Total Copies *</label>
-            <input type="number" id="bookCopies" name="copies" required min="1" placeholder="1">
-          </div>
-      </div>
-
-       <div class="form-group form-group-flush">
-        <label>Upload E-Book (PDF)</label>
-        <input type="file" name="pdf_file" accept="application/pdf">
-      </div>
-
-      <div class="form-grid-2col" style="margin-top: var(--space-md);">
-        <button type="submit" class="btn btn-primary">Add Book</button>
-        <button type="button" class="btn btn-outline-secondary" onclick="closeModal('addBookModal')">Cancel</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Edit Book Modal -->
-<div id="editBookModal" class="modal-overlay">
-  <div class="modal-content glass-card">
-    <div class="modal-header-row">
-        <h2>Edit Book</h2>
-        <button type="button" class="modal-close-btn" onclick="closeModal('editBookModal')">✕</button>
-    </div>
-
-    <form id="editBookForm" method="POST" class="form-grid">
-      <div class="form-group form-group-flush">
-        <label>Title *</label>
-        <input type="text" id="editTitle" name="title" required>
-      </div>
-
-      <div class="form-group form-group-flush">
-        <label>Author (Select or Type New) *</label>
-        <input type="text" id="editAuthorName" name="new_author_name" list="authorListEdit" required placeholder="Type to search or add new author...">
-        <datalist id="authorListEdit">
-            {% for a in authors %}
-            <option value="{{ a.name }}">
-            {% endfor %}
-        </datalist>
-        <input type="hidden" name="author_id" id="editAuthorId">
-      </div>
-
-      <div class="form-grid-2-1">
-          <div class="form-group form-group-flush">
-              <label>Series (Optional)</label>
-              <input type="text" id="editSeriesName" name="new_series_name" list="seriesListEdit" placeholder="Search or add new series...">
-              <datalist id="seriesListEdit">
-                  {% for s in series_list %}
-                  <option value="{{ s.title }}">
-                  {% endfor %}
-              </datalist>
-              <input type="hidden" name="series_id" id="editSeriesId">
-          </div>
-          <div class="form-group form-group-flush">
-              <label>Order #</label>
-              <input type="number" id="editOrder" name="series_order" min="1">
-          </div>
-      </div>
-
-      <div class="form-grid-2col">
-          <div class="form-group form-group-flush">
-            <label>Category *</label>
-            <select id="editCategory" name="category" required>
-              <option value="Fiction">Fiction</option>
-              <option value="Non-Fiction">Non-Fiction</option>
-              <option value="Science">Science</option>
-              <option value="Technology">Technology</option>
-              <option value="Reference">Reference</option>
-              <option value="Biography">Biography</option>
-              <option value="History">History</option>
-            </select>
-          </div>
-          <div class="form-group form-group-flush">
-            <label>Total Copies *</label>
-            <input type="number" id="editCopies" name="copies" required min="1">
-          </div>
-      </div>
-
-      <div class="form-grid-2col" style="margin-top: var(--space-md);">
-        <button type="submit" class="btn btn-primary">Save Changes</button>
-        <button type="button" class="btn btn-outline-secondary" onclick="closeModal('editBookModal')">Cancel</button>
-      </div>
-    </form>
-  </div>
-</div>
-
 <!-- Delete Confirmation Modal -->
-<div id="deleteBookModal" class="modal-overlay">
-  <div class="modal-content glass-card" style="max-width: 400px; text-align: center">
-    <div style="display: flex; justify-content: flex-end;">
-        <button type="button" class="modal-close-btn" onclick="closeModal('deleteBookModal')">✕</button>
+<div id="deleteBookModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 opacity-0 transition-opacity duration-300">
+    <div class="bg-base-900 border border-rose-900/50 rounded-3xl w-full max-w-sm shadow-[0_20px_50px_rgba(0,0,0,0.8)] transform scale-95 transition-transform duration-300 text-center p-8 overflow-hidden relative">
+        <div class="absolute -top-16 -left-16 w-32 h-32 bg-rose-500/20 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="w-20 h-20 bg-rose-500/10 border border-rose-500/20 rounded-full flex flex-col items-center justify-center mx-auto mb-6 relative z-10">
+            <span class="material-symbols-outlined text-[36px] text-rose-500">warning</span>
+        </div>
+        
+        <h3 class="text-xl font-black text-white mb-2 relative z-10">Target Neutralization</h3>
+        <p class="text-sm text-base-400 font-medium mb-8 leading-relaxed relative z-10" id="deleteMessage">Are you sure?</p>
+        
+        <div class="flex flex-col gap-3 relative z-10">
+            <button id="confirmDeleteBtn" class="w-full py-3.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-sm font-bold shadow-[0_4px_15px_rgba(225,29,72,0.3)] transition-all">Neutralize Node</button>
+            <button onclick="closeModal('deleteBookModal')" class="w-full py-3.5 bg-transparent hover:bg-base-800 text-base-400 font-bold rounded-xl text-sm transition-colors">Abort</button>
+        </div>
     </div>
-    <div class="empty-state-icon" style="font-size: 3rem;">🗑️</div>
-    <h3>Delete Book</h3>
-    <p id="deleteMessage" style="color: var(--text-sub);"></p>
-    <p style="color: var(--danger); font-size: 0.875rem; font-weight: 600; margin-bottom: var(--space-lg);">
-       ⚠️ This action cannot be undone.
-    </p>
-    <div class="form-grid-2col">
-      <button type="button" class="btn btn-outline-secondary" onclick="closeModal('deleteBookModal')">Cancel</button>
-      <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
-    </div>
-  </div>
 </div>
 
-{% endblock %}
+<!-- Import Modal Modal -->
+<div id="importBookModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 opacity-0 transition-opacity duration-300">
+     <div class="bg-base-900 border border-base-700 rounded-3xl w-full max-w-sm shadow-[0_20px_50px_rgba(0,0,0,0.8)] transform scale-95 transition-transform duration-300 p-8">
+        
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-xl bg-brand-500/20 text-brand-500 flex items-center justify-center">
+                <span class="material-symbols-outlined">publish</span>
+            </div>
+            <h2 class="text-xl font-black text-white">Bulk Protocol</h2>
+        </div>
 
-{% block scripts %}
+        <p class="text-[11px] font-bold text-base-400 uppercase tracking-widest mb-2">Required CSV Matrix:</p>
+        <div class="bg-base-800 font-mono text-xs text-brand-300 p-3 rounded-xl border border-base-700 mb-6">
+            Title, Author, Category, Copies
+        </div>
+
+        <form action="/admin/books/import" method="POST" enctype="multipart/form-data">
+            <label class="block w-full border-2 border-dashed border-base-700 hover:border-brand-500 rounded-xl p-6 text-center cursor-pointer transition-colors bg-base-800/50 hover:bg-base-800 mb-6 group">
+                <span class="material-symbols-outlined text-[32px] text-base-500 group-hover:text-brand-400 mb-2 transition-colors">upload_file</span>
+                <span class="block text-sm font-bold text-white mb-1">Select CSV File</span>
+                <span class="block text-xs text-base-400 font-medium pb-2">or drag and drop here</span>
+                <input type="file" name="csv_file" accept=".csv" class="hidden" required onchange="this.nextElementSibling.innerText = this.files[0].name; this.nextElementSibling.classList.remove('hidden'); document.getElementById('importBtn').disabled=false;">
+                <span class="hidden mt-2 text-xs font-mono text-brand-400 bg-brand-400/10 px-2 py-1 rounded inline-block"></span>
+            </label>
+            
+            <div class="flex gap-2">
+                <button type="button" onclick="closeModal('importBookModal')" class="w-1/3 py-3 px-2 bg-base-800 text-white rounded-xl text-sm font-bold transition-colors border border-base-700">Cancel</button>
+                <button type="submit" id="importBtn" class="w-2/3 py-3 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-sm font-bold shadow-[0_4px_15px_rgba(37,99,235,0.3)] transition-all disabled:opacity-50 disabled:cursor-not-allowed">Synchronize</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
-  let bookToDelete = null;
+    let bookToDelete = null;
 
-  function openModal(modalId) {
-    document.getElementById(modalId).style.display = "flex";
-  }
-
-  function closeModal(modalId) {
-    document.getElementById(modalId).style.display = "none";
-  }
-
-  // Edit Book
-  document.querySelectorAll('.edit-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-        const id = btn.dataset.id;
-        const originalText = btn.innerHTML;
-        btn.innerHTML = "<span>⏳</span>...";
-        btn.disabled = true;
-
-        try {
-            const resp = await fetch(`/admin/books/get/${id}`);
-            const contentType = resp.headers.get("content-type");
-            if (!contentType || !contentType.includes("application/json")) {
-                const text = await resp.text();
-                throw new Error(`Server returned status ${resp.status}`);
-            }
-
-            const result = await resp.json();
-            if (!result.success) throw new Error(result.error || "Unknown error");
-            
-            const book = result.data;
-            document.getElementById("editTitle").value = book.title;
-            document.getElementById("editAuthorName").value = book.author_name || ""; 
-            document.getElementById("editCategory").value = book.category;
-            document.getElementById("editCopies").value = book.total_copies;
-            document.getElementById("editSeriesName").value = book.series_title || "";
-            document.getElementById("editOrder").value = book.series_order || "";
-            document.getElementById("editBookForm").action = `/admin/book/edit/${id}`;
-            
-            openModal("editBookModal");
-        } catch (err) {
-            alert("❌ Error: " + err.message);
-        } finally {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
-    });
-  });
-
-  // Delete Book
-  document.querySelectorAll('.delete-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        bookToDelete = btn.dataset.id;
-        document.getElementById("deleteMessage").textContent =
-          'Are you sure you want to delete "' + btn.dataset.title + '"?';
-        openModal("deleteBookModal");
-    });
-  });
-
-  document.getElementById("confirmDeleteBtn").addEventListener("click", function () {
-      if (bookToDelete) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '/admin/book/delete/' + bookToDelete;
-        document.body.appendChild(form);
-        form.submit();
-      }
-  });
-
-  // ISBN Fetcher
-  document.getElementById('fetchIsbnBtn').addEventListener('click', async () => {
-    const isbn = document.getElementById('isbnInput').value.trim();
-    const feedback = document.getElementById('isbnFeedback');
-    const btn = document.getElementById('fetchIsbnBtn');
-    
-    if(!isbn) {
-        feedback.innerText = "❌ Please enter an ISBN first.";
-        return;
+    function openModal(id) {
+        const modal = document.getElementById(id);
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.firstElementChild.classList.remove('scale-95');
+        }, 10);
+        document.body.style.overflow = 'hidden';
     }
-    
-    feedback.innerText = "🔍 Searching global databases...";
-    feedback.style.color = "var(--text-sub)";
-    btn.disabled = true;
-    
-    try {
-        const resp = await fetch('/admin/book/fetch-metadata', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ isbn })
+
+    function closeModal(id) {
+        const modal = document.getElementById(id);
+        modal.classList.add('opacity-0');
+        modal.firstElementChild.classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+        document.body.style.overflow = 'auto';
+    }
+
+    // Genre Filtering Logic
+    document.addEventListener('DOMContentLoaded', () => {
+        const categories = new Set();
+        document.querySelectorAll('.book-card-premium').forEach(card => {
+            categories.add(card.dataset.category);
         });
+
+        const filterBar = document.getElementById('genre-filters');
+
+        categories.forEach(cat => {
+            if(cat && cat !== 'None') {
+                const btn = document.createElement('button');
+                btn.className = 'shrink-0 px-5 py-1.5 bg-base-800 hover:bg-base-700 text-base-300 hover:text-white border border-base-700 rounded-full text-sm font-bold shadow-sm transition-all tag-btn';
+                btn.innerText = cat;
+                btn.onclick = () => filterGrid(cat, btn);
+                filterBar.appendChild(btn);
+            }
+        });
+    });
+
+    function filterGrid(cat, btnParam) {
+        // Handle active states on buttons
+        const allBtns = document.getElementById('genre-filters').querySelectorAll('button');
+        allBtns.forEach(b => {
+            b.className = 'shrink-0 px-5 py-1.5 bg-base-800 hover:bg-base-700 text-base-300 hover:text-white border border-base-700 rounded-full text-sm font-bold shadow-sm transition-all tag-btn';
+        });
+
+        const activeClass = 'shrink-0 px-5 py-1.5 bg-brand-600 hover:bg-brand-500 text-white rounded-full text-sm font-bold shadow-sm transition-all tag-btn';
         
-        const data = await resp.json();
-        btn.disabled = false;
-        
-        if(data.error) {
-            feedback.innerText = "⚠️ " + data.error;
-            feedback.style.color = "#ef4444";
-        } else {
-            document.getElementById('bookTitle').value = data.title;
-            
-            const catSelect = document.getElementById('bookCategory');
-            let found = false;
-            for(let opt of catSelect.options) {
-                if(opt.value.toLowerCase() === data.category.toLowerCase()) {
-                    catSelect.value = opt.value;
-                    found = true;
-                    break;
+        if (cat === 'all') {
+            allBtns[0].className = activeClass;
+        } else if (btnParam) {
+            btnParam.className = activeClass;
+        }
+
+        // Handle card display
+        document.querySelectorAll('.book-card-premium').forEach(card => {
+            card.style.display = (cat === 'all' || card.dataset.category === cat) ? 'flex' : 'none';
+        });
+    }
+
+    // API Fetches for Edit
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.onclick = async () => {
+            const id = btn.dataset.id;
+            try {
+                const res = await fetch(`/admin/books/get/${id}`);
+                const { data } = await res.json();
+                
+                document.getElementById('editTitle').value = data.title;
+                document.getElementById('editAuthorName').value = data.author_name;
+                document.getElementById('editCategory').value = data.category;
+                document.getElementById('editCopies').value = data.total_copies;
+                document.getElementById('editBookForm').action = `/admin/book/edit/${id}`;
+                
+                openModal('editBookModal');
+            } catch (e) { alert("Link failure: " + e.message); }
+        };
+    });
+
+    // Delete handling
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.onclick = () => {
+            bookToDelete = btn.dataset.id;
+            document.getElementById('deleteMessage').innerText = `Deleting node "${btn.dataset.title}". System metrics will reflect this loss permanently.`;
+            openModal('deleteBookModal');
+        };
+    });
+
+    document.getElementById('confirmDeleteBtn').onclick = () => {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/book/delete/${bookToDelete}`;
+        document.body.appendChild(form);
+        form.submit();
+    };
+
+    // Auto ISBN fetch
+    const fetchBtn = document.getElementById('fetchIsbnBtn');
+    if(fetchBtn) {
+        fetchBtn.onclick = async (e) => {
+            e.preventDefault();
+            const isbn = document.getElementById('isbnInput').value.trim();
+            const feedback = document.getElementById('isbnFeedback');
+            if(!isbn) return;
+
+            feedback.innerText = "Querying databases...";
+            feedback.className = "text-xs mt-2 font-medium text-indigo-400 block transition-opacity";
+            fetchBtn.classList.add('animate-pulse');
+
+            try {
+                const res = await fetch('/admin/book/fetch-metadata', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ isbn })
+                });
+                const data = await res.json();
+                fetchBtn.classList.remove('animate-pulse');
+                
+                if(data.error) {
+                    feedback.innerText = "Item not found in external databases.";
+                    feedback.className = "text-xs mt-2 font-medium text-rose-400 block transition-opacity";
+                } else {
+                    document.getElementById('bookTitle').value = data.title;
+                    if(data.authors && data.authors.length > 0) {
+                        const authorInput = document.querySelector('input[name="new_author_name"]');
+                        if(authorInput) authorInput.value = data.authors[0].name || data.authors[0];
+                    }
+                    feedback.innerText = `Synchronized: ${data.title}`;
+                    feedback.className = "text-xs mt-2 font-medium text-emerald-400 block transition-opacity";
                 }
+            } catch(e) { 
+                fetchBtn.classList.remove('animate-pulse');
+                feedback.innerText = "Synchronization error."; 
+                feedback.className = "text-xs mt-2 font-medium text-rose-400 block transition-opacity";
             }
-            if(!found) {
-                const newOpt = new Option(data.category, data.category);
-                catSelect.add(newOpt);
-                catSelect.value = data.category;
-            }
-            
-            feedback.innerHTML = "✅ Found: <strong>" + data.title + "</strong>";
-            feedback.style.color = "#10b981";
-        }
-    } catch (err) {
-        btn.disabled = false;
-        feedback.innerText = "❌ Connection error.";
-        feedback.style.color = "#ef4444";
+        };
     }
-  });
-
-  // Close modal when clicking outside
-  ['addBookModal', 'deleteBookModal', 'editBookModal', 'importBookModal'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.addEventListener('click', e => { if(e.target === el) closeModal(id); });
-  });
-</script>
-
-<script>
-// Series Modal Logic
-let currentSeriesId = null;
-let currentSeriesTitle = '';
-
-function backToSeriesGrid() {
-    document.getElementById('series-detail-view').style.display = 'none';
-    document.getElementById('series-grid-view').style.display = 'flex';
-}
-
-async function openSeriesDetails(seriesId, title) {
-    currentSeriesId = seriesId;
-    currentSeriesTitle = title;
-    
-    document.getElementById('series-grid-view').style.display = 'none';
-    document.getElementById('series-detail-view').style.display = 'flex';
-    document.getElementById('detail-series-title').innerText = title;
-    
-    const container = document.getElementById('detail-books-container');
-    container.innerHTML = '<div class="empty-state">Loading books...</div>';
-    
-    try {
-        const res = await fetch(`/api/series/${seriesId}/books`);
-        const books = await res.json();
-        
-        if (books.length === 0) {
-            container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📚</div><p>No books in this series yet.</p></div>`;
-        } else {
-            let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">';
-            books.forEach(b => {
-                html += `
-                <div style="display: flex; gap: 1rem; padding: 1rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; align-items: center;">
-                    <div style="font-size: 2rem;">📖</div>
-                    <div>
-                        <h4 style="margin: 0; font-size: 1rem;">${b.title}</h4>
-                        <span class="badge badge-pending">Vol. ${b.series_order || '?'}</span>
-                    </div>
-                </div>`;
-            });
-            html += '</div>';
-            container.innerHTML = html;
-        }
-    } catch (err) {
-        console.error(err);
-        container.innerHTML = `<div class="empty-state" style="color: var(--danger);">Error loading content.</div>`;
-    }
-}
-
-function renameCurrentSeries() {
-    const newName = prompt("Rename series:", currentSeriesTitle);
-    if(newName && newName !== currentSeriesTitle) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '/admin/series/rename';
-        const idInput = document.createElement('input');
-        idInput.name = 'series_id'; idInput.value = currentSeriesId;
-        const nameInput = document.createElement('input');
-        nameInput.name = 'new_name'; nameInput.value = newName;
-        form.appendChild(idInput); form.appendChild(nameInput);
-        document.body.appendChild(form);
-        form.submit();
-    }
-}
-
-function deleteCurrentSeries() {
-    if(confirm("Delete this series? Books will remain in library.")) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '/admin/series/delete/' + currentSeriesId;
-        document.body.appendChild(form);
-        form.submit();
-    }
-}
 </script>
 {% endblock %}
