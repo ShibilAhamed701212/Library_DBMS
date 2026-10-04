@@ -9,8 +9,12 @@ Responsibilities:
 """
 
 import re
-import random
-from flask import Blueprint, render_template, request, redirect, flash, session
+import hmac
+import hashlib
+import secrets
+import threading
+import time
+from flask import Blueprint, render_template, request, redirect, flash, session, current_app
 from backend.repository.db_access import execute_query, fetch_all, fetch_one
 
 public_bp = Blueprint("public", __name__)
@@ -35,6 +39,47 @@ def ensure_account_requests_table():
         """)
     except Exception:
         pass
+
+
+# =====================================================
+# OTP HELPERS
+# =====================================================
+# The Flask session is a signed but readable cookie, so the OTP itself is
+# never stored in it: only an HMAC keyed with the app secret, which the
+# client cannot reverse. Failed attempts are counted server-side per email
+# because a client could replay an older cookie to reset a cookie counter.
+
+OTP_TTL_SECONDS = 10 * 60
+OTP_MAX_ATTEMPTS = 5
+_otp_failures = {}
+_otp_failures_lock = threading.Lock()
+
+
+def _otp_digest(email, otp):
+    key = current_app.secret_key
+    if isinstance(key, str):
+        key = key.encode()
+    return hmac.new(key, f"{email}:{otp}".encode(), hashlib.sha256).hexdigest()
+
+
+def _otp_failure_count(email):
+    with _otp_failures_lock:
+        return _otp_failures.get(email, 0)
+
+
+def _record_otp_failure(email):
+    with _otp_failures_lock:
+        _otp_failures[email] = _otp_failures.get(email, 0) + 1
+
+
+def _clear_otp_failures(email):
+    with _otp_failures_lock:
+        _otp_failures.pop(email, None)
+
+
+def _clear_signup_session():
+    for k in ('signup_otp_hash', 'signup_otp_expires', 'signup_name', 'signup_email', 'signup_reason'):
+        session.pop(k, None)
 
 
 # =====================================================
@@ -121,10 +166,12 @@ def request_account():
         return redirect("/login")
 
     # Generate 6-digit OTP
-    otp = str(random.randint(100000, 999999))
+    otp = f"{secrets.randbelow(1000000):06d}"
 
-    # Store in session for verification
-    session['signup_otp'] = otp
+    # Store only a keyed hash of the OTP in the (client-readable) session
+    _clear_otp_failures(email)
+    session['signup_otp_hash'] = _otp_digest(email, otp)
+    session['signup_otp_expires'] = int(time.time()) + OTP_TTL_SECONDS
     session['signup_name'] = name
     session['signup_email'] = email
     session['signup_reason'] = reason
@@ -141,7 +188,7 @@ You requested an account at the library. Please use the verification code below 
 📧 Your OTP Code: {otp}
 ━━━━━━━━━━━━━━━━━━━━━━━━
 
-This code expires when you close the page.
+This code expires in 10 minutes.
 
 If you did not request this, please ignore this email.
 
@@ -169,20 +216,29 @@ Library Management Team
 def verify_email():
     """Step 2: Show OTP form and verify the code."""
     # Check session has pending signup
-    if 'signup_otp' not in session:
+    if 'signup_otp_hash' not in session or 'signup_email' not in session:
         flash("No pending verification. Please submit your request first.", "error")
         return redirect("/login")
 
     if request.method == "POST":
         entered_otp = request.form.get("otp", "").strip()
+        email = session['signup_email']
 
-        if entered_otp == session.get('signup_otp'):
+        if time.time() > session.get('signup_otp_expires', 0) or \
+                _otp_failure_count(email) >= OTP_MAX_ATTEMPTS:
+            _clear_signup_session()
+            flash("Your verification code has expired. Please submit your request again.", "error")
+            return redirect("/login")
+
+        if hmac.compare_digest(_otp_digest(email, entered_otp), session['signup_otp_hash']):
             # OTP correct — create the account request
             ensure_account_requests_table()
-            name = session.pop('signup_name')
-            email = session.pop('signup_email')
-            reason = session.pop('signup_reason', '')
-            session.pop('signup_otp', None)
+            name = session.get('signup_name')
+            reason = session.get('signup_reason', '')
+            _clear_signup_session()
+            # Burn this code so a replayed cookie cannot submit it again.
+            with _otp_failures_lock:
+                _otp_failures[email] = OTP_MAX_ATTEMPTS
 
             execute_query(
                 "INSERT INTO account_requests (name, email, reason) VALUES (%s, %s, %s)",
@@ -192,6 +248,7 @@ def verify_email():
             flash("✅ Email verified! Your account request has been submitted. You'll receive your credentials once approved.", "success")
             return redirect("/login")
         else:
+            _record_otp_failure(email)
             flash("❌ Invalid verification code. Please try again.", "error")
             return redirect("/verify-email")
 

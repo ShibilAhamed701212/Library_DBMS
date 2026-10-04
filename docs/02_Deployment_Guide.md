@@ -56,17 +56,28 @@ The easiest way is to use **Aiven** (Free tier available):
     - `DB_NAME`: `defaultdb`
     - `DB_USER`: `avnadmin`
     - `DB_PASSWORD`: (From Aiven)
-    - `FLASK_SECRET_KEY`: (Something random like `super-secret-123`)
+    - `FLASK_SECRET_KEY`: a long random value, e.g. the output of `python -c "import secrets; print(secrets.token_hex(32))"`. Required: without it every restart logs everyone out.
+    - `SMTP_SERVER`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`: needed for account-request OTP emails and reminders.
+    - `DB_AUTH_PLUGIN`: set to `caching_sha2_password` if your MySQL user does not use `mysql_native_password`.
 
 6.  Click **Create Web Service**.
 
-## 5️⃣ Initialize Data (One-time)
+## 5️⃣ Initialize the Database (One-time)
 
-Once the app is live, you need to run the seed script *once* to create your 30 books.
-On Render, go to the **Shell** tab and run:
+Once the app is live, open the **Shell** tab on Render and create the schema:
 ```bash
-python database/seed_data.py
+python database/init_db.py
 ```
+
+Optionally load the demo data (30 books plus demo accounts). **This deletes existing users and books**, so only do it on an empty database:
+```bash
+SEED_ADMIN_PASSWORD='pick-a-password' python database/seed_data.py
+```
+
+If your host has no shell, set a long random `DB_INIT_TOKEN` environment variable, open
+`https://<your-app>/system/initialize-db-cloud-sync?token=<DB_INIT_TOKEN>` once (it runs the schema **and** the destructive seed), then remove `DB_INIT_TOKEN`. The route returns 404 whenever `DB_INIT_TOKEN` is unset.
+
+> Uploaded files (`static/uploads/`) are stored on the local disk, which is ephemeral on Render's free tier. Attach a persistent disk if avatars, chat files and e-books must survive redeploys.
 
 ---
 

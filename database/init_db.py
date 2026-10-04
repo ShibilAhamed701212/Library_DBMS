@@ -9,12 +9,13 @@ from backend.config.db import get_connection
 
 def run_schema():
     """
-    Reads the SQL schema file and executes it to create tables.
+    Reads database/schema.sql (the consolidated, idempotent schema) and
+    executes it to create all tables and reference data.
     """
     # Use absolute project root for reliability
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root_local = os.path.dirname(script_dir)
-    schema_path = os.path.join(project_root_local, "database", "DBMS_library_db.sql")
+    schema_path = os.path.join(project_root_local, "database", "schema.sql")
     
     if not os.path.exists(schema_path):
         return f"❌ Schema file not found at {schema_path}", False
@@ -42,6 +43,7 @@ def run_schema():
                 safe_cmds.append(cmd)
 
             # Execute each statement individually
+            failures = 0
             for cmd in safe_cmds:
                 cmd = cmd.strip()
                 if not cmd:
@@ -55,13 +57,18 @@ def run_schema():
                     except Exception:
                         pass
                 except Exception as e:
-                    # Capture and continue; schema runs should be best-effort
-                    first_line = cmd.split('\n', 1)[0][:120]
+                    # Capture and continue so every problem is reported at once
+                    failures += 1
+                    sql_lines = [l for l in cmd.splitlines() if l.strip() and not l.strip().startswith('--')]
+                    first_line = (sql_lines[0] if sql_lines else cmd)[:120]
                     output.append(f"⚠️ Warning: {e} | SQL: {first_line}")
         
         conn.commit()
         cursor.close()
         conn.close()
+        if failures:
+            output.append(f"❌ {failures} schema statement(s) failed; see warnings above.")
+            return "\n".join(output), False
         output.append("✅ Database tables created successfully!")
         return "\n".join(output), True
         
@@ -71,3 +78,4 @@ def run_schema():
 if __name__ == "__main__":
     msg, success = run_schema()
     print(msg)
+    sys.exit(0 if success else 1)

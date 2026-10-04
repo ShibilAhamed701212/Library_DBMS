@@ -6,6 +6,9 @@ application services (professional approach).
 
 Run:
     python database/seed_data.py
+
+WARNING: clears users, books, authors, series, issues, requests and
+suggestions before seeding. Use on a fresh/demo database only.
 """
 
 import sys
@@ -64,12 +67,21 @@ def clear_data():
 def seed_users():
     """
     Inserts admin and member users.
+
+    All seeded accounts share one password: SEED_ADMIN_PASSWORD if set,
+    otherwise a random one printed once below (no hard-coded default).
     """
+    password = os.getenv("SEED_ADMIN_PASSWORD")
+    if not password:
+        import secrets
+        password = secrets.token_urlsafe(12)
+        print(f"[INFO] SEED_ADMIN_PASSWORD not set; generated password for seeded accounts: {password}")
+
     users = [
-        ("Admin User", "admin@library.com", "admin", "Admin@123"),
-        ("Rahul Verma", "rahul@gmail.com", "member", "Admin@123"),
-        ("Aisha Khan", "aisha@gmail.com", "member", "Admin@123"),
-        ("Neha Sharma", "neha@gmail.com", "member", "Admin@123"),
+        ("Admin User", "admin@library.com", "admin", password),
+        ("Rahul Verma", "rahul@gmail.com", "member", password),
+        ("Aisha Khan", "aisha@gmail.com", "member", password),
+        ("Neha Sharma", "neha@gmail.com", "member", password),
     ]
 
     for name, email, role, password in users:

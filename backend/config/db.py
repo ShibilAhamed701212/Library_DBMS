@@ -43,9 +43,8 @@ def get_connection_config() -> Dict[str, Any]:
     return {
         "host": os.getenv("DB_HOST", "127.0.0.1"),
         "user": os.getenv("DB_USER", "app_user"),
-        # WARNING: Default password is for development only. 
-        # Always set DB_PASSWORD in production via environment variables.
-        "password": os.getenv("DB_PASSWORD", "App@123"),
+        # No hard-coded default password: set DB_PASSWORD in .env / environment.
+        "password": os.getenv("DB_PASSWORD", ""),
         "database": os.getenv("DB_NAME", "library_db"),
         "port": int(os.getenv("DB_PORT", 3306)),
         "charset": "utf8mb4",

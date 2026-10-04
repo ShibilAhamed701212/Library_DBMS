@@ -1,7 +1,7 @@
 from backend import socketio
 from flask_socketio import emit, join_room, leave_room
 from flask import request, session
-from backend.services.channel_service import save_message, get_channel_messages
+from backend.services.channel_service import save_message, get_channel_messages, can_access_channel
 from backend.services.chat_service import get_or_create_anon_id, delete_message, edit_message # We might need to move these
 # Actually, delete/edit should be in channel_service now or compatible. 
 # For now, let's assume strict separation. I need to move edit/delete to ChannelService ideally.
@@ -67,6 +67,10 @@ def handle_join_channel(data):
         emit('error', {'message': 'Channel not found'})
         return
 
+    if not can_access_channel(user_id, channel, session.get('role')):
+        emit('error', {'message': 'You do not have access to this channel.'})
+        return
+
     # Join Socket Room (using channel_id as the room name)
     join_room(str(channel_id))
     
@@ -109,6 +113,11 @@ def handle_message(data):
     content = data.get('message') or data.get('content')
     
     if not channel_id: return
+
+    channel = fetch_one("SELECT * FROM channels WHERE channel_id = %s", (channel_id,))
+    if not can_access_channel(user_id, channel, session.get('role')):
+        emit('error', {'message': 'You do not have access to this channel.'})
+        return
 
     # --- RESTRICTION: Global Community (ID 1) is Admin-Only for posting ---
     try:

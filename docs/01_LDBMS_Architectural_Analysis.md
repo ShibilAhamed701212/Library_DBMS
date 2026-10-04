@@ -1,3 +1,5 @@
+> **Note (2026-10 audit):** this is a long-form design write-up and parts of it are outdated. For example, SQLAlchemy and Alembic are not used or listed in `requirements.txt`, the schema now lives in `database/schema.sql`, and Socket.IO runs in threading mode rather than on Eventlet/Gevent. The [README](../README.md) is authoritative for setup, configuration and dependencies.
+
 # Comprehensive Architectural Analysis of the LDBMS Enterprise Ecosystem
 
 ## 1. Architectural Philosophy and Design Paradigms
