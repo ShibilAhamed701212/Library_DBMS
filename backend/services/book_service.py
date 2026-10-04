@@ -40,11 +40,11 @@ def add_book(title, author_id, category, total_copies, pdf_src=None, series_id=N
     book_id = execute(
         """
         INSERT INTO books
-            (title, author_id, category, total_copies, available_copies, pdf_src, series_id, series_order)
+            (title, author, author_id, category, total_copies, available_copies, pdf_src, series_id, series_order)
         VALUES
-            (%s, %s, %s, %s, %s, %s, %s, %s)
+            (%s, COALESCE((SELECT name FROM authors WHERE author_id = %s), ''), %s, %s, %s, %s, %s, %s, %s)
         """,
-        (title, author_id, category, total_copies, total_copies, pdf_src, series_id, series_order)
+        (title, author_id, author_id, category, total_copies, total_copies, pdf_src, series_id, series_order)
     )
 
     return book_id
@@ -72,11 +72,13 @@ def update_book(book_id, title, author_id, category, total_copies, series_id=Non
     execute(
         """
         UPDATE books 
-        SET title = %s, author_id = %s, category = %s, total_copies = %s, 
+        SET title = %s, author_id = %s,
+            author = COALESCE((SELECT name FROM authors WHERE author_id = %s), author),
+            category = %s, total_copies = %s,
             available_copies = %s, series_id = %s, series_order = %s
         WHERE book_id = %s
         """,
-        (title, author_id, category, total_copies, new_available, series_id, series_order, book_id)
+        (title, author_id, author_id, category, total_copies, new_available, series_id, series_order, book_id)
     )
 
     return "Book updated successfully"

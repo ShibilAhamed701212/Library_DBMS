@@ -110,7 +110,7 @@ def check_for_badges(user_id):
     unique_genres = res_genres['cnt'] if res_genres else 0
     
     # 4. Member Days
-    res_days = fetch_one("SELECT DATEDIFF(NOW(), join_date) as days FROM users WHERE user_id = %s", (user_id,))
+    res_days = fetch_one("SELECT DATEDIFF(NOW(), created_at) as days FROM users WHERE user_id = %s", (user_id,))
     member_days = res_days['days'] if res_days else 0
 
     for badge in unearned_dynamic:

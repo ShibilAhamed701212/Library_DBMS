@@ -25,9 +25,6 @@ from backend.routes.admin_routes import admin_bp    # Admin dashboard & admin ac
 from backend.routes.member_routes import member_bp  # Member dashboard
 from backend.routes.system_routes import system_bp  # Cloud initialization
 
-# Import test routes (for debugging)
-from backend.routes.test_auth import test_auth_bp   # Test authentication routes
-
 # -------------------------------
 # LOAD ENVIRONMENT VARIABLES
 # -------------------------------
@@ -88,11 +85,20 @@ def create_app():
     # - Flash messages
     # - CSRF protection (if enabled)
     #
-    # Pulled from environment for security
-    app.secret_key = os.getenv(
-        "FLASK_SECRET_KEY",
-        "dev-secret"   # fallback ONLY for development
-    )
+    # Pulled from environment for security. SECRET_KEY is accepted as an
+    # alias. Without either, a random per-process key is used: sessions
+    # will not survive a restart, but cookies cannot be forged with a
+    # publicly known key.
+    secret_key = os.getenv("FLASK_SECRET_KEY") or os.getenv("SECRET_KEY")
+    if not secret_key:
+        import secrets
+        import logging
+        logging.getLogger(__name__).warning(
+            "FLASK_SECRET_KEY is not set; using a random key. "
+            "Sessions will be invalidated on restart."
+        )
+        secret_key = secrets.token_hex(32)
+    app.secret_key = secret_key
 
     # -------------------------------
     # REGISTER BLUEPRINTS
@@ -115,9 +121,8 @@ def create_app():
     from backend.routes.analytics_routes import analytics_bp
     app.register_blueprint(analytics_bp) # /admin/analytics
     
-    # Register test blueprints (for debugging)
-    # Register test blueprints (for debugging)
-    app.register_blueprint(test_auth_bp, url_prefix='/test')  # /test/auth/...
+    # The debug blueprint in backend/routes/test_auth.py lists every user
+    # without authentication, so it is intentionally not registered.
 
     from backend.routes.common_routes import common_bp
     app.register_blueprint(common_bp)
@@ -201,6 +206,13 @@ def create_app():
             
             # Everyone else gets maintenance page
             return render_template("maintenance.html"), 503
+
+    @app.after_request
+    def set_security_headers(response):
+        # Uploaded files are served from /static; stop browsers from
+        # MIME-sniffing them into HTML/JS.
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        return response
 
     # -------------------------------
     # RETURN CONFIGURED APP

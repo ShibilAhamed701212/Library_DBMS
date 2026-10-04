@@ -1,3 +1,8 @@
+-- LEGACY: original base schema (5 tables), kept for reference only.
+-- It is no longer loaded by init_db.py and does not match the current code.
+-- Use database/schema.sql for new databases. Do not reuse the example
+-- passwords below.
+
 -- ======================================================
 -- DATABASE SETUP
 -- ======================================================

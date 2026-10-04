@@ -1,4 +1,5 @@
-from flask import Blueprint, request, current_app
+from flask import Blueprint, request, current_app, abort
+import hmac
 import os
 from database.init_db import run_schema
 from database.seed_data import main as run_seed
@@ -11,11 +12,14 @@ def initialize_db():
     Hidden route to initialize the database from the cloud server.
     Bypasses local network port 3306 restrictions.
     """
-    # Simple security check using the FLASK_SECRET_KEY
-    token = request.args.get('token')
-    expected_token = os.getenv('FLASK_SECRET_KEY', 'default-dev-token')
-    
-    if token != expected_token:
+    # This route truncates users and books, so it is disabled unless a
+    # dedicated DB_INIT_TOKEN is configured (there is no default token).
+    expected_token = os.getenv('DB_INIT_TOKEN')
+    if not expected_token:
+        abort(404)
+
+    token = request.args.get('token', '')
+    if not hmac.compare_digest(token.encode(), expected_token.encode()):
         return "❌ Unauthorized: Invalid initialization token.", 403
 
     output = []
@@ -39,6 +43,6 @@ def initialize_db():
         output.append(f"❌ Seeding Error: {e}")
         
     output.append("\n🎉 --- CLOUD INITIALIZATION COMPLETE ---")
-    output.append("You can now go to the login page and use admin@library.com")
+    output.append("You can now log in as admin@library.com with SEED_ADMIN_PASSWORD (or the generated password printed in the server log).")
     
     return "<pre>" + "\n".join(output) + "</pre>"

@@ -131,12 +131,17 @@ def admin_add_book_route():
         flash("❌ All required fields must be filled", "error")
         return redirect("/admin/books")
         
-    p_src = None
+    pdf_src = None
     if 'pdf_file' in request.files:
         file = request.files['pdf_file']
         if file and file.filename != '':
             filename = secure_filename(f"ebook_{int(datetime.now().timestamp())}_{file.filename}")
-            save_path = os.path.join("static", "uploads", "ebooks", filename)
+            if not filename.lower().endswith(".pdf"):
+                flash("❌ E-book must be a PDF file.", "error")
+                return redirect("/admin/books")
+            save_dir = os.path.join("static", "uploads", "ebooks")
+            os.makedirs(save_dir, exist_ok=True)
+            save_path = os.path.join(save_dir, filename)
             file.save(save_path)
             pdf_src = f"uploads/ebooks/{filename}"
             
@@ -742,7 +747,7 @@ def admin_add_manual_purchase():
         # and status = 'approved' so it appears in purchase list
         execute_query(
             """
-            INSERT INTO book_suggestions (user_id, title, author, reason, status, created_at)
+            INSERT INTO book_suggestions (user_id, title, author, notes, status, created_at)
             VALUES (NULL, %s, %s, %s, 'approved', NOW())
             """,
             (title, author, notes if notes else "Admin added")

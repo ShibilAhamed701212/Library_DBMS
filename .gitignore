@@ -17,3 +17,11 @@ tunnel_log.txt
 tunnel_url.txt
 
 LDBMS_codebase_context.txt
+
+# Runtime data (user uploads, generated reports, local vector store)
+static/uploads/**
+!static/uploads/*/
+!static/uploads/*/.gitkeep
+exports/
+backend/brain/data/
+.pytest_cache/

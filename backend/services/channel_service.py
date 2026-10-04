@@ -1,6 +1,39 @@
 from backend.repository.db_access import execute, fetch_one, fetch_all, get_connection
 from backend.services.chat_service import get_or_create_anon_id
 
+def can_access_channel(user_id, channel, system_role=None):
+    """
+    Returns True if the user may read/post in the channel.
+    - Public channels (no guild, not private, not a DM): any logged-in user.
+    - Guild channels: members of the guild.
+    - DMs and private groups: participants only (site admins may access
+      non-DM channels for moderation, never DMs).
+    """
+    if not user_id or not channel:
+        return False
+
+    is_dm = channel.get('name') == 'DM'
+    if not channel.get('guild_id') and not channel.get('is_private') and not is_dm:
+        return True
+    if system_role == 'admin' and not is_dm:
+        return True
+
+    participant = fetch_one(
+        "SELECT 1 AS ok FROM dm_participants WHERE channel_id = %s AND user_id = %s",
+        (channel['channel_id'], user_id)
+    )
+    if participant:
+        return True
+
+    if channel.get('guild_id'):
+        member = fetch_one(
+            "SELECT 1 AS ok FROM guild_members WHERE guild_id = %s AND user_id = %s",
+            (channel['guild_id'], user_id)
+        )
+        return bool(member)
+
+    return False
+
 def create_channel(guild_id, category_id, name, type='text', topic=None, is_private=False, creator_id=None):
     """Creates a new channel in a guild or global."""
     cid = execute("""

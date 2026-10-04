@@ -155,6 +155,11 @@ def route_create_channel():
 @chat_bp.route('/channels/<int:channel_id>/messages', methods=['GET'])
 @member_required
 def route_get_messages(channel_id):
+    from backend.repository.db_access import fetch_one
+    from backend.services.channel_service import can_access_channel
+    channel = fetch_one("SELECT * FROM channels WHERE channel_id = %s", (channel_id,))
+    if not can_access_channel(session.get('user_id'), channel, session.get('role')):
+        return jsonify({'error': 'Unauthorized'}), 403
     try:
         msgs = get_channel_messages(channel_id)
         return jsonify({'success': True, 'messages': msgs})
@@ -253,7 +258,19 @@ def route_update_channel(channel_id):
     data = request.json
     name = data.get('name')
     if not name: return jsonify({'error': 'Name required'}), 400
-    from backend.repository.db_access import execute
+    from backend.repository.db_access import execute, fetch_one
+
+    # Same rule as channel settings/rules: site admin, channel creator,
+    # or channel admin.
+    user_id = session['user_id']
+    channel = fetch_one("SELECT created_by FROM channels WHERE channel_id = %s", (channel_id,))
+    if not channel:
+        return jsonify({'error': 'Channel not found'}), 404
+    if session.get('role') != 'admin' and channel.get('created_by') != user_id:
+        p = fetch_one("SELECT role FROM dm_participants WHERE channel_id = %s AND user_id = %s", (channel_id, user_id))
+        if not (p and p['role'] == 'admin'):
+            return jsonify({'error': 'Unauthorized'}), 403
+
     execute("UPDATE channels SET name = %s WHERE channel_id = %s", (name, channel_id))
     return jsonify({'success': True})
 
@@ -596,7 +613,9 @@ def route_update_channel_settings(channel_id):
     if 'icon' in request.files:
         file = request.files['icon']
         if file and file.filename:
-            ext = os.path.splitext(file.filename)[1]
+            ext = os.path.splitext(secure_filename(file.filename))[1].lower()
+            if ext not in ('.png', '.jpg', '.jpeg', '.gif', '.webp'):
+                return jsonify({'success': False, 'error': 'Icon must be an image (png, jpg, gif, webp).'}), 400
             unique_name = f"channel_{channel_id}_{uuid.uuid4().hex[:8]}{ext}"
             save_dir = os.path.join(current_app.static_folder, 'uploads', 'channels')
             os.makedirs(save_dir, exist_ok=True)
@@ -658,8 +677,19 @@ def send_invite():
     invite_type = data.get('type', 'DM')
     
     from backend.utils.snowflake import SnowflakeGenerator
-    from backend.repository.db_access import execute
-    
+    from backend.repository.db_access import execute, fetch_one
+    from backend.services.channel_service import can_access_channel
+
+    if invite_type == 'GROUP':
+        # Only someone who can already see a (non-DM) channel may invite others to it.
+        channel = fetch_one("SELECT * FROM channels WHERE channel_id = %s", (target_channel_id,))
+        if not channel or channel.get('name') == 'DM' or \
+                not can_access_channel(session['user_id'], channel, session.get('role')):
+            return jsonify({'error': 'Unauthorized'}), 403
+    else:
+        invite_type = 'DM'
+        target_channel_id = None
+
     gen = SnowflakeGenerator()
     invite_id = gen.next_id()
     
@@ -716,12 +746,26 @@ def handle_invite():
     status = 'accepted' if action == 'accept' else 'rejected'
     
     from backend.repository.db_access import execute, fetch_one
+
+    # Only the invited user (or, for group invites, the owner of the
+    # channel's guild) may answer an invite, and only while it is pending.
+    invite = fetch_one("SELECT * FROM chat_invitations WHERE invite_id = %s", (invite_id,))
+    if not invite or invite.get('status') != 'pending':
+        return jsonify({'error': 'Invite not found'}), 404
+    user_id = session['user_id']
+    allowed = invite['target_user_id'] == user_id
+    if not allowed and invite['type'] == 'GROUP' and invite.get('target_channel_id'):
+        owner = fetch_one(
+            "SELECT g.owner_id FROM channels c JOIN guilds g ON c.guild_id = g.guild_id WHERE c.channel_id = %s",
+            (invite['target_channel_id'],)
+        )
+        allowed = bool(owner) and owner['owner_id'] == user_id
+    if not allowed:
+        return jsonify({'error': 'Unauthorized'}), 403
+
     execute("UPDATE chat_invitations SET status = %s WHERE invite_id = %s", (status, invite_id))
     
     if action == 'accept':
-        invite = fetch_one("SELECT * FROM chat_invitations WHERE invite_id = %s", (invite_id,))
-        if not invite: return jsonify({'error': 'Invite not found'}), 404
-        
         if invite['type'] == 'DM':
             from backend.services.channel_service import create_dm
             cid = create_dm(invite['sender_id'], invite['target_user_id'])

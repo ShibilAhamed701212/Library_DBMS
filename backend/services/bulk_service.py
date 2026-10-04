@@ -5,7 +5,7 @@ from backend.repository.db_access import fetch_all, execute
 
 def export_books_csv():
     """Returns the entire book catalog as a CSV formatted string."""
-    books = fetch_all("SELECT title, author, category, copies FROM books")
+    books = fetch_all("SELECT title, author, category, total_copies FROM books")
     
     output = io.StringIO()
     writer = csv.writer(output)
@@ -15,7 +15,7 @@ def export_books_csv():
     
     # Data
     for b in books:
-        writer.writerow([b['title'], b['author'], b['category'], b['copies']])
+        writer.writerow([b['title'], b['author'], b['category'], b['total_copies']])
         
     return output.getvalue()
 
@@ -43,7 +43,7 @@ def import_books_csv(stream):
                 
                 execute(
                     """
-                    INSERT INTO books (title, author, category, copies, available_copies)
+                    INSERT INTO books (title, author, category, total_copies, available_copies)
                     VALUES (%s, %s, %s, %s, %s)
                     """,
                     (title, author, category, copies, copies)
