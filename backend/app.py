@@ -103,6 +103,8 @@ def create_app():
     # Explicit cookie policy (Flask leaves SameSite unset by default).
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    # Set SESSION_COOKIE_SECURE=1 when the site is served over HTTPS only.
+    app.config["SESSION_COOKIE_SECURE"] = os.getenv("SESSION_COOKIE_SECURE", "").lower() in ("1", "true", "yes")
 
     # -------------------------------
     # REGISTER BLUEPRINTS
@@ -199,7 +201,8 @@ def create_app():
            request.path == '/' or \
            request.path.startswith('/admin') or \
            request.path.startswith('/api/book') or \
-           request.path.startswith('/system'):
+           request.path.startswith('/system') or \
+           request.path in ('/change-password', '/logout'):
             return None
 
         # Check maintenance status
@@ -233,7 +236,10 @@ def create_app():
         source = request.headers.get("Origin") or request.headers.get("Referer")
         if not source:
             return None
-        source_host = (urlsplit(source).netloc or "").lower()
+        try:
+            source_host = (urlsplit(source).netloc or "").lower()
+        except ValueError:
+            abort(403)
         if source_host and (source_host == request.host.lower() or source_host in trusted_hosts):
             return None
         abort(403)

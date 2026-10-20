@@ -42,6 +42,9 @@ print("[OK] Loaded backend.chat.socket_service event handlers (Discord Arch)", f
 
 @socketio.on('connect')
 def handle_connect():
+    # A temporary password must be changed before using chat.
+    if session.get('must_change_password'):
+        return False
     user_id = session.get('user_id')
     if user_id:
         print(f"[SOCKET] User {session.get('name')} (ID: {user_id}) connected.", flush=True)

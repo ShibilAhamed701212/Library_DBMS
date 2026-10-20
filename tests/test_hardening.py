@@ -76,14 +76,19 @@ def test_changing_password_clears_flag(client, monkeypatch):
     import backend.routes.auth_routes as auth_routes
 
     updates = []
-    monkeypatch.setattr(auth_routes, "execute", lambda q, p=None: updates.append(p))
+    monkeypatch.setattr(auth_routes, "execute", lambda q, p=None: updates.append((q, p)))
     monkeypatch.setattr(auth_routes, "hash_password", lambda pw: "hashed")
+    monkeypatch.setattr(auth_routes, "fetch_one", lambda q, p=None: {"password_hash": "old"})
+    monkeypatch.setattr(auth_routes, "verify_password", lambda pw, h: False)
     login_as(client, 5)
     with client.session_transaction() as sess:
         sess["must_change_password"] = True
     response = client.post("/change-password", data={"password": "N3w-password!", "confirm_password": "N3w-password!"})
     assert response.headers["Location"].endswith("/member/dashboard")
-    assert updates == [("hashed", 5)]
+    assert len(updates) == 1
+    query, params = updates[0]
+    assert params == ("hashed", 5)
+    assert "must_change_password = FALSE" in query
     with client.session_transaction() as sess:
         assert "must_change_password" not in sess
 
@@ -131,3 +136,73 @@ def test_admin_unknown_ticket_is_404(client, monkeypatch):
     monkeypatch.setattr(support_service, "get_ticket_details", lambda tid: None)
     login_as(client, 1, role="admin")
     assert client.get("/admin/support/999").status_code == 404
+
+
+def test_admin_post_to_unknown_ticket_is_404(client, monkeypatch):
+    import backend.services.support_service as support_service
+
+    closed = []
+    monkeypatch.setattr(support_service, "get_ticket_details", lambda tid: None)
+    monkeypatch.setattr(support_service, "close_ticket", lambda tid: closed.append(tid) or "ok")
+    login_as(client, 1, role="admin")
+    assert client.post("/admin/support/999", data={"action": "close"}).status_code == 404
+    assert closed == []
+
+
+# ---------------------------------------------------------------------------
+# Review follow-ups
+# ---------------------------------------------------------------------------
+
+def test_malformed_origin_rejected(client):
+    login_as(client, 5)
+    response = client.post("/chat/anonymous", json={"is_anon": True},
+                           headers={"Origin": "http://[::1"})
+    assert response.status_code == 403
+
+
+def test_new_password_must_differ_from_current(client, monkeypatch):
+    import backend.routes.auth_routes as auth_routes
+
+    updates = []
+    monkeypatch.setattr(auth_routes, "execute", lambda q, p=None: updates.append(p))
+    monkeypatch.setattr(auth_routes, "fetch_one", lambda q, p=None: {"password_hash": "temp-hash"})
+    monkeypatch.setattr(auth_routes, "verify_password", lambda pw, h: True)
+    login_as(client, 5)
+    with client.session_transaction() as sess:
+        sess["must_change_password"] = True
+    response = client.post("/change-password", data={"password": "Temp-pass1", "confirm_password": "Temp-pass1"})
+    assert response.headers["Location"].endswith("/change-password")
+    assert updates == []
+    with client.session_transaction() as sess:
+        assert sess["must_change_password"] is True
+
+
+def test_change_password_reachable_in_maintenance(make_app, monkeypatch):
+    import backend.services.settings_service as settings_service
+
+    monkeypatch.setattr(settings_service, "is_maintenance_mode", lambda: True)
+    app = make_app(FLASK_SECRET_KEY="k")
+    client = app.test_client()
+    login_as(client, 5)
+    with client.session_transaction() as sess:
+        sess["must_change_password"] = True
+    assert client.get("/change-password").status_code == 200
+    assert client.get("/member/dashboard").status_code == 503
+
+
+def test_socket_refused_until_password_changed(app, client):
+    import importlib
+    from backend import socketio
+    import backend.chat.socket_service as socket_service
+
+    importlib.reload(socket_service)
+    login_as(client, 5)
+    with client.session_transaction() as sess:
+        sess["must_change_password"] = True
+    sio = socketio.test_client(app, flask_test_client=client)
+    assert not sio.is_connected()
+
+
+def test_secure_cookie_opt_in(make_app):
+    assert make_app(FLASK_SECRET_KEY="k").config["SESSION_COOKIE_SECURE"] is False
+    assert make_app(FLASK_SECRET_KEY="k", SESSION_COOKIE_SECURE="1").config["SESSION_COOKIE_SECURE"] is True

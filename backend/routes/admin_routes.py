@@ -1193,7 +1193,11 @@ def admin_support_route():
 @admin_required
 def admin_ticket_view(ticket_id):
     from backend.services.support_service import get_ticket_details, add_reply, close_ticket
-    
+
+    data = get_ticket_details(ticket_id)
+    if not data:
+        abort(404)
+
     if request.method == "POST":
         action = request.form.get("action")
         if action == "reply":
@@ -1204,10 +1208,7 @@ def admin_ticket_view(ticket_id):
             result = close_ticket(ticket_id)
             flash(result)
         return redirect(f"/admin/support/{ticket_id}")
-        
-    data = get_ticket_details(ticket_id)
-    if not data:
-        abort(404)
+
     return render_template("admin/ticket_view.html", active_page="admin_support", **data)
 
 

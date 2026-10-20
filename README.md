@@ -200,6 +200,7 @@ All settings are environment variables (loaded from `.env` by `python-dotenv`).
 | `SMTP_SERVER`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | For email | Account-request OTPs, credential emails, reminders. Defaults: `smtp.gmail.com`, `587`. Without them, emails are skipped and OTP sign-up cannot complete. |
 | `SEED_ADMIN_PASSWORD` | No | Password for accounts created by `seed_data.py`. |
 | `CSRF_TRUSTED_ORIGINS` | No | Comma-separated extra hostnames (e.g. `library.example.org`) allowed to send POSTs, for when a proxy changes the `Host` header. Same-host requests are always allowed. |
+| `SESSION_COOKIE_SECURE` | No | Set to `1` when the site is served only over HTTPS, so browsers never send the session cookie over plain HTTP. Leave unset for local `http://` development. |
 | `DB_INIT_TOKEN` | No | Enables `/system/initialize-db-cloud-sync` (see [Deployment](#-deployment)). The route returns 404 when this is unset. |
 | `GEMINI_API_KEY` | No | Gemini-powered vibe discovery. |
 | `HF_TOKEN` | No | Hugging Face Inference API for the AI librarian. |
