@@ -16,7 +16,7 @@ DESIGN PRINCIPLES FOLLOWED:
 
 from flask import (
     Blueprint, render_template, session, redirect,
-    request, flash, url_for, jsonify
+    request, flash, url_for, jsonify, abort
 )
 
 from backend.repository.db_access import fetch_one, fetch_all, execute_query
@@ -1206,6 +1206,8 @@ def admin_ticket_view(ticket_id):
         return redirect(f"/admin/support/{ticket_id}")
         
     data = get_ticket_details(ticket_id)
+    if not data:
+        abort(404)
     return render_template("admin/ticket_view.html", active_page="admin_support", **data)
 
 

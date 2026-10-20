@@ -33,7 +33,6 @@ OPTIONAL_TABLES = ("system_settings",)
 # Pages that cannot render in an offline test environment.
 SKIP_PAGES = (
     "/member/ai-chat",   # downloads a sentence-transformers model on first use
-    "/admin/support/1",  # no ticket 1 in seed data (page 500s on unknown ids; see README known issues)
 )
 
 

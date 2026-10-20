@@ -199,6 +199,7 @@ All settings are environment variables (loaded from `.env` by `python-dotenv`).
 | `DB_POOL_SIZE` | No | Connection pool size (default `5`). |
 | `SMTP_SERVER`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | For email | Account-request OTPs, credential emails, reminders. Defaults: `smtp.gmail.com`, `587`. Without them, emails are skipped and OTP sign-up cannot complete. |
 | `SEED_ADMIN_PASSWORD` | No | Password for accounts created by `seed_data.py`. |
+| `CSRF_TRUSTED_ORIGINS` | No | Comma-separated extra hostnames (e.g. `library.example.org`) allowed to send POSTs, for when a proxy changes the `Host` header. Same-host requests are always allowed. |
 | `DB_INIT_TOKEN` | No | Enables `/system/initialize-db-cloud-sync` (see [Deployment](#-deployment)). The route returns 404 when this is unset. |
 | `GEMINI_API_KEY` | No | Gemini-powered vibe discovery. |
 | `HF_TOKEN` | No | Hugging Face Inference API for the AI librarian. |
@@ -235,12 +236,15 @@ pytest
 
 - `tests/test_security.py`: regression tests for the security fixes (secret key, reset endpoint, debug route, OTP storage, chat authorization, upload validation, invites). No database needed.
 - `tests/test_books.py`: book creation and update, and the admin add-book route.
+- `tests/test_hardening.py`: cross-origin POST rejection, the forced password change, support-ticket ownership and the unknown-ticket 404.
 - `tests/test_fresh_install.py`: end-to-end fresh-install check. It runs `init_db` twice and then `seed_data`, EXPLAINs every SQL statement in `backend/` against the schema, and loads every page as an admin and as a member. It is **destructive** and skipped by default:
 
   ```bash
   mysql -e "CREATE DATABASE library_test CHARACTER SET utf8mb4"
   LDBMS_INTEGRATION=1 DB_NAME=library_test pytest tests/test_fresh_install.py
   ```
+
+GitHub Actions (`.github/workflows/ci.yml`) runs `ruff check --select E9,F63,F7,F82 .` (syntax errors and undefined names) and the full suite, including the fresh-install test against a MariaDB 10.11 service, on every push to `main` and every pull request.
 
 ---
 
@@ -287,7 +291,9 @@ Socket.IO events (`backend/chat/socket_service.py`): `join_channel`, `send_messa
 
 ## 🔐 Security notes
 
-- Passwords are hashed with bcrypt. New accounts must change their temporary password on first login.
+- Passwords are hashed with bcrypt. New accounts must change their temporary password on first login; every other page redirects to the change-password form until they do.
+- POST, PUT, PATCH and DELETE requests whose `Origin` or `Referer` names another host are rejected with 403 (CSRF protection). Session cookies are `HttpOnly` and `SameSite=Lax`.
+- Members can only view and reply to their own support tickets.
 - Session cookies are signed with `FLASK_SECRET_KEY`; there is no hard-coded fallback key.
 - The email OTP is never stored in the client-readable session cookie (only an HMAC). It expires after 10 minutes and allows 5 attempts.
 - Chat history and posting are limited to channel participants (DMs, private groups) or guild members. Renaming a channel, changing its settings or rules, and answering invites are limited to the right users.
@@ -300,10 +306,12 @@ The fixes and their verification are listed in [docs/05_Audit_and_Fixes.md](docs
 
 ## ⚠️ Known limitations
 
-- **No CSRF protection** on form and JSON POSTs. The session cookie sets no `SameSite` attribute, so it relies on the browser default (`Lax` in current Chromium and Firefox), which is not a complete defense.
+- CSRF protection is an `Origin`/`Referer` check plus `SameSite=Lax`, not per-form tokens. Requests carrying neither header (non-browser clients) are allowed.
+- Socket.IO accepts connections from any origin (`cors_allowed_origins="*"`); the `SameSite=Lax` cookie keeps other sites from connecting with a member's session.
+- There is no rate limiting on password login.
+- Plan purchases are a demo flow with no payment gateway (the price is taken from the server, not the client).
 - Joining a non-DM group by channel ID (`POST /chat/join/<id>`) is open to any member by design, so "private" groups depend on the ID not being known.
 - OTP attempt counting is in-process memory: it resets on restart and is not shared between workers.
-- `/admin/support/<id>` and the member ticket page return HTTP 500 for a ticket ID that doesn't exist.
 - The AI features were not exercised end to end here. Gemini discovery uses the `gemini-1.5-flash` model ID, and the AI librarian downloads Hugging Face models on first use and needs network access.
 - Verified on MariaDB 10.11 with Python 3.11. MySQL 8 should work with the same schema (see the authentication note above) but was not tested.
 - `scripts/setup` and `scripts/migrations` are historical one-off scripts kept for reference. Some are destructive (`reset_*`), and none are needed for a fresh install.

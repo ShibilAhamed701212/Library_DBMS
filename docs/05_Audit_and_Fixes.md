@@ -48,13 +48,28 @@ This records what the engineering audit found in the code before any change was 
 
 ## Remaining known issues (not changed)
 
-- No CSRF protection; the session cookie relies on the browser's default `SameSite` behaviour.
 - Any member can join a non-DM group by channel ID (`POST /chat/join/<id>`); the code documents this as intended.
-- `/admin/support/<id>` and the member ticket page return 500 for an unknown ticket ID.
 - A second `POST /chat/upload` handler in `chat_routes.py` is shadowed by the first and never runs.
 - AI features (Gemini `gemini-1.5-flash`, Hugging Face inference, local model download) could not be exercised offline.
 - The schema was verified on MariaDB 10.11 only.
 - Screenshots were not captured: the UI's CSS, fonts and charts load from public CDNs that were unreachable in the verification environment.
+
+- No rate limiting on password login.
+
+## Second pass (October 2026)
+
+A fresh re-audit of `main` after the fixes above found four more problems. Each was confirmed in the code and is covered by `tests/test_hardening.py`.
+
+| # | Finding (before) | Fix | Files |
+|---|---|---|---|
+| 13 | Any member could read and reply to any other member's support ticket by changing the ID in `/member/support/<id>`. | Both GET and POST check that the ticket belongs to the logged-in member; otherwise "Ticket not found". | `backend/routes/member_routes.py` |
+| 14 | The forced password change was a single redirect after login; the user could browse to any other page and keep the temporary password. | Login sets a session flag, a `before_request` hook redirects every page except `/change-password`, `/logout` and static files until the password is changed, and a successful change clears it. | `backend/app.py`, `backend/routes/auth_routes.py` |
+| 15 | No CSRF protection, and no `SameSite` attribute on the session cookie. | Unsafe methods whose `Origin`/`Referer` names a different host get 403 (extra hosts via `CSRF_TRUSTED_ORIGINS`). Session cookie is `HttpOnly` and `SameSite=Lax`. | `backend/app.py` |
+| 16 | `/admin/support/<id>` returned 500 for an unknown ticket. | Returns 404 (the member page already redirected after #13). | `backend/routes/admin_routes.py` |
+
+Also added: a GitHub Actions workflow running the critical ruff rules and the full suite, including the fresh-install test on MariaDB 10.11.
+
+Validation: 65 tests pass locally (including the fresh-install test on an empty MariaDB 10.11 database), and every new test fails against the previous code.
 
 ## Manual steps for existing deployments
 
@@ -63,3 +78,4 @@ This records what the engineering audit found in the code before any change was 
 3. Existing databases: `python database/init_db.py` only creates missing tables. It does **not** alter existing ones. If an existing database was built from the old scripts, compare it with `database/schema.sql`, especially `series.name`, `reading_goals.goal_books/current_books`, `books.created_at`, `authors.nationality`, `badges.rule_type/rule_value`, `chat_messages`, `dm_participants`, `chat_invitations` and `audit_logs`.
 4. `/system/initialize-db-cloud-sync` now needs `DB_INIT_TOKEN`. Leave it unset except for a one-time bootstrap.
 5. Seeded demo accounts no longer use `Admin@123`. Change the password of any production account that still uses it.
+6. Behind a proxy that rewrites the `Host` header, set `CSRF_TRUSTED_ORIGINS` to the public hostname, or form POSTs will get 403.

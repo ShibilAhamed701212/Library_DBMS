@@ -100,6 +100,10 @@ def create_app():
         secret_key = secrets.token_hex(32)
     app.secret_key = secret_key
 
+    # Explicit cookie policy (Flask leaves SameSite unset by default).
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
     # -------------------------------
     # REGISTER BLUEPRINTS
     # -------------------------------
@@ -184,7 +188,7 @@ def create_app():
         return data
 
     # Maintenance Mode Hook
-    from flask import request, render_template
+    from flask import request, render_template, redirect
     from backend.services.settings_service import is_maintenance_mode
 
     @app.before_request
@@ -206,6 +210,46 @@ def create_app():
             
             # Everyone else gets maintenance page
             return render_template("maintenance.html"), 503
+
+    # -------------------------------
+    # CSRF PROTECTION (same-origin check)
+    # -------------------------------
+    # Browsers send Origin (or at least Referer) on cross-site form posts and
+    # fetches. Any state-changing request whose Origin/Referer names a
+    # different host is rejected. Requests without either header (non-browser
+    # clients, tests) are allowed. Extra hosts, e.g. behind a proxy that
+    # rewrites Host, can be listed in CSRF_TRUSTED_ORIGINS (comma-separated).
+    from urllib.parse import urlsplit
+    from flask import abort
+
+    trusted_hosts = {
+        h.strip().lower() for h in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if h.strip()
+    }
+
+    @app.before_request
+    def check_same_origin():
+        if request.method in ("GET", "HEAD", "OPTIONS", "TRACE"):
+            return None
+        source = request.headers.get("Origin") or request.headers.get("Referer")
+        if not source:
+            return None
+        source_host = (urlsplit(source).netloc or "").lower()
+        if source_host and (source_host == request.host.lower() or source_host in trusted_hosts):
+            return None
+        abort(403)
+
+    # -------------------------------
+    # FORCED PASSWORD CHANGE
+    # -------------------------------
+    # Accounts created with a temporary password must change it before
+    # using anything else (login only redirected once before).
+    @app.before_request
+    def enforce_password_change():
+        if not session.get("must_change_password"):
+            return None
+        if request.path in ("/change-password", "/logout") or request.path.startswith("/static"):
+            return None
+        return redirect("/change-password")
 
     @app.after_request
     def set_security_headers(response):

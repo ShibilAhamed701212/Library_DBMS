@@ -854,7 +854,13 @@ def member_support():
 @member_required
 def member_ticket_view(ticket_id):
     from backend.services.support_service import get_ticket_details, add_reply
-    
+
+    # Members may only see and reply to their own tickets.
+    owner = fetch_one("SELECT user_id FROM tickets WHERE ticket_id = %s", (ticket_id,))
+    if not owner or owner["user_id"] != session["user_id"]:
+        flash("❌ Ticket not found", "error")
+        return redirect("/member/support")
+
     if request.method == "POST":
         message = request.form.get("message")
         result = add_reply(ticket_id, session["user_id"], message)

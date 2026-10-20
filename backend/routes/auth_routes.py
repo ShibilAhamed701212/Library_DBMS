@@ -93,6 +93,7 @@ def login():
 
         # If user is logging in with default password
         if user.get("must_change_password"):
+            session["must_change_password"] = True
             return redirect("/change-password")
 
         # -----------------------------
@@ -190,6 +191,8 @@ def change_password():
             """,
             (password_hash, session["user_id"])
         )
+
+        session.pop("must_change_password", None)
 
         # Notify user
         flash("✅ Password updated successfully", "success")
