@@ -28,10 +28,10 @@ from backend.services.auth_service import authenticate_user
 from backend.utils.decorators import login_required
 # login_required → ensures user is logged in before accessing route
 
-from backend.utils.security import hash_password
+from backend.utils.security import hash_password, verify_password
 # hash_password → securely hashes passwords (bcrypt)
 
-from backend.repository.db_access import execute
+from backend.repository.db_access import execute, fetch_one
 # execute → runs INSERT / UPDATE / DELETE queries
 
 
@@ -93,6 +93,7 @@ def login():
 
         # If user is logging in with default password
         if user.get("must_change_password"):
+            session["must_change_password"] = True
             return redirect("/change-password")
 
         # -----------------------------
@@ -170,6 +171,12 @@ def change_password():
             flash("❌ Password must be at least 8 characters", "error")
             return redirect("/change-password")
 
+        # The new password must differ from the current (temporary) one
+        current = fetch_one("SELECT password_hash FROM users WHERE user_id = %s", (session["user_id"],))
+        if current and verify_password(new_password, current["password_hash"]):
+            flash("❌ Choose a password different from your current one", "error")
+            return redirect("/change-password")
+
         # -----------------------------
         # HASH PASSWORD
         # -----------------------------
@@ -190,6 +197,8 @@ def change_password():
             """,
             (password_hash, session["user_id"])
         )
+
+        session.pop("must_change_password", None)
 
         # Notify user
         flash("✅ Password updated successfully", "success")
